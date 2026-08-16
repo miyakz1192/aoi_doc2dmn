@@ -1,0 +1,273 @@
+{
+  "_meta": {
+    "purpose": "HANDOFF_20260816_to_claudecode_testdata.md タスク1・タスク2に基づく候補データ。正式なオラクル(testdata/clauses/clauses_v1.json)には未統合。④人間レビュー(Kazuhiroさん)を経てから統合する。",
+    "labeling_note": "axis1/axis2の一次仮ラベルはClaude Codeが付与した。評価対象であるsrc/stage2_classify/local_llm.py(LocalLlmAxis1Classifier等)は使用していない(自己採点を避けるため)。",
+    "status": "pending_human_review"
+  },
+  "candidates": [
+    {
+      "clause_id": "ipa_secguide_v4_2_1_3",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "2.1.3 ソフトウェアのアップデート（技術的対策）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "extraction_note": "他節への参照文（「2.4.2ソフトウェアのアップデート方法」を参照のこと）を除いて抜粋。それ以外は原文ママ。"
+      },
+      "task": "task1",
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "エスカレーション基準",
+        "axis2": "手続き的",
+        "cell_id": "escalation_procedural",
+        "confidence_note": "「期限内にアップデートが完了しない場合」というタイムアウトを起点に、代替のリスク低減策へ切り替わるフォールバック構造。第42条（代替休暇）と同型のObligationManagerパターン。Task1で見つかった唯一の明確なescalation_procedural候補（他は「速やかに」「直ちに」等の即時報告パターンが大半で、期限管理を伴う手続き的なものは稀だった）。"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "従業員は、業務で使用するソフトウェアを最新の状態で利用する。やむを得ず上記のとおりアップデートができない場合（例えば、動作検証に一定期間を要し、期限内にアップデートが完了しない場合）は、アップデート適用までの間、以下のいずれかにより脆弱性悪用のリスクを低減する対策を実施する。",
+      "text_filled": "従業員は、業務で使用するソフトウェアを最新の状態で利用する。やむを得ず上記のとおりアップデートができない場合（例えば、動作検証に一定期間を要し、期限内にアップデートが完了しない場合）は、アップデート適用までの間、以下のいずれかにより脆弱性悪用のリスクを低減する対策を実施する。",
+      "parameter_slots": []
+    },
+    {
+      "clause_id": "ipa_secguide_v4_5_6",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "5.6 情報資産の社外持ち出し（組織的対策）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "extraction_note": "冒頭文＋箇条書き上位2項目のみ抜粋（以降の暗号化等の技術的箇条書きは別テーマのため除外）。原文ママ。"
+      },
+      "task": "task1",
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "エスカレーション基準",
+        "axis2": "宣言的",
+        "cell_id": "escalation_declarative",
+        "confidence_note": "機密性区分（社外秘／極秘）に応じて異なる承認者から事前承認を得る、という行動前承認パターン。第18条・第8.5節（再委託）と同型。承認さえ下りればその場で完結し、期限管理・継続監視は伴わないため宣言的。委託管理ドメイン以外（情報資産の取り扱い）での再現例。"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "情報資産を社外に持ち出す場合には、以下を実施する。社外秘の場合は所属部門長の許可を得る。極秘の場合は代表取締役の許可を得る。",
+      "text_filled": "情報資産を社外に持ち出す場合には、以下を実施する。社外秘の場合は所属部門長の許可を得る。極秘の場合は代表取締役の許可を得る。",
+      "parameter_slots": []
+    },
+    {
+      "clause_id": "ipa_secguide_v4_9_3",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "9.3 インシデントの連絡及び報告（組織的対策）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "extraction_note": "原文ママ。"
+      },
+      "task": "task1",
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "エスカレーション基準",
+        "axis2": "宣言的",
+        "cell_id": "escalation_declarative",
+        "confidence_note": "「速やかに報告し、指示を仰ぐ」という第58条と同型のパターン（異常検知→報告→人間の指示待ち）。「速やかに」は順序を示すだけで期限管理・待機を伴わないため宣言的。就業規則以外のドメインでの軸1・軸2判定の再現性確認用。"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "事故レベル1以上のインシデントが発生した場合、発見者は以下の連絡網に従い、対応者または責任者に速やかに報告し、指示を仰ぐ。",
+      "text_filled": "事故レベル1以上のインシデントが発生した場合、発見者は以下の連絡網に従い、対応者または責任者に速やかに報告し、指示を仰ぐ。",
+      "parameter_slots": []
+    },
+    {
+      "clause_id": "ipa_secguide_v4_personnel_2",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "人的対策 2. 従業員の責務",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "extraction_note": "箇条書きのうち第1項のみ抜粋。原文ママ。"
+      },
+      "task": "task1",
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "ハード制約",
+        "axis2": "宣言的",
+        "cell_id": "hard_declarative",
+        "confidence_note": "「してはならない」という明確な禁止規定で、営業秘密該当性という単一の事実から機械的に判定できる。第11条と同型。時間軸・状態遷移なし。"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "従業員は、当社が営業秘密として管理する情報及びその複製物の一切を許可されていない組織、人に提供してはならない。",
+      "text_filled": "従業員は、当社が営業秘密として管理する情報及びその複製物の一切を許可されていない組織、人に提供してはならない。",
+      "parameter_slots": []
+    },
+    {
+      "clause_id": "ipa_secguide_v4_6_7_1",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "6.7 特権アカウント（組織的対策、箇条書き第3項）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "extraction_note": "原文ママ。"
+      },
+      "task": "task1",
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "ハード制約",
+        "axis2": "宣言的",
+        "cell_id": "hard_declarative",
+        "confidence_note": "役割（システム開発担当者）と環境（本番環境）という属性から機械的に判定できる禁止規定。技術的ドメインでの再現例。"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "システム開発を担当する者が本番環境において特権/管理者権限で操作を行うことを禁止する。",
+      "text_filled": "システム開発を担当する者が本番環境において特権/管理者権限で操作を行うことを禁止する。",
+      "parameter_slots": []
+    },
+    {
+      "clause_id": "ipa_secguide_v4_6_7_5",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "6.7 特権アカウント（組織的対策、箇条書き第5項）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "extraction_note": "原文ママ。"
+      },
+      "task": "task1",
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "ハード制約",
+        "axis2": "手続き的",
+        "cell_id": "hard_procedural",
+        "confidence_note": "「一定期間使用されなかった場合」という経過期間を起点にした義務。ただし第42条・candidate 2.1.3のような『本来の処理が完了しなかった場合の代替処理』ではなく、単純な期間経過トリガー→単一の必須アクション（削除・無効化）であり、分岐先の代替処理や人間承認は無いため、エスカレーション基準ではなくハード制約と判定。第53条（解雇予告30日）と同系統だが、期限が具体的日数ではなく『一定期間』と抽象化されている点が新規性。"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "特権アカウントが不要になった場合（例えば、管理者が組織を退職した場合及びIDが一定期間使用されなかった場合）、速やかに特権アカウントを削除又は無効化する。",
+      "text_filled": "特権アカウントが不要になった場合（例えば、管理者が組織を退職した場合及びIDが一定期間使用されなかった場合）、速やかに特権アカウントを削除又は無効化する。",
+      "parameter_slots": []
+    },
+    {
+      "clause_id": "ipa_secguide_v4_8_4",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "8.4 委託先の評価（組織的対策、冒頭文の前半のみ）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "extraction_note": "冒頭文のうち周期的評価義務の部分のみ抜粋（後半の『不備が認められた場合は協議のうえ対処』という条件分岐部分は、判断ガイド的性質が混在するため今回は除外）。原文ママ。"
+      },
+      "task": "task1",
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "ハード制約",
+        "axis2": "手続き的",
+        "cell_id": "hard_procedural",
+        "confidence_note": "「年1回以上の頻度で」という周期的な処理サイクル。第46条（毎月の締め日・支払日）と同型の周期処理パターンで、委託管理ドメインでの再現例。"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "委託先における情報セキュリティ対策の実施状況について年1回以上の頻度で評価する機会を設ける。",
+      "text_filled": "委託先における情報セキュリティ対策の実施状況について年1回以上の頻度で評価する機会を設ける。",
+      "parameter_slots": []
+    },
+    {
+      "clause_id": "ipa_secguide_v4_5_2_rto",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "5.3 リストアの手順「重要事項」（組織的対策）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "extraction_note": "箇条書き第1項のみ抜粋。原文ママ（例示の『2時間以内』は原文の数値をそのまま残した）。"
+      },
+      "task": "task1",
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "ハード制約",
+        "axis2": "手続き的",
+        "cell_id": "hard_procedural",
+        "confidence_note": "「2時間以内」という明確な期限を遵守する義務。第53条（30日前予告）と同系統の明確な期限順守パターンで、事業継続（BCP）ドメインでの再現例。"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "定められた復旧時間目標（例：2時間以内）を遵守する。",
+      "text_filled": "定められた復旧時間目標（例：2時間以内）を遵守する。",
+      "parameter_slots": []
+    },
+    {
+      "clause_id": "ipa_secguide_v4_6_6_4",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "6.6.4 脆弱性情報の対応要否判断（技術的対策、冒頭文のみ）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "extraction_note": "冒頭の総合判断を示す一文のみ抜粋（後続のCVSSスコア基準等の詳細な採点表は除外）。原文ママ。"
+      },
+      "task": "task1",
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "判断ガイド",
+        "axis2": "宣言的",
+        "cell_id": "guide_declarative",
+        "confidence_note": "深刻度・業務影響度・緊急度という3つの観点を『総合的に評価』して優先度を決める、と規定されており、単一の機械的な閾値判定ではなく複合的な状況判断を要する。第10条（誠実に職務を遂行）と同型の判断ガイドパターンで、技術リスク評価ドメインでの再現例。個々の観点にはCVSSスコア等の客観的な基準があるが、それらを『総合的に評価』する最終判断自体は事例依存であるため判断ガイドとした。"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "システム管理者は、収集した脆弱性情報について、脆弱性の深刻度、業務への影響度、緊急度を総合的に評価し、以下のマトリックスを用いて対応優先度を決定する。",
+      "text_filled": "システム管理者は、収集した脆弱性情報について、脆弱性の深刻度、業務への影響度、緊急度を総合的に評価し、以下のマトリックスを用いて対応優先度を決定する。",
+      "parameter_slots": []
+    },
+    {
+      "clause_id": "ipa_secguide_v4_8_6_noise",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "8.6 取引先一覧の作成及び管理（組織的対策）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "extraction_note": "原文ママ。"
+      },
+      "task": "task1",
+      "oracle": {
+        "stage1_relevant": false,
+        "axis1": null,
+        "axis2": null,
+        "cell_id": null,
+        "confidence_note": "台帳に記載すべき項目（会社名・連絡先・契約種別等）の列挙であり、条件分岐や行動規律を含まない。第35条（家族手当の額）と同型のノイズ条文。①フィルタで除外されるべき。"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "システム管理者は、機密情報を共有している取引先について、その一覧（以下「取引先一覧」という）を作成し、適切に管理する。取引先一覧には、以下の情報を含むこととする。取引先の基本情報（会社名、担当者、所在地、連絡先、契約種別、契約期間、契約番号など）、取り交わす情報資産の名称・分類（機密性の評価に基づく区分など）、情報の授受・共有手段（受発注の手段含む）。",
+      "text_filled": "システム管理者は、機密情報を共有している取引先について、その一覧（以下「取引先一覧」という）を作成し、適切に管理する。取引先一覧には、以下の情報を含むこととする。取引先の基本情報（会社名、担当者、所在地、連絡先、契約種別、契約期間、契約番号など）、取り交わす情報資産の名称・分類（機密性の評価に基づく区分など）、情報の授受・共有手段（受発注の手段含む）。",
+      "parameter_slots": []
+    },
+    {
+      "clause_id": "synthetic_breach_report_simple",
+      "source": {
+        "name": "個人情報保護法施行規則第8条「漏えい等の報告」を題材にした創作条文（会社規程の条文らしい文体に書き起こしたもの。法令の引き写しではない）",
+        "section": null,
+        "url": "https://www.ppc.go.jp/news/kaiseihou_feature/roueitouhoukoku_gimuka/",
+        "extraction_note": "創作。速報の期限のみを含む単純パターン。"
+      },
+      "task": "task2",
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "エスカレーション基準",
+        "axis2": "手続き的",
+        "cell_id": "escalation_procedural",
+        "confidence_note": "『事実を知った時点から◯日以内に報告』という明確な期限管理を伴う報告義務。第60条の既知の誤判定パターン（『認められる』等の柔らかい表現＋他者関与）とは異なり、期限が数値で明示されているため、軸1判定は素直にエスカレーション基準へ寄ると予想される。人間レビュー後、実測でこの予想が当たるか確認する。"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "職員は、個人情報の漏えい、滅失又は毀損（以下「漏えい等」という。）の事実を知ったときは、当該事実を知った時点から概ね３日以内に、個人情報保護管理者に速報しなければならない。",
+      "text_filled": "職員は、個人情報の漏えい、滅失又は毀損（以下「漏えい等」という。）の事実を知ったときは、当該事実を知った時点から概ね３日以内に、個人情報保護管理者に速報しなければならない。",
+      "parameter_slots": []
+    },
+    {
+      "clause_id": "synthetic_breach_report_two_stage",
+      "source": {
+        "name": "個人情報保護法施行規則第8条「漏えい等の報告」を題材にした創作条文（会社規程の条文らしい文体に書き起こしたもの。法令の引き写しではない）",
+        "section": null,
+        "url": "https://www.ppc.go.jp/news/kaiseihou_feature/roueitouhoukoku_gimuka/",
+        "extraction_note": "創作。速報＋確報の二段階構造。確報期限が『不正の目的によるものか』で30日/60日に分岐する、より複雑な手続き的パターン。"
+      },
+      "task": "task2",
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "エスカレーション基準",
+        "axis2": "手続き的",
+        "cell_id": "escalation_procedural",
+        "confidence_note": "速報（概ね3日以内）＋確報（原則30日以内、不正目的の場合は60日以内）という二段階の期限管理。確報期限自体が条件分岐する点が新規性で、軸1の判定順序ルール（『トリガー条件が客観的に判定可能でも、行動前・異常検知時の報告要求であればエスカレーション基準を優先する』）が、この種の複合的な条件分岐でも正しく機能するかの確認材料になる。第18条・第42条で観測された誤判定（客観的に判定可能な条件をハード制約と誤認する）の再発有無を見る良いテストケース。"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "職員は、個人情報の漏えい、滅失又は毀損（以下「漏えい等」という。）の事実を知ったときは、当該事実を知った時点から概ね３日以内に個人情報保護管理者に速報するとともに、当該事実を知った日から３０日以内（不正の目的をもって行われたおそれがある漏えい等の場合は６０日以内）に、対応状況を確報しなければならない。",
+      "text_filled": "職員は、個人情報の漏えい、滅失又は毀損（以下「漏えい等」という。）の事実を知ったときは、当該事実を知った時点から概ね３日以内に個人情報保護管理者に速報するとともに、当該事実を知った日から３０日以内（不正の目的をもって行われたおそれがある漏えい等の場合は６０日以内）に、対応状況を確報しなければならない。",
+      "parameter_slots": []
+    }
+  ]
+}

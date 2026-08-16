@@ -75,10 +75,34 @@
 
 **既知の未対応**：本v1は厚労省モデル就業規則のみを出典とする。本番入力スコープは就業規則・情報管理規程の両方を含むと決定済みのため、情報管理規程由来のサンプル（第14条の題材である医療事務AI「あおい」の情報管理規程に近い性質の条文）を別途追加する必要がある。就業規則とは条文の性質（宣言的な禁止規定が相対的に多い等）が異なる可能性があり、現行15件のカバレッジがそのまま情報管理規程にも当てはまるとは限らない。次タスク候補として引き継ぐ。
 
-## 評価指標（`eval/run_eval.py` が算出する想定）
+## 評価指標（`eval/run_eval.py` が算出する）
 
 - stage1_relevant の正解率・適合率・再現率
-- axis1 / axis2 それぞれの正解率（混同行列付き）
-- is_ambiguous=false の項目のみでの厳密一致率（本番相当の精度指標）
-- is_ambiguous=true の項目での「候補ラベルのいずれかに一致したか」の別集計
+- axis1 / axis2 それぞれの`strict_accuracy` / `lenient_accuracy`（混同行列付き）
 - LLM側confidenceスコアとの較正（confidence >= しきい値のときの正解率 vs しきい値未満のときの正解率）
+
+### strict_accuracy / lenient_accuracy の定義
+
+（`eval/metrics.py`の`compute_axis_metrics`の実装に基づく。is_ambiguousの真偽で母集団を
+分けて別集計するのではなく、全件を通した単一のスコアとして算出する点に注意）
+
+- **strict_accuracy**：予測ラベルが`oracle.axis1` / `oracle.axis2`（主ラベル）と完全一致した
+  件数 ÷ 全件数。本番相当の厳密な精度指標
+- **lenient_accuracy**：上記の一致に加えて、`is_ambiguous=true`の境界事例について予測が
+  `alt_labels`の代替ラベルと一致した場合も正解に加えた件数 ÷ 全件数。`is_ambiguous=false`の
+  条文には代替ラベルが存在しないため、strictと同じ扱いになる（=境界事例が無ければ
+  strict==lenient）
+
+### 直近の測定結果（2026年8月、Ollama qwen2.5:14b-instruct、`--variant both`）
+
+| 項目 | 値 |
+|---|---|
+| Stage1関連フィルタ accuracy | 1.00（15/15） |
+| 軸1 strict_accuracy / lenient_accuracy | 0.82 / 0.91（n=11） |
+| 軸2 strict_accuracy / lenient_accuracy | 1.00 / 1.00（n=11） |
+| raw vs filled 差分 | 0件（空欄は①②の判定に影響しないと結論、`text_raw`を正本として運用） |
+
+軸1の唯一の残存ミスは第12条（境界事例、alt_labelで正解扱い）と第60条（面接指導、"疲労の蓄積が
+認められる"という柔らかい表現＋本人の申出という組み合わせをエスカレーション基準と誤判定）。
+第60条はプロンプト調整を3回試みたが解消せず、これ以上のn=11への狙い撃ちは過学習リスクが高いため
+保留。テストデータ拡張（本節末尾「既知の未対応」参照）後に再評価する。
