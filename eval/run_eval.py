@@ -28,6 +28,7 @@ from eval.metrics import (  # noqa: E402
     compute_axis_metrics,
     compute_stage1_metrics,
     confidence_calibration,
+    quote_verification_calibration,
 )
 from src.common.clause_io import ClauseOracle, load_clauses  # noqa: E402
 from src.stage1_filter.base import ClauseFilter  # noqa: E402
@@ -70,15 +71,18 @@ def run_variant(clauses: list[ClauseOracle], variant: str) -> dict:
 
     # --- Stage 2: 軸1・軸2分類（①でrelevant=Trueと判定された条文のみ対象） ---
     relevant_clauses = [c for c in clauses if c.stage1_relevant]
-    axis1_preds, axis1_confs = [], []
-    axis2_preds, axis2_confs = [], []
+    axis1_preds, axis1_confs, axis1_verified, axis1_vocab_flagged = [], [], [], []
+    axis2_preds, axis2_confs, axis2_verified = [], [], []
     for c in relevant_clauses:
         r1 = axis1_classifier.classify(c.text(variant), c.clause_id)
         r2 = axis2_classifier.classify(c.text(variant), c.clause_id)
         axis1_preds.append(r1.label)
         axis1_confs.append(r1.confidence)
+        axis1_verified.append(r1.quote_verified)
+        axis1_vocab_flagged.append(r1.vocab_flagged)
         axis2_preds.append(r2.label)
         axis2_confs.append(r2.confidence)
+        axis2_verified.append(r2.quote_verified)
 
     axis1_golds = [c.axis1 for c in relevant_clauses]
     axis2_golds = [c.axis2 for c in relevant_clauses]
@@ -95,6 +99,36 @@ def run_variant(clauses: list[ClauseOracle], variant: str) -> dict:
     axis2_calibration = confidence_calibration(
         axis2_preds, axis2_golds, axis2_confs, CONFIDENCE_THRESHOLD
     )
+    axis1_quote_calibration = quote_verification_calibration(axis1_preds, axis1_golds, axis1_verified)
+    axis2_quote_calibration = quote_verification_calibration(axis2_preds, axis2_golds, axis2_verified)
+
+    # vocab_flagged集計: フラグが立った件数のうち、実際に不正解だった件数
+    # (=フラグが拾えている不正解)と、フラグが立ったが正解だった件数
+    # (=過剰検知。④人間レビューの負荷として計上されるが誤りではない)。
+    vocab_flag_total = sum(axis1_vocab_flagged)
+    vocab_flag_catches = sum(
+        1 for flagged, pred, gold in zip(axis1_vocab_flagged, axis1_preds, axis1_golds)
+        if flagged and pred != gold
+    )
+    axis1_missed_ids = [
+        cid for cid, pred, gold in zip(
+            [c.clause_id for c in relevant_clauses], axis1_preds, axis1_golds
+        )
+        if pred != gold
+    ]
+    axis1_missed_flagged = [
+        cid for cid, flagged, pred, gold in zip(
+            [c.clause_id for c in relevant_clauses], axis1_vocab_flagged, axis1_preds, axis1_golds
+        )
+        if pred != gold and not flagged
+    ]
+    vocab_flag_stats = {
+        "flagged_count": vocab_flag_total,
+        "flagged_total_relevant": len(relevant_clauses),
+        "flagged_and_incorrect": vocab_flag_catches,
+        "incorrect_total": len(axis1_missed_ids),
+        "incorrect_but_not_flagged": axis1_missed_flagged,
+    }
 
     return {
         "variant": variant,
@@ -106,6 +140,9 @@ def run_variant(clauses: list[ClauseOracle], variant: str) -> dict:
         "axis2_metrics": axis2_metrics,
         "axis1_calibration": axis1_calibration,
         "axis2_calibration": axis2_calibration,
+        "axis1_quote_calibration": axis1_quote_calibration,
+        "axis2_quote_calibration": axis2_quote_calibration,
+        "axis1_vocab_flag_stats": vocab_flag_stats,
     }
 
 
@@ -125,14 +162,20 @@ def print_report(result: dict) -> None:
           f"lenient_accuracy={axis1_metrics.lenient_accuracy:.2f} "
           f"(n={axis1_metrics.total})")
     print(f"  confusion (gold, pred) -> count: {dict(axis1_metrics.confusion)}")
-    print(f"  calibration: {result['axis1_calibration']}")
+    print(f"  confidence calibration: {result['axis1_calibration']}")
+    print(f"  quote calibration: {result['axis1_quote_calibration']}")
+    vfs = result["axis1_vocab_flag_stats"]
+    print(f"  vocab flag: {vfs['flagged_count']}/{vfs['flagged_total_relevant']}件に既知の語彙的盲点フラグ、"
+          f"うち不正解{vfs['flagged_and_incorrect']}件を捕捉"
+          f"(不正解は全{vfs['incorrect_total']}件、フラグ未検知の不正解: {vfs['incorrect_but_not_flagged']})")
     print()
     print("[Stage 2: 軸2 (宣言的/手続き的)]")
     print(f"  strict_accuracy={axis2_metrics.strict_accuracy:.2f} "
           f"lenient_accuracy={axis2_metrics.lenient_accuracy:.2f} "
           f"(n={axis2_metrics.total})")
     print(f"  confusion (gold, pred) -> count: {dict(axis2_metrics.confusion)}")
-    print(f"  calibration: {result['axis2_calibration']}")
+    print(f"  confidence calibration: {result['axis2_calibration']}")
+    print(f"  quote calibration: {result['axis2_quote_calibration']}")
 
 
 def print_diff(result_raw: dict, result_filled: dict) -> None:

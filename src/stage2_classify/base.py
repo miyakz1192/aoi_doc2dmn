@@ -16,6 +16,19 @@ class AxisClassificationResult:
     label: str
     confidence: float  # 0.0-1.0
     rationale: str
+    # 判定根拠として原文から逐語引用させたもの、およびそれが実際に
+    # clause_text中に存在するかのプログラム側検証結果。confidenceとは独立した
+    # もう一つの人間レビュー行きゲートとして使う(confidenceは常に0.7超を返す
+    # 傾向があり単独では機能しないことが実測で判明したため)。
+    evidence_quote: str = ""
+    quote_verified: bool = False
+    # 条文中に既知の語彙的盲点(「認められる」「申出」「許可を得る」「承認を受ける」等)を
+    # 含むかのルールベース判定。quote_verifiedは「存在しない記述の幻視」(RTO型)は
+    # 検出できるが、「実在する文言を正しく引用した上での解釈ミス」(第60条・5.6型、
+    # 4回の反復調整でも解消しなかった既知の弱点)は検出できない。vocab_flags.pyの
+    # check_vocab_flag()参照。confidence/quote_verifiedの結果に関わらずTrueなら
+    # ④人間レビューへ強制的に回す運用上の補完フラグ。
+    vocab_flagged: bool = False
 
 
 class AxisClassifier(ABC):

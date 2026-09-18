@@ -102,3 +102,32 @@ def confidence_calibration(
         "below_threshold_accuracy": below_correct / below_total if below_total else None,
         "below_threshold_count": below_total,
     }
+
+
+def quote_verification_calibration(
+    predictions: list[str],
+    golds: list[str],
+    quote_verified_flags: list[bool],
+) -> dict:
+    """evidence_quoteがclause_text中に実在した場合／しなかった場合の正解率を返す。
+
+    confidence_calibration()と同じ形の集計だが、confidenceの代わりに
+    quote_verified(プログラム側で検証した逐語引用の実在チェック)を軸にする。
+    confidenceは常に0.7超を返す傾向があり単独では機能しないことが実測で
+    判明したため、これを補う第二の較正指標として用いる。
+    """
+    verified_correct = verified_total = unverified_correct = unverified_total = 0
+    for pred, gold, verified in zip(predictions, golds, quote_verified_flags):
+        correct = pred == gold
+        if verified:
+            verified_total += 1
+            verified_correct += int(correct)
+        else:
+            unverified_total += 1
+            unverified_correct += int(correct)
+    return {
+        "verified_accuracy": verified_correct / verified_total if verified_total else None,
+        "verified_count": verified_total,
+        "unverified_accuracy": unverified_correct / unverified_total if unverified_total else None,
+        "unverified_count": unverified_total,
+    }
