@@ -2,3 +2,6 @@ reference/
 .venv/
 __pycache__/
 *.pyc
+# ③4点セットの生成物。run_golden_path.pyで再生成できる。
+# registered_atのタイムスタンプが実行ごとに変わるためdiffノイズになる。
+out/

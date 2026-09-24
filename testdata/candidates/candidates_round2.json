@@ -1,0 +1,34 @@
+{
+  "_meta": {
+    "purpose": "HANDOFF_20260918_round9_to_claudecode.md タスク1に基づく候補データ。第60条（面接指導）のtext_rawが原典（厚労省モデル就業規則、testdata/sources/mhlw_model_rules_sample.docx、テーブル82）の項3を欠落させていたことの是正。正式なオラクル(testdata/clauses/clauses_v1.json)には未統合。④人間レビュー(Kazuhiroさん)を経てから統合する。",
+    "labeling_note": "axis1/axis2の一次仮ラベルはClaude Codeが付与した。評価対象であるsrc/stage2_classify/local_llm.py(LocalLlmAxis1Classifier等)は使用していない(自己採点を避けるため)。",
+    "status": "confirmed_by_human_review_20260918_round11",
+    "existing_clause_finding": "既存clause mhlw_r7dec_art60_1_2 のtext_rawを原典と突合した結果、項1+項2としては完全一致しており修正不要と判明した(欠落していたのは項3のみ)。したがって既存clauseへの変更は行わず、項3のみを新規候補として追加する。"
+  },
+  "candidates": [
+    {
+      "clause_id": "mhlw_r7dec_art60_3",
+      "article_no": "第60条第3項",
+      "article_title": "長時間労働者に対する面接指導（結果に基づく措置）",
+      "source": {
+        "name": "厚生労働省「モデル就業規則」解説版",
+        "section": "第60条（長時間労働者に対する面接指導）第3項",
+        "url": "https://www.mhlw.go.jp/content/001620506.docx",
+        "extraction_note": "原文ママ。原典はテーブル(枠内の条文本体)に格納されており、python-docxのparagraphs走査では検出されずtablesの走査で発見した。既存clause mhlw_r7dec_art60_1_2 は項1+項2のみを抽出しており項3が欠落していたため、本clauseとして分離抽出する。"
+      },
+      "task": "round9_task1",
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "判断ガイド",
+        "axis2": "宣言的",
+        "cell_id": "guide_declarative",
+        "confidence_note": "条文本文には「認めるときは...措置を命ずることがある」とあるのみで、第18条・第58条・第42条にあるような「承認を得る／報告する／指示を仰ぐ」という構造的な人間確認プロセスの記述が無い。これは会社側の単独裁量判断であり、機械的な二値判定ができない抽象的規範という点で、第10条・第12条・第15条と同型の判断ガイドパターンに近い。【確定履歴】当初、HANDOFF_20260918_round9_to_claudecode.mdはaxis1候補として「エスカレーション基準」を提案していた(労働安全衛生法第66条の8第2項が求める医師の意見聴取プロセスという、条文本文の外にある実務知識が根拠)。これは「gold labelは条文本文のみに基づいて判定する」という本プロジェクトの一貫方針への違反であり、HANDOFF_20260918_round11_to_claudecode.mdで撤回・訂正された。判断ガイドで確定。この経緯は、testdata/schema.md「gold label判定の方針」節を新設する契機になった。"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "前項の面接指導の結果必要と認めるときは、一定期間の就業禁止、労働時間の短縮、配置転換その他健康保持上必要な措置を命ずることがある。",
+      "text_filled": "前項の面接指導の結果必要と認めるときは、一定期間の就業禁止、労働時間の短縮、配置転換その他健康保持上必要な措置を命ずることがある。",
+      "parameter_slots": []
+    }
+  ]
+}

@@ -1,9 +1,9 @@
 # aoi_doc2dmn
 
 擬人化アーキテクチャの直近ゴール「ドキュメントから決定表（DMN）を作る」の
-うち、①条文抽出・関連フィルタ＋②2軸分類（機械判定可能性の分類）にフォーカスした
-リポジトリ。③以降の内容生成（決定表の中身の自動導出）は本リポジトリの成果と
-合体させる形で後続フェーズとして扱う。
+うち、①条文抽出・関連フィルタ、②2軸分類（機械判定可能性の分類）、
+③a内容生成（宣言的×ハード制約の決定表生成）を実装したリポジトリ。
+③b（手続き的×ハード制約／ObligationManager向けIR）は対象外。
 
 ## ディレクトリ構成
 
@@ -16,7 +16,14 @@ aoi_doc2dmn/
 │   │   ├── llm_fallback.py  # LlmFallbackFilter(Ollama判定)
 │   │   └── composite.py     # CompositeFilter(上記2つを合成)
 │   ├── stage2_classify/  # ②軸1・軸2分類器
-│   │   └── local_llm.py     # LocalLlmAxis1Classifier / LocalLlmAxis2Classifier(Ollama)
+│   │   ├── local_llm.py     # LocalLlmAxis1Classifier / LocalLlmAxis2Classifier(Ollama)
+│   │   └── vocab_flags.py   # 既知の語彙的盲点への安全網フラグ
+│   ├── stage3_generate/  # ③a 内容生成(IR→4点セット)
+│   │   ├── ir_schema.py        # ClauseIR / ReviewGates
+│   │   ├── wiring_generator.py # 4点セット同時生成+クロス検証
+│   │   ├── golden_path.py      # ゴールデンパス条文のIR構築
+│   │   ├── dmn_engine.py       # 軽量DMN検証エンジン(reference/から移植)
+│   │   └── run_golden_path.py  # 一気通貫実行スクリプト
 │   └── common/
 │       ├── clause_io.py     # testdata読み込み
 │       └── ollama_client.py # Ollama呼び出し共通ヘルパー
@@ -24,10 +31,11 @@ aoi_doc2dmn/
 │   ├── run_eval.py      # オラクルとの一致率を測る評価ハーネス
 │   └── metrics.py       # 精度・混同行列・confidence較正
 ├── testdata/
-│   ├── clauses/clauses_v1.json  # オラクル付きテストデータ（27件。厚労省モデル就業規則15件＋
+│   ├── clauses/clauses_v1.json  # オラクル付きテストデータ（28件。厚労省モデル就業規則16件＋
 │   │                             IPA情報セキュリティ関連規程等12件）
 │   ├── candidates/              # テストデータ拡張時の候補・レビュー記録
 │   └── schema.md                # オラクルのスキーマ定義・カバレッジ表・①関連判定の基準
+├── out/                  # ③の4点セット生成物（gitignore対象。再生成可能）
 └── reference/
     └── README.md         # 既存実装（Claude Code生成コード）を参考にする際の置き場・方針
 ```
@@ -35,7 +43,7 @@ aoi_doc2dmn/
 ## 現状
 
 - `testdata/clauses/clauses_v1.json`: 厚生労働省「モデル就業規則」＋IPA情報セキュリティ関連規程等
-  から実条文を抽出し、①関連判定・②軸1・②軸2のオラクルラベルを付与済み（27件、境界事例1件含む）
+  から実条文を抽出し、①関連判定・②軸1・②軸2のオラクルラベルを付与済み（28件）
 - `src/stage1_filter/`, `src/stage2_classify/`: Ollama（`qwen2.5:14b-instruct`）を使った実装済み。
   `eval/run_eval.py`の`build_filter()` / `build_axis1_classifier()` / `build_axis2_classifier()`は
   実装に接続済み
@@ -45,12 +53,15 @@ aoi_doc2dmn/
 - さらに、`quote_verified`では検出できない「実在する文言を正しく引用した上での解釈ミス」型の
   既知の誤判定パターン（「認められる」「申出」「許可を得る」「承認を受ける」）には、
   `vocab_flagged`（`src/stage2_classify/vocab_flags.py`）というルールベースの第三のゲートがある
-- 直近の評価結果（`--variant both`、2026年8月18日）：Stage1関連フィルタ accuracy=0.96（26/27）、
-  Stage2軸1 strict_accuracy=0.86／lenient_accuracy=0.91（n=22）、軸2 strict/lenient_accuracy=0.95（n=22）。
+- 直近の評価結果（`--variant both`、2026年9月18日）：Stage1関連フィルタ accuracy=0.96（27/28）、
+  Stage2軸1 strict_accuracy=0.87／lenient_accuracy=0.91（n=23）、軸2 strict/lenient_accuracy=0.96（n=23）。
   raw/filled間の差分は0件。strict/lenientの意味は下記「評価指標の見方」を参照
 - 既知の残存課題：軸1で第60条（面接指導）・5.6（情報資産の社外持ち出し）の2件が誤判定される。
   プロンプト調整・軸1の2段階再構造化など複数回試みたが解消せず、これ以上の狙い撃ちは過学習リスクが
   高いため保留。詳細な経緯は`HANDOFF_20260818_round6_to_web.md`を参照
+- 軸1・軸2分類の精度改善フェーズ（第4回〜第9回）はひと段落し、③段階（内容生成・IRスキーマ
+  パイプライン）への移行フェーズに入った。詳細は`testdata/schema.md`「軸1・軸2分類の精度改善
+  フェーズの区切り」節、「gold label判定の方針」節を参照
 
 ## 評価指標の見方
 
@@ -85,6 +96,16 @@ pipのシステム直接インストールができないため、プロジェ�
 
 スクリプトを使わず直接実行する場合は `python3 -m eval.run_eval --variant both` でも同様に動く
 （`run_eval.sh`は疎通確認を追加しているだけ）。
+
+### ③a 4点セット生成（ゴールデンパス）
+
+```bash
+.venv/bin/python3 -m src.stage3_generate.run_golden_path              # ②分類器も実際に呼ぶ
+.venv/bin/python3 -m src.stage3_generate.run_golden_path --use-oracle # Ollama不要。配線部分のみ検証
+```
+
+条文 → ②2軸分類 → ③a IR構築 → 4点セット生成 → 生成DMNの評価、までを一気通貫で実行する。
+`out/golden_path/`にDMN XML・バインディング設定・ルーティング表・登録簿が出力される。
 
 空欄（`［　］`）の扱い方針は`testdata/schema.md`「空欄の扱い方針」節を、
 ①関連判定の基準（解釈A/B）は同ファイル「①関連判定の基準」節を参照。
