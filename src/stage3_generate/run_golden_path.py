@@ -7,6 +7,10 @@
 `--use-oracle`はOllamaを起動せずに配線部分だけを検証したい場合に使う。
 ②の分類結果はIRの`axis1_result`/`axis2_result`および`review_gates`に反映されるため、
 本番相当の確認をするときはオプション無しで実行する。
+
+v2 では配線ジェネレータが既存の決定表と fact 台帳(登録簿)を参照するため、
+`registry/registry.json` を読み込んで渡す(`--registry` で差し替え可能)。更新後の登録簿は
+`out/` に書き出すだけで、永続台帳への反映(promotion)は人間レビューを経た別操作とする。
 """
 from __future__ import annotations
 
@@ -25,21 +29,25 @@ from src.stage2_classify.local_llm import (  # noqa: E402
 from src.stage2_classify.vocab_flags import check_vocab_flag  # noqa: E402
 from src.stage3_generate.dmn_engine import DmnModel  # noqa: E402
 from src.stage3_generate.golden_path import (  # noqa: E402
-    BINDINGS,
     CLAUSE_ID,
     DECISION_ID,
-    DEFINITIONS_ID,
-    DEFINITIONS_NAME,
-    NAMESPACE,
     build_golden_path_ir,
 )
 from src.stage3_generate.ir_schema import AxisResult  # noqa: E402
+from src.stage3_generate.registry import Registry  # noqa: E402
 from src.stage3_generate.wiring_generator import generate_wiring_bundle  # noqa: E402
 
 DEFAULT_TESTDATA = Path(__file__).resolve().parents[2] / "testdata" / "clauses" / "clauses_v1.json"
 DEFAULT_OUT_DIR = Path(__file__).resolve().parents[2] / "out" / "golden_path"
+DEFAULT_REGISTRY = Path(__file__).resolve().parents[2] / "registry" / "registry.json"
 
 # 生成したDMNが想定通りに動くかを確認するシナリオ。
+#
+# シナリオ2〜4の入力値(検証環境・一般・運用担当)は、D4により possible_values から
+# 除かれた「条文に書かれていない値」である。DMN評価はバインディング設定を通らず値を
+# 直接エンジンへ渡すため4/4は成立するが、これは設計書7章 U2(既定のワイルドカード行が
+# 「許可」なので、未登録の値もすべて許可に落ちる)が指摘する論点そのものである。
+# possible_values を広げて再合法化するのはD4に反するため、シナリオ名に明記して残す。
 SCENARIOS = [
     {
         "name": "開発担当者が本番環境で特権操作 → 禁止",
@@ -51,7 +59,7 @@ SCENARIOS = [
         "expected": {"decision": "禁止", "reason_code": "dev_privileged_op_on_production"},
     },
     {
-        "name": "開発担当者だが検証環境 → 許可",
+        "name": "開発担当者だが検証環境 → 許可(possible_values外の値が既定行に落ちる・U2)",
         "facts": {
             "operator_role": "システム開発担当",
             "target_environment": "検証環境",
@@ -60,7 +68,7 @@ SCENARIOS = [
         "expected": {"decision": "許可", "reason_code": "not_prohibited_combination"},
     },
     {
-        "name": "開発担当者が本番環境だが一般権限 → 許可",
+        "name": "開発担当者が本番環境だが一般権限 → 許可(possible_values外の値が既定行に落ちる・U2)",
         "facts": {
             "operator_role": "システム開発担当",
             "target_environment": "本番環境",
@@ -69,7 +77,7 @@ SCENARIOS = [
         "expected": {"decision": "許可", "reason_code": "not_prohibited_combination"},
     },
     {
-        "name": "運用担当者が本番環境で特権操作 → 許可(この条文の禁止対象外)",
+        "name": "運用担当者が本番環境で特権操作 → 許可(possible_values外の値が既定行に落ちる・U2)",
         "facts": {
             "operator_role": "運用担当",
             "target_environment": "本番環境",
@@ -115,7 +123,11 @@ def _classify(clause_text: str, clause_ref: str, use_oracle: bool, oracle: dict)
     return to_axis(r1), to_axis(r2)
 
 
-def run(use_oracle: bool = False, out_dir: Path = DEFAULT_OUT_DIR) -> int:
+def run(
+    use_oracle: bool = False,
+    out_dir: Path = DEFAULT_OUT_DIR,
+    registry_path: Path = DEFAULT_REGISTRY,
+) -> int:
     clauses = {c.clause_id: c for c in load_clauses(DEFAULT_TESTDATA)}
     clause = clauses[CLAUSE_ID]
     print(f"[対象条文] {CLAUSE_ID} ({clause.article_no} {clause.article_title})")
@@ -148,19 +160,19 @@ def run(use_oracle: bool = False, out_dir: Path = DEFAULT_OUT_DIR) -> int:
         print(f"    - gate: {reason}")
     print()
 
-    # --- 4点セット生成 ---
-    bundle = generate_wiring_bundle(
-        ir,
-        existing_binding_fact_keys=set(),
-        new_bindings=BINDINGS,
-        definitions_id=DEFINITIONS_ID,
-        definitions_name=DEFINITIONS_NAME,
-        namespace=NAMESPACE,
-    )
+    # --- 4点セット生成(クロス検証 C1〜C10 を含む) ---
+    registry = Registry.load(registry_path)
+    print(f"[登録簿] {registry_path}")
+    print(f"  層1={len(registry.decision_tables)}件 層2={len(registry.rule_rows)}件 "
+          f"層3={len(registry.fact_registry)}件")
+    print()
+
+    bundle = generate_wiring_bundle(ir, registry=registry)
     paths = bundle.write_all(out_dir, "privileged_operation")
-    print("[4点セット生成]")
+    print("[4点セット生成] クロス検証 C1〜C10 通過")
     for key, path in paths.items():
         print(f"  {key}: {path}")
+    print(f"  required_facts: {bundle.routing_table['routes'][0]['required_facts']}")
     print()
 
     # --- 生成したDMNの評価 ---
@@ -190,5 +202,13 @@ if __name__ == "__main__":
         help="②分類器を呼ばずオラクル値を使う(Ollama不要。配線部分のみ検証したい場合)",
     )
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
+    parser.add_argument(
+        "--registry",
+        type=Path,
+        default=DEFAULT_REGISTRY,
+        help="入力となる登録簿のパス(既存の決定表とfact台帳。既定: registry/registry.json)",
+    )
     args = parser.parse_args()
-    raise SystemExit(run(use_oracle=args.use_oracle, out_dir=args.out_dir))
+    raise SystemExit(
+        run(use_oracle=args.use_oracle, out_dir=args.out_dir, registry_path=args.registry)
+    )

@@ -1,31 +1,28 @@
-"""③a 中間表現(IR)スキーマ。
+"""③a 中間表現(IR)スキーマ v2。
 
 ②2軸分類・③a各判定の結果を1つの構造(`ClauseIR`)にまとめ、スキーマ配線ジェネレータが
 4点セット(DMN XML／バインディング設定／ルーティング表／Scope・Decision登録簿)を
 同時生成するための唯一の入力とする。
 
-## reference/ からの踏襲と、aoi_doc2dmn向けの調整
+仕様: docs/design/aoi_doc2dmn_IRv2_design.md (IR v2 設計書 v1.1) の3章。
+v1(コミット 9e66776)との差分は同書 付録A。
 
-土台は`reference/gijinka-extraction-pipeline/src/pipeline/ir_schema.py`および
-`docs/ir_schema.md`(Apache KIE/Kogito実機で18/18一致の検証済み設計)。
-以下は踏襲する:
+## v2 で変わった点(設計書2章 D1〜D11)
 
-- 4点セットを同一IRから同時生成する(別々の関数・タイミングで作らない)
-- 複合fact禁止原則、FIRSTヒットポリシー、ActionRefの設計時2段階ルックアップ
-- RuleRowDraft.outputsを出力名->値の汎用マップとして持つ設計判断
+- **D1**: fact の定義を IR に入れる(`facts`)。v1 はバインディング設定を IR の外
+  (`golden_path.py` の `BINDINGS` 定数)から渡していた
+- **D3**: 区分の値は `passthrough`、2つの値の比較は `exact_match` 等の比較型
+- **D5**: `sources` は `{from, path}` または `{from: literal, value}` の形
+- **D6**: レベル判定を層ごとの型にし、`outcome` は `final.action` から導出する
+  (v1 は3層すべてに同じ「列集合の関係」を当てはめ、`outcome` を別に書いていた)
+- **D7**: 判定先(`target`)を IR に持たせる。v1 は DMN モデル名を引数で渡していた
+- **D10**: `ReviewGates` に `new_fact_unapproved` を追加
 
-aoi_doc2dmn向けに調整した点:
+## 引き継ぐ原則(設計書1.4)
 
-1. **`human_review_status`を単一のstatusから、独立した複数ゲートのOR条件に変更**
-   (`ReviewGates`)。reference側は`confidence < 0.7`のみを判定条件にしていたが、
-   本リポジトリの実測でconfidenceは常に0.7超を返し較正情報を持たないことが判明した
-   (`testdata/schema.md`参照)。そのため②で実装した`quote_verified`(ハルシネーション型検出)
-   ・`vocab_flagged`(語彙的盲点型検出)を独立したゲートとして併置する。複数のゲートを
-   1つの不透明なスコアに混ぜないのは複合fact禁止原則と同じ思想。
-2. **`AxisResult`に`quote_verified`/`vocab_flagged`を追加**。②の
-   `AxisClassificationResult`(src/stage2_classify/base.py)と対応させる。
-3. `strategy_id`はreference側にあったが、本リポジトリの`AxisClassificationResult`には
-   無いためオプショナルにした。
+- 4点セットの同時生成、複合 fact 禁止、FIRST と行の順序、来歴の表し方、Action 正規化
+- IR に入れてよい情報は条文本文と出典付きの context だけ
+- 人間レビューのゲートは1つのスコアに混ぜず、独立したゲートの OR として持つ
 """
 from __future__ import annotations
 
@@ -48,14 +45,37 @@ CompoundFactOption = Literal[
 
 HumanReviewStatus = Literal["pending", "approved", "rejected"]
 
+SourceKind = Literal["action_request", "master", "literal"]
+
+IntermediateAction = Literal["reuse_value", "add_row", "add_column"]
+
+FinalAction = Literal["add_rows", "new_table"]
+
 CONFIDENCE_THRESHOLD = 0.7
+
+# 一致プリミティブ名 -> sources の引数名(設計書3.5)。
+# プリミティブの実装そのものは③aの範囲外で、ここでは C4(sources のキーが引数名と
+# 一致するか)の検証に使う定義としてのみ持つ。
+PRIMITIVE_ARGS: dict[str, tuple[str, ...]] = {
+    "passthrough": ("value",),
+    "exact_match": ("claimed", "registered"),
+    "fuzzy_match_name": ("claimed", "registered"),
+    "date_match": ("claimed", "registered"),
+    "ontology_class_match": ("subject", "target_class"),
+}
+
+
+# --------------------------------------------------------------------------
+# ② 2軸分類の結果(v1 から変更なし)
+# --------------------------------------------------------------------------
 
 
 @dataclass
 class AxisResult:
     """②2軸分類の1軸分の結果。
 
-    src/stage2_classify/base.py の AxisClassificationResult に対応する。
+    src/stage2_classify/base.py の AxisClassificationResult に対応する
+    (`strategy_id` のみ stage2 側に無いためオプショナル)。
     """
 
     label: str
@@ -69,43 +89,6 @@ class AxisResult:
     @property
     def confidence_below_threshold(self) -> bool:
         return self.confidence < CONFIDENCE_THRESHOLD
-
-
-@dataclass
-class ReviewGates:
-    """④人間レビューへ回すかを判定する独立したゲート群。
-
-    複数の条件を1つの不透明なスコアに混ぜず、それぞれ独立した真偽値として保持する
-    (複合fact禁止原則と同じ思想)。`should_review`はこれらのOR。
-    """
-
-    confidence_below_threshold: bool = False
-    quote_unverified: bool = False
-    vocab_flagged: bool = False
-    # ③固有のゲート。Action正規化で新規語彙が検出された場合に立てる。
-    new_action_unapproved: bool = False
-
-    @property
-    def should_review(self) -> bool:
-        return (
-            self.confidence_below_threshold
-            or self.quote_unverified
-            or self.vocab_flagged
-            or self.new_action_unapproved
-        )
-
-    def reasons(self) -> list[str]:
-        """立っているゲートの名前を列挙する(④レビューUIでの提示用)。"""
-        out = []
-        if self.confidence_below_threshold:
-            out.append(f"confidence < {CONFIDENCE_THRESHOLD}")
-        if self.quote_unverified:
-            out.append("evidence_quoteが条文中に実在しない(ハルシネーション疑い)")
-        if self.vocab_flagged:
-            out.append("既知の語彙的盲点パターンを含む")
-        if self.new_action_unapproved:
-            out.append("新規Actionが未承認")
-        return out
 
 
 @dataclass
@@ -123,31 +106,167 @@ class ActionRef:
     approved_by: Optional[str] = None
 
 
-@dataclass
-class ColumnSetRelation:
-    """③aレベル判定における、層ごとの列集合関係の判定結果。"""
+# --------------------------------------------------------------------------
+# fact の定義(v2 新設。設計書3.3・D1)
+# --------------------------------------------------------------------------
 
-    layer: Literal["atomic_fact", "intermediate", "final"]
+
+@dataclass
+class SourceRef:
+    """一致プリミティブの引数1つ分の値の取得元(設計書3.3・D5)。
+
+    フィールド名が `from_` なのは `from` が Python の予約語のため。JSON では
+    `"from"` キーになる(`source_ref_to_json` / `source_ref_from_json`)。
+    """
+
+    from_: SourceKind
+    path: Optional[str] = None  # action_request / master のとき
+    value: Optional[str] = None  # literal のとき
+
+
+def source_ref_to_json(ref: SourceRef) -> dict:
+    """`SourceRef` を JSON 表現(`from` キー)に変換する。"""
+    out: dict = {"from": ref.from_}
+    if ref.from_ == "literal":
+        out["value"] = ref.value
+    else:
+        out["path"] = ref.path
+    return out
+
+
+def source_ref_from_json(payload: dict) -> SourceRef:
+    """JSON 表現から `SourceRef` を復元する(正解IR・登録簿の読み込み用)。"""
+    return SourceRef(
+        from_=payload["from"],
+        path=payload.get("path"),
+        value=payload.get("value"),
+    )
+
+
+@dataclass
+class FactDef:
+    """fact 1つ分の定義。DMN の inputData 1つに対応する(設計書3.3)。"""
+
+    variable: str
+    primitive: str
+    possible_values: list[str]
+    sources: dict[str, SourceRef]
+    # 語彙登録時に人が付ける比較の種類の注釈(任意)
+    comparison_kind: Optional[str] = None
+
+    def to_json(self) -> dict:
+        out: dict = {
+            "variable": self.variable,
+            "primitive": self.primitive,
+            "possible_values": list(self.possible_values),
+            "sources": {k: source_ref_to_json(v) for k, v in self.sources.items()},
+        }
+        if self.comparison_kind is not None:
+            out["comparison_kind"] = self.comparison_kind
+        return out
+
+    @classmethod
+    def from_json(cls, payload: dict) -> "FactDef":
+        return cls(
+            variable=payload["variable"],
+            primitive=payload["primitive"],
+            possible_values=list(payload.get("possible_values", [])),
+            sources={
+                k: source_ref_from_json(v) for k, v in payload.get("sources", {}).items()
+            },
+            comparison_kind=payload.get("comparison_kind"),
+        )
+
+
+@dataclass
+class FactUsage:
+    """この条文が使う fact(設計書3.3・D1)。
+
+    `new_facts` は登録簿の層3(fact 台帳)に追加され、`referenced_facts` は層3に
+    登録済みの fact を名前で参照する。`value_additions` は既存 fact の
+    `possible_values` に値を足す場合に使う。
+    """
+
+    new_facts: list[FactDef] = field(default_factory=list)
+    referenced_facts: list[str] = field(default_factory=list)
+    value_additions: dict[str, list[str]] = field(default_factory=dict)
+
+
+# --------------------------------------------------------------------------
+# 判定先(v2 新設。設計書3.3・D7)
+# --------------------------------------------------------------------------
+
+
+@dataclass
+class DecisionTarget:
+    """この条文の判定を入れる DMN モデルと、最終判定の ID。"""
+
+    dmn_model: str
+    entry_decision_id: str
+
+
+# --------------------------------------------------------------------------
+# レベル判定(v2 で層ごとの型に変更。設計書3.3・D6)
+# --------------------------------------------------------------------------
+
+
+@dataclass
+class AtomicFactLayer:
+    """① 事実の層: 必要な比較を既存の一致プリミティブで賄えるか。"""
+
+    covered: bool
+    new_primitives: list[str] = field(default_factory=list)
+
+
+@dataclass
+class IntermediateChange:
+    """② 中間判定の層: 既存の中間判定をどう直すか。
+
+    `relation` が判断の根拠(列集合の関係)、`action` が結論(直し方)で、v1 のように
+    1つの欄に混ぜない(D6)。
+    """
+
+    table_id: str
     relation: ColumnSetRelationKind
-    detail: str
+    action: IntermediateAction
+    new_output_values: list[str] = field(default_factory=list)
+
+
+@dataclass
+class FinalLayer:
+    """③ 最終判定の層: 既存の最終判定に行を足すか、新しい表を作るか。"""
+
+    compared_table_id: Optional[str]
+    relation: Optional[ColumnSetRelationKind]
+    action: FinalAction
 
 
 @dataclass
 class LevelDetermination:
-    """③aレベル判定(3層×3パターン)の結果一式。"""
+    """③aレベル判定。層ごとに問いと答えの形が違うため、層ごとの型を持つ(D6)。"""
 
-    atomic_fact_layer: ColumnSetRelation
-    intermediate_layer: ColumnSetRelation
-    final_layer: ColumnSetRelation
-    outcome: LevelOutcome
-    reused_intermediate_decisions: list[str] = field(default_factory=list)
+    atomic_fact: AtomicFactLayer
+    intermediate: list[IntermediateChange]
+    final: FinalLayer
+
+    @property
+    def outcome(self) -> LevelOutcome:
+        """結論は最終判定の層の action から導く(値として持たない)。"""
+        if self.final.action == "new_table":
+            return "level1_new_table"
+        return "level2_row_addition"
+
+
+# --------------------------------------------------------------------------
+# 決定表(v1 から変更なし)
+# --------------------------------------------------------------------------
 
 
 @dataclass
 class RuleRowDraft:
     """登録簿(rule_rows)1行分の草案。position順でFIRSTヒットポリシーの挿入位置を表す。
 
-    outputsは決定表の出力名->値の汎用マップ(reference側の設計判断を踏襲)。
+    outputsは決定表の出力名->値の汎用マップ。
     """
 
     row_id: str
@@ -159,7 +278,7 @@ class RuleRowDraft:
 
 @dataclass
 class NewDecisionTableDraft:
-    """レベル1(新規決定表)判定時に生成する決定表の草案。"""
+    """新しく作る決定表の草案(中間判定・最終判定とも)。"""
 
     decision_table_id: str
     decision_id: str
@@ -188,6 +307,79 @@ class Provenance:
     registered_by: str
     registered_at: str  # ISO8601
 
+    def to_json(self) -> dict:
+        return {
+            "origin": self.origin,
+            "clause_ref": self.clause_ref,
+            "registered_by": self.registered_by,
+            "registered_at": self.registered_at,
+        }
+
+
+# --------------------------------------------------------------------------
+# ④人間レビューのゲート(v2 で new_fact_unapproved を追加。D10)
+# --------------------------------------------------------------------------
+
+
+@dataclass
+class ReviewGates:
+    """④人間レビューへ回すかを判定する独立したゲート群。
+
+    複数の条件を1つの不透明なスコアに混ぜず、それぞれ独立した真偽値として保持する
+    (複合fact禁止原則と同じ思想)。`should_review`はこれらのOR。
+    """
+
+    confidence_below_threshold: bool = False
+    quote_unverified: bool = False
+    vocab_flagged: bool = False
+    # Action正規化で新規語彙が検出された場合に立てる。
+    new_action_unapproved: bool = False
+    # fact の語彙(新しい fact・既存 fact への新しい値)を増やす場合に立てる(D10)。
+    new_fact_unapproved: bool = False
+
+    @property
+    def should_review(self) -> bool:
+        return any(
+            (
+                self.confidence_below_threshold,
+                self.quote_unverified,
+                self.vocab_flagged,
+                self.new_action_unapproved,
+                self.new_fact_unapproved,
+            )
+        )
+
+    def gate_names(self) -> list[str]:
+        """立っているゲートの名前を列挙する(集計用。設計書4.5)。"""
+        names = [
+            "confidence_below_threshold",
+            "quote_unverified",
+            "vocab_flagged",
+            "new_action_unapproved",
+            "new_fact_unapproved",
+        ]
+        return [n for n in names if getattr(self, n)]
+
+    def reasons(self) -> list[str]:
+        """立っているゲートの説明文を列挙する(④レビューUIでの提示用)。"""
+        out = []
+        if self.confidence_below_threshold:
+            out.append(f"confidence < {CONFIDENCE_THRESHOLD}")
+        if self.quote_unverified:
+            out.append("evidence_quoteが条文中に実在しない(ハルシネーション疑い)")
+        if self.vocab_flagged:
+            out.append("既知の語彙的盲点パターンを含む")
+        if self.new_action_unapproved:
+            out.append("新規Actionが未承認")
+        if self.new_fact_unapproved:
+            out.append("新規fact・既存factへの新規値が未承認")
+        return out
+
+
+# --------------------------------------------------------------------------
+# ClauseIR
+# --------------------------------------------------------------------------
+
 
 @dataclass
 class ClauseIR:
@@ -200,6 +392,8 @@ class ClauseIR:
     actor: str
     action: ActionRef
     scope: str
+    target: DecisionTarget
+    facts: FactUsage
     level_determination: LevelDetermination
     rule_row_additions: list[RuleRowDraft]
     new_decision_tables: list[NewDecisionTableDraft]
@@ -209,7 +403,12 @@ class ClauseIR:
     human_review_status: HumanReviewStatus = "pending"
 
     def all_fact_keys(self) -> set[str]:
-        """このIRが要求する全factキー(バインディング設定側と突合する集合)。"""
+        """このIRのどこかの決定表で参照されている全factキー。
+
+        ドット参照(他決定の出力)も含むため、fact としての突合には
+        `wiring_generator._flat_fact_keys()` でドット参照を除いてから使う。
+        C2(新規factが使われているか)の基準でもある。
+        """
         keys: set[str] = set()
         for row in self.rule_row_additions:
             keys.update(row.conditions.keys())
@@ -224,8 +423,9 @@ def build_review_gates(
     axis1: AxisResult,
     axis2: AxisResult,
     action: ActionRef,
+    facts: FactUsage,
 ) -> ReviewGates:
-    """②の判定結果とAction正規化結果から、④人間レビューのゲートを組み立てる。
+    """②の判定結果・Action正規化・fact の使い方から、④人間レビューのゲートを組み立てる。
 
     軸1・軸2のいずれかがゲート条件に該当すれば、そのゲートを立てる(OR条件)。
     """
@@ -236,4 +436,5 @@ def build_review_gates(
         quote_unverified=(not axis1.quote_verified) or (not axis2.quote_verified),
         vocab_flagged=axis1.vocab_flagged or axis2.vocab_flagged,
         new_action_unapproved=action.is_new and action.approved_by is None,
+        new_fact_unapproved=bool(facts.new_facts) or bool(facts.value_additions),
     )

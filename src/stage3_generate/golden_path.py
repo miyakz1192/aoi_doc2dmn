@@ -1,7 +1,9 @@
-"""ゴールデンパス(ipa_secguide_v4_6_7_1: 特権アカウント)のIR構築。
+"""ゴールデンパス(ipa_secguide_v4_6_7_1: 特権アカウント)のIR v2 構築。
 
 ③aの最初の1周として、単一条文・単一決定表・既存表への統合判断なし、という
 最も単純なケースで「条文 → IR → 4点セット」が一気通貫で動くことを確認するための実装。
+
+仕様: docs/design/aoi_doc2dmn_IRv2_design.md 3.8節(特権アカウント条文の IR v2)。
 
 ## 対象条文
 
@@ -15,15 +17,25 @@
 - 判定に必要な事実が「操作者の役割」「対象環境」「要求権限」の3つの独立した属性のみで、
   いずれも条文本文から直接読み取れる(外部知識・contextを必要としない。
   `testdata/schema.md`「gold label判定の方針」節の論点に触れない)
-- 他の条文・既存決定表を参照しないため、レベル1/レベル2判定(複数DMNファイル問題)が発生しない
+- 他の条文・既存決定表を参照しないため、レベル1/レベル2判定が発生しない
 - 3つの属性はいずれも単一比較で判定でき、複合fact禁止原則に自然に適合する
-  (「開発担当者 かつ 本番環境 かつ 特権権限」というANDは決定表の1行として表現し、
-  一致プリミティブ側では組まない)
 
-## IRの構造
+## v1(コミット 9e66776)との違い
 
-3つのフラットfactを入力とする新規決定表を1つ作る(レベル1相当だが、既存表が無いため
-判定自体は自明)。FIRSTヒットポリシーで、危険な条件(禁止に該当するケース)を上位行に置く。
+設計書3.8の通り3点ある。
+
+1. fact の定義が IR の中に入った(`facts.new_facts`)。v1 は `BINDINGS` 定数を
+   配線ジェネレータの引数として外から渡していた(D1)
+2. `primitive` が実態どおり `passthrough` になった。v1 は3件すべて `exact_match` と
+   宣言していたが、決定表は生の区分値を条件にしており実態と合っていなかった(D3)
+3. `possible_values` から条文にない値が消えた。v1 は「運用担当」「その他」「検証環境」
+   「開発環境」「一般」を含んでいたが、いずれも条文に書かれていない(D4・設計書1.4)
+
+あわせて `target`(判定先)を IR に持たせ(D7)、レベル判定を層ごとの型にした(D6)。
+`DEFINITIONS_ID`／`DEFINITIONS_NAME`／`NAMESPACE` 定数は廃止し、配線ジェネレータが
+`target.dmn_model` から導出する。
+
+## 決定表
 
 | position | operator_role | target_environment | requested_privilege | → decision | reason_code |
 |---|---|---|---|---|---|
@@ -36,63 +48,69 @@ from datetime import datetime, timezone
 
 from .ir_schema import (
     ActionRef,
+    AtomicFactLayer,
     AxisResult,
     ClauseIR,
-    ColumnSetRelation,
     CompoundFactApplication,
+    DecisionTarget,
+    FactDef,
+    FactUsage,
+    FinalLayer,
     LevelDetermination,
     NewDecisionTableDraft,
     Provenance,
     RuleRowDraft,
+    SourceRef,
     build_review_gates,
 )
 
 CLAUSE_ID = "ipa_secguide_v4_6_7_1"
 CLAUSE_REF = "IPA情報セキュリティ関連規程 6.7 特権アカウント(第3項)"
 
+DMN_MODEL = "privileged_operation"
 DECISION_ID = "decision_privileged_operation"
 DECISION_NAME = "特権操作可否判定"
 DECISION_TABLE_ID = "dt_privileged_operation"
-
-DEFINITIONS_ID = "privileged_operation_definitions"
-DEFINITIONS_NAME = "特権操作可否判定"
-NAMESPACE = "http://gijinka.example.com/dmn/privileged_operation"
 
 KS_ACCOUNT_REGISTRY = "ks_privileged_account_registry"
 KS_ACTION_REQUEST = "ks_action_request"
 
 INPUT_COLUMNS = ["operator_role", "target_environment", "requested_privilege"]
 
-# バインディング設定。どの一致プリミティブを、どこから取得した値に適用するか。
-# possible_valuesを明示し、sourcesは名前付きキーで与える(reference側の設計を踏襲)。
-BINDINGS = [
-    {
-        "variable": "operator_role",
-        "primitive": "exact_match",
-        "possible_values": ["システム開発担当", "運用担当", "その他"],
-        "sources": {
-            "subject": "action_request.operator.role",
-            "registry": "privileged_account_registry.role",
-        },
-    },
-    {
-        "variable": "target_environment",
-        "primitive": "exact_match",
-        "possible_values": ["本番環境", "検証環境", "開発環境"],
-        "sources": {
-            "subject": "action_request.target.environment",
-        },
-    },
-    {
-        "variable": "requested_privilege",
-        "primitive": "exact_match",
-        "possible_values": ["特権", "一般"],
-        "sources": {
-            "subject": "action_request.requested_privilege",
-            "registry": "privileged_account_registry.granted_privilege",
-        },
-    },
-]
+
+def _new_facts() -> list[FactDef]:
+    """この条文で新しく定義する fact(設計書3.8)。
+
+    3つとも「区分の値をそのまま渡す」用途なので primitive は passthrough、
+    sources の引数名は `value` 1つ(設計書3.5)。possible_values は条文に
+    出てくる値だけに限る(D4)。
+    """
+    return [
+        FactDef(
+            variable="operator_role",
+            primitive="passthrough",
+            possible_values=["システム開発担当"],
+            sources={
+                "value": SourceRef(from_="action_request", path="operator.role"),
+            },
+        ),
+        FactDef(
+            variable="target_environment",
+            primitive="passthrough",
+            possible_values=["本番環境"],
+            sources={
+                "value": SourceRef(from_="action_request", path="target.environment"),
+            },
+        ),
+        FactDef(
+            variable="requested_privilege",
+            primitive="passthrough",
+            possible_values=["特権"],
+            sources={
+                "value": SourceRef(from_="action_request", path="requested_privilege"),
+            },
+        ),
+    ]
 
 
 def build_golden_path_ir(
@@ -104,7 +122,7 @@ def build_golden_path_ir(
     registered_by: str = "claude_code",
     registered_at: str | None = None,
 ) -> ClauseIR:
-    """ゴールデンパス条文のIRを構築する。
+    """ゴールデンパス条文のIR v2 を構築する。
 
     axis1_result / axis2_result は②の分類器の実出力を渡す
     (ハードコードせず、実際の判定結果をIRに反映させる)。
@@ -116,6 +134,8 @@ def build_golden_path_ir(
         is_new=True,
         approved_by=action_approved_by,
     )
+
+    facts = FactUsage(new_facts=_new_facts())
 
     rule_rows = [
         RuleRowDraft(
@@ -160,35 +180,13 @@ def build_golden_path_ir(
     )
 
     level_determination = LevelDetermination(
-        atomic_fact_layer=ColumnSetRelation(
-            layer="atomic_fact",
-            relation="proper_subset",
-            detail=(
-                "operator_role / target_environment / requested_privilege の3factは"
-                "いずれも既存のprimitiveに相当する単一比較(exact_match)で賄える。"
-                "新規primitiveの追加は不要。"
-            ),
+        atomic_fact=AtomicFactLayer(covered=True, new_primitives=[]),
+        intermediate=[],
+        final=FinalLayer(
+            compared_table_id=None,
+            relation=None,
+            action="new_table",
         ),
-        intermediate_layer=ColumnSetRelation(
-            layer="intermediate",
-            relation="exact_match",
-            detail=(
-                "中間決定を必要としない。3factから直接最終判定に至るため、"
-                "再利用すべき既存中間決定も無い。"
-            ),
-        ),
-        final_layer=ColumnSetRelation(
-            layer="final",
-            relation="intersecting_non_subset",
-            detail=(
-                "action=特権操作 は既存ルーティング表に存在しない新規actionであり、"
-                "既存決定表への行追加(レベル2)は行わず新規決定表を作成する。"
-                "ただし本スコープでは既存DMNファイル自体が存在しないため、"
-                "この判定は形式的なものにとどまる。"
-            ),
-        ),
-        outcome="level1_new_table",
-        reused_intermediate_decisions=[],
     )
 
     compound_fact = CompoundFactApplication(
@@ -197,6 +195,8 @@ def build_golden_path_ir(
             "「開発担当者 かつ 本番環境 かつ 特権権限」という複合条件は、"
             "一致プリミティブ側でANDを組まず、決定表の1行(id_r_priv_1)の"
             "3列の条件として表現する(複合fact禁止原則)。"
+            "なお option_taken の選択肢に「新規表の行として表す」が無いため"
+            "existing_table_row_addition を充てている(設計書へ報告済みの論点)。"
         ),
     )
 
@@ -207,7 +207,7 @@ def build_golden_path_ir(
         registered_at=registered_at or datetime.now(timezone.utc).isoformat(),
     )
 
-    review_gates = build_review_gates(axis1_result, axis2_result, action)
+    review_gates = build_review_gates(axis1_result, axis2_result, action, facts)
 
     return ClauseIR(
         clause_ref=CLAUSE_REF,
@@ -217,6 +217,8 @@ def build_golden_path_ir(
         actor="あおい",
         action=action,
         scope="情報システムの運用操作",
+        target=DecisionTarget(dmn_model=DMN_MODEL, entry_decision_id=DECISION_ID),
+        facts=facts,
         level_determination=level_determination,
         rule_row_additions=[],
         new_decision_tables=[new_table],

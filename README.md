@@ -19,8 +19,9 @@ aoi_doc2dmn/
 │   │   ├── local_llm.py     # LocalLlmAxis1Classifier / LocalLlmAxis2Classifier(Ollama)
 │   │   └── vocab_flags.py   # 既知の語彙的盲点への安全網フラグ
 │   ├── stage3_generate/  # ③a 内容生成(IR→4点セット)
-│   │   ├── ir_schema.py        # ClauseIR / ReviewGates
-│   │   ├── wiring_generator.py # 4点セット同時生成+クロス検証
+│   │   ├── ir_schema.py        # ClauseIR v2 / FactDef / ReviewGates
+│   │   ├── registry.py         # Scope/Decision登録簿(層1・2・3)の読み書き
+│   │   ├── wiring_generator.py # 4点セット同時生成+クロス検証C1〜C10
 │   │   ├── golden_path.py      # ゴールデンパス条文のIR構築
 │   │   ├── dmn_engine.py       # 軽量DMN検証エンジン(reference/から移植)
 │   │   └── run_golden_path.py  # 一気通貫実行スクリプト
@@ -35,6 +36,10 @@ aoi_doc2dmn/
 │   │                             IPA情報セキュリティ関連規程等12件）
 │   ├── candidates/              # テストデータ拡張時の候補・レビュー記録
 │   └── schema.md                # オラクルのスキーマ定義・カバレッジ表・①関連判定の基準
+├── registry/
+│   └── registry.json     # 永続化した登録簿（③の入力。既存の決定表とfact台帳）
+├── tests/                # pytest（クロス検証C1〜C10の失敗テスト・ゴールデンパス固定）
+├── docs/design/          # ③aの設計書（IR v2設計書・9e66776時点のAsIs仕様書）
 ├── out/                  # ③の4点セット生成物（gitignore対象。再生成可能）
 └── reference/
     └── README.md         # 既存実装（Claude Code生成コード）を参考にする際の置き場・方針
@@ -62,6 +67,12 @@ aoi_doc2dmn/
 - 軸1・軸2分類の精度改善フェーズ（第4回〜第9回）はひと段落し、③段階（内容生成・IRスキーマ
   パイプライン）への移行フェーズに入った。詳細は`testdata/schema.md`「軸1・軸2分類の精度改善
   フェーズの区切り」節、「gold label判定の方針」節を参照
+- `src/stage3_generate/`: ③a（宣言的×ハード制約）の**後半**（IR → 4点セット）は
+  IR v2（`docs/design/aoi_doc2dmn_IRv2_design.md`）で実装済み。fact の定義がIRに入り
+  （`facts.new_facts`）、4点すべてをIRと登録簿から生成する。クロス検証はC1〜C10で、
+  それぞれの失敗テストが`tests/`にある
+- ③aの**前段**（条文 → IR）は未実装。現状は`golden_path.py`がゴールデンパス1件のIRを
+  手で組み立てている。これが③の本丸であり次の作業対象
 
 ## 評価指標の見方
 
@@ -104,8 +115,21 @@ pipのシステム直接インストールができないため、プロジェ�
 .venv/bin/python3 -m src.stage3_generate.run_golden_path --use-oracle # Ollama不要。配線部分のみ検証
 ```
 
-条文 → ②2軸分類 → ③a IR構築 → 4点セット生成 → 生成DMNの評価、までを一気通貫で実行する。
-`out/golden_path/`にDMN XML・バインディング設定・ルーティング表・登録簿が出力される。
+条文 → ②2軸分類 → ③a IR構築 → 4点セット生成（クロス検証C1〜C10）→ 生成DMNの評価、までを
+一気通貫で実行する。`out/golden_path/`にDMN XML・バインディング設定・ルーティング表・
+登録簿が出力される。
+
+入力となる登録簿は`registry/registry.json`（`--registry`で差し替え可能）。更新後の登録簿は
+`out/`に書き出すだけで、永続台帳への反映（promotion）は人間レビューを経た別操作とする。
+
+### テスト
+
+```bash
+.venv/bin/python3 -m pytest tests/ -v
+```
+
+クロス検証C1〜C10の失敗テスト（わざと違反させたIRで`SchemaWiringError`になること）と、
+ゴールデンパスがC1〜C10を通過しDMN評価4/4になることを固定している。Ollamaは不要。
 
 空欄（`［　］`）の扱い方針は`testdata/schema.md`「空欄の扱い方針」節を、
 ①関連判定の基準（解釈A/B）は同ファイル「①関連判定の基準」節を参照。
