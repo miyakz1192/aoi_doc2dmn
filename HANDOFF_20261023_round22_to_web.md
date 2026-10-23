@@ -255,7 +255,7 @@ HANDOFF 5節に従い、パートB の中では直さず報告する。
 
 | 項目 | 値 |
 | --- | --- |
-| コミット | `COMMIT_A`（パートA）／`COMMIT_B`（パートB） |
+| コミット | `6fcaf03`（パートA）／`aa11654`（パートB） |
 | テスト | **155件すべて成功（skip 0件）**。`reference/` を退避した状態でも155件成功 |
 | 内訳 | `test_cross_validation.py` 48／`test_golden_path.py` 20／`test_acceptance_paths.py` 27／`test_bootstrap_fixes.py` 42／`test_ir_gold.py` 18 |
 | 正解 IR | 5件通過・**シナリオ 22/22 一致**・表しきれなかった条文1件 |
@@ -293,7 +293,7 @@ HANDOFF 5節に従い、パートB の中では直さず報告する。
 ```
 aoi_doc2dmnで、第21回（設計書 v1.4 の修正と正解IRの初版）が完了しました。
 HANDOFF_20261023_round22_to_web.md を読んで、結果を把握してください。
-コミット COMMIT_B を push 済みです。正解IRの下書きのレビューを一緒に進めたいです。
+コミット aa11654 を push 済みです。正解IRの下書きのレビューを一緒に進めたいです。
 ```
 
 ---
