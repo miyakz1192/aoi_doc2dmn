@@ -18,11 +18,22 @@
 | 層2 の行 | decisionTable の rule(セルは DMN の表記のまま) |
 | 層3 possible_values | 決定表のセルに出てくる値だけ(D4)。DMN にない値は補わない |
 | 層3 primitive | 設計書3.5節の一致プリミティブ表(`FACT_PRIMITIVES`) |
-| 層1 entry_points | **DMN には無い**(`ENTRY_POINTS`。出典は下記) |
-| 層3 sources | **DMN には無く、補わない**(`SOURCE_GAP_NOTE`) |
+| 層1 entry_points | **DMN には無い**(`ENTRY_POINTS`。出典は設計書 D32) |
+| 層3 sources | **DMN には無く、補わない**(`SOURCE_GAP_NOTE`・D33) |
 
 DMN に無いものを勝手に埋めないのが原則(設計書1.4・HANDOFF 4節)。埋めずに空にしたもの、
 出典を付けて入れたものは、どちらも下の定数のところに理由を書いてある。
+
+## 元の DMN の修正(D34)
+
+元の DMN に不足・矛盾があっても `reference/` の元ファイルは書き換えず、`registry/` の
+側で直す。直す内容は `DMN_FIXES` に、内容・理由・承認者とともに1か所にまとめてある
+(`ENTRY_POINTS` と同じ考え方で、差し替えられるようにするため)。適用した修正は層1・層2の
+`history` に残る。
+
+修正後の登録簿には C5・C11 を当て(`check_registry_cell_values`)、違反があれば止める。
+これがないと、矛盾を抱えた値が台帳に入り、あとで正解 IR がその値を参照するたびに
+C11 に当たる。
 
 ## 実行
 
@@ -34,15 +45,23 @@ from __future__ import annotations
 
 import argparse
 import json
-import shutil
 import xml.etree.ElementTree as ET
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
 from .registry import Registry, dmn_path
+from .wiring_generator import (
+    DMNDI_NS,
+    SchemaWiringError,
+    _cell_values,
+    _register_namespaces,
+    _serialize,
+    check_registry_cell_values,
+)
 
 DMN_NS = "https://www.omg.org/spec/DMN/20240513/MODEL/"
-_NS = {"d": DMN_NS}
+_NS = {"d": DMN_NS, "dmndi": DMNDI_NS}
 
 # 初期登録の元にする DMN(リポジトリには入っていない。reference/ は .gitignore 対象)。
 SOURCE_DMN_DEFAULT = (
@@ -96,6 +115,41 @@ SOURCE_GAP_NOTE = (
     "sources は元の DMN XML に情報が無いため未設定。"
     "一致プリミティブの実装時に、出典付きで付与する必要がある"
 )
+
+# 元の DMN の不足・矛盾に対する修正(D34)。`reference/` の元ファイルは書き換えず、
+# `registry/dmn/` に置く側だけを直す。承認されたものだけを並べる。
+FIX_APPROVER = "Kazuhiro"
+
+DMN_FIXES: list[dict] = [
+    {
+        "fix_id": "drop_identity_result_value_from_identity_level_reference",
+        "kind": "remove_cell_value",
+        "decision_table_id": "dt_transmission",
+        "column": "本人確認判定.identity_level",
+        "row_ids": ["tr_r3", "tr_r5"],
+        "value": "未",
+        "change": (
+            "送信可否判定の tr_r3・tr_r5 の「確認レベル」のセルから \"未\" を削除する"
+        ),
+        "reason": (
+            "「未」は本人確認判定の identity_result(済／未)の値で、"
+            "identity_level(高／中／不一致検出／情報不足)には決して来ない。"
+            "残すと、この値を参照する行が実行時に当たらないまま C11 に当たり続ける"
+        ),
+        "approved_by": FIX_APPROVER,
+    },
+    {
+        "fix_id": "drop_unreferenced_input_data",
+        "kind": "remove_input_data",
+        "name": "added by me",
+        "change": 'inputData "added by me"(と対応する DMNDI の図形)を削除する',
+        "reason": (
+            "どの決定表も参照していない inputData。実行時に集める事実が1つ増えたように"
+            "見えるだけで、判定には使われない"
+        ),
+        "approved_by": FIX_APPROVER,
+    },
+]
 
 
 # --------------------------------------------------------------------------
@@ -175,6 +229,162 @@ def _input_data_names(root: ET.Element) -> dict[str, str]:
 
 
 # --------------------------------------------------------------------------
+# 元の DMN の修正(D34)
+# --------------------------------------------------------------------------
+
+
+def _find_decision_table(root: ET.Element, decision_table_id: str) -> Optional[ET.Element]:
+    for decision in root.findall("d:decision", _NS):
+        table = decision.find("d:decisionTable", _NS)
+        if table is not None and table.get("id") == decision_table_id:
+            return table
+    return None
+
+
+def _remove_cell_value(root: ET.Element, fix: dict) -> dict:
+    """決定表のセル(FEEL のリテラル列)から値を1つ取り除く。
+
+    セルの読み方は D28 の `_cell_values()` に任せ、残った値を同じ FEEL の表記で
+    書き戻す。取り除く値がもう無い場合は停止する(修正の一覧が実態と合っていない
+    ことを黙って見逃さないため)。
+    """
+    table = _find_decision_table(root, fix["decision_table_id"])
+    if table is None:
+        raise SchemaWiringError(
+            f"修正 {fix['fix_id']!r} を適用できません: 決定表 "
+            f"{fix['decision_table_id']!r} が DMN にありません。"
+        )
+    columns = [
+        _text(i.find("d:inputExpression/d:text", _NS))
+        for i in table.findall("d:input", _NS)
+    ]
+    if fix["column"] not in columns:
+        raise SchemaWiringError(
+            f"修正 {fix['fix_id']!r} を適用できません: 決定表 "
+            f"{fix['decision_table_id']!r} に列 {fix['column']!r} がありません"
+            f"(入力列: {columns})。"
+        )
+    index = columns.index(fix["column"])
+    rules = {r.get("id"): r for r in table.findall("d:rule", _NS)}
+    for row_id in fix["row_ids"]:
+        rule = rules.get(row_id)
+        if rule is None:
+            raise SchemaWiringError(
+                f"修正 {fix['fix_id']!r} を適用できません: 決定表 "
+                f"{fix['decision_table_id']!r} に行 {row_id!r} がありません。"
+            )
+        text_el = rule.findall("d:inputEntry", _NS)[index].find("d:text", _NS)
+        where = f"{fix['decision_table_id']}/{row_id}/{fix['column']}"
+        values = _cell_values(_text(text_el), where=where)
+        if fix["value"] not in values:
+            raise SchemaWiringError(
+                f"修正 {fix['fix_id']!r} を適用できません: {where} のセルに "
+                f"{fix['value']!r} がありません(値: {values})。すでに直っているなら、"
+                "DMN_FIXES から外してください。"
+            )
+        remaining = [v for v in values if v != fix["value"]]
+        if not remaining:
+            raise SchemaWiringError(
+                f"修正 {fix['fix_id']!r} を適用できません: {where} のセルが空になります。"
+            )
+        text_el.text = ",".join(f'"{v}"' for v in remaining)
+    return _fix_record(fix, scope="rule", row_ids=list(fix["row_ids"]))
+
+
+def _remove_input_data(root: ET.Element, fix: dict) -> dict:
+    """どの決定表も参照していない inputData を、DMNDI の図形ごと取り除く。"""
+    targets = [i for i in root.findall("d:inputData", _NS) if i.get("name") == fix["name"]]
+    if not targets:
+        raise SchemaWiringError(
+            f"修正 {fix['fix_id']!r} を適用できません: inputData {fix['name']!r} が"
+            "DMN にありません。すでに直っているなら、DMN_FIXES から外してください。"
+        )
+    used = {
+        column
+        for decision in _read_decisions(root)
+        for column in decision["input_columns"]
+    }
+    if fix["name"] in used:
+        raise SchemaWiringError(
+            f"修正 {fix['fix_id']!r} を適用できません: inputData {fix['name']!r} は"
+            "決定表から参照されています(参照されている入力は削除しません)。"
+        )
+    removed_ids = {i.get("id") for i in targets}
+    for element in targets:
+        root.remove(element)
+    # DMNDI の図形を残すと、存在しない要素を指す dmnElementRef になる
+    for diagram in root.findall("dmndi:DMNDI/dmndi:DMNDiagram", _NS):
+        for shape in list(diagram.findall("dmndi:DMNShape", _NS)):
+            if shape.get("dmnElementRef") in removed_ids:
+                diagram.remove(shape)
+    return _fix_record(fix, scope="dmn_model")
+
+
+def _fix_record(fix: dict, *, scope: str, row_ids: Optional[list[str]] = None) -> dict:
+    """`history` に残す修正の記録(内容・理由・承認者)。"""
+    record = {
+        "change": "dmn_fix",
+        "fix_id": fix["fix_id"],
+        "description": fix["change"],
+        "reason": fix["reason"],
+        "approved_by": fix["approved_by"],
+        "scope": scope,
+    }
+    if scope == "rule":
+        record["decision_table_id"] = fix["decision_table_id"]
+        record["row_ids"] = list(row_ids or [])
+    return record
+
+
+_FIX_KINDS = {
+    "remove_cell_value": _remove_cell_value,
+    "remove_input_data": _remove_input_data,
+}
+
+
+def apply_dmn_fixes(root: ET.Element, fixes: Optional[list[dict]] = None) -> list[dict]:
+    """承認済みの修正を DMN の木に当て、`history` に残す記録を返す(D34)。
+
+    `fixes` を空にすると修正なしで登録できる(修正を外すと C5・C11 で止まることを
+    確かめるテスト用)。
+    """
+    applied: list[dict] = []
+    for fix in DMN_FIXES if fixes is None else fixes:
+        apply_one = _FIX_KINDS.get(fix["kind"])
+        if apply_one is None:
+            raise SchemaWiringError(
+                f"修正 {fix['fix_id']!r} の kind={fix['kind']!r} は未対応です。"
+            )
+        applied.append(apply_one(root, fix))
+    return applied
+
+
+def _record_fixes(registry: Registry, applied: list[dict]) -> None:
+    """適用した修正を層1・層2の history に残す(D34)。
+
+    行に閉じた修正(`scope="rule"`)は、その決定表の層1エントリと対象の行に残す。
+    モデル全体に関わる修正(`scope="dmn_model"`。参照されない inputData の削除など)は
+    置き場所が1つに決まらないため、そのモデルの層1エントリすべてに残す
+    (登録簿にモデル単位のエントリが無い。**要報告事項**)。
+    """
+    for record in applied:
+        if record["scope"] == "dmn_model":
+            for entry in registry.decision_tables:
+                entry["history"].append(dict(record))
+            continue
+        table_id = record["decision_table_id"]
+        for entry in registry.decision_tables:
+            if entry["decision_table_id"] == table_id:
+                entry["history"].append(dict(record))
+        for row in registry.rule_rows:
+            if (
+                row["decision_table_id"] == table_id
+                and row["row_id"] in record["row_ids"]
+            ):
+                row["history"].append(dict(record))
+
+
+# --------------------------------------------------------------------------
 # 登録簿の組み立て
 # --------------------------------------------------------------------------
 
@@ -195,12 +405,33 @@ def _is_dot_reference(column: str) -> bool:
     return "." in column
 
 
-def build_registry(source_dmn: str | Path) -> tuple[Registry, list[str]]:
-    """DMN XML から登録簿(層1・層2・層3)を起こし、見つかった問題も返す。
+@dataclass
+class BootstrapResult:
+    """初期登録の結果。"""
 
-    戻り値の2つめは、元の DMN の不足・矛盾の一覧(補わずに報告するもの)。
+    registry: Registry
+    # 元の DMN に残った不足・矛盾(補わずに報告するもの)
+    problems: list[str] = field(default_factory=list)
+    # `registry/dmn/` に置く DMN XML(承認済みの修正を当てたもの。D34)
+    dmn_xml: str = ""
+    # 当てた修正の記録(内容・理由・承認者)
+    fixes: list[dict] = field(default_factory=list)
+
+
+def build_registry(
+    source_dmn: str | Path, *, fixes: Optional[list[dict]] = None
+) -> BootstrapResult:
+    """DMN XML から登録簿(層1・層2・層3)を起こす。
+
+    承認済みの修正(D34)を当ててから読み取るので、`problems` に残るのは「修正して
+    いない不足・矛盾」だけになる。最後に登録簿へ C5・C11 を当て、違反があれば
+    `SchemaWiringError` で停止する。
+
+    `fixes=[]` を渡すと修正なしで組み立てる(修正を外すと止まることの確認用)。
     """
+    _register_namespaces()
     root = ET.parse(str(source_dmn)).getroot()
+    applied = apply_dmn_fixes(root, fixes)
     decisions = _read_decisions(root)
     input_data = _input_data_names(root)
 
@@ -227,6 +458,8 @@ def build_registry(source_dmn: str | Path) -> tuple[Registry, list[str]]:
                 ],
                 "knowledge_sources": list(d["knowledge_sources"]),
                 "provenance": provenance,
+                # 修正の記録を残す場所(D34)。層2の行と同じ形にそろえる
+                "history": [],
             }
         )
 
@@ -277,7 +510,16 @@ def build_registry(source_dmn: str | Path) -> tuple[Registry, list[str]]:
     registry = Registry(
         decision_tables=layer1, rule_rows=layer2, fact_registry=layer3
     )
-    return registry, find_problems(decisions, input_data)
+    _record_fixes(registry, applied)
+    # D34: 修正後の登録簿に C5・C11 を当てる。元の DMN の矛盾を抱えたまま
+    # 登録すると、あとで正解 IR がその値を参照するたびに C11 に当たる
+    check_registry_cell_values(registry)
+    return BootstrapResult(
+        registry=registry,
+        problems=find_problems(decisions, input_data),
+        dmn_xml=_serialize(root),
+        fixes=applied,
+    )
 
 
 def _fact_order(decisions: list[dict]) -> list[str]:
@@ -292,8 +534,6 @@ def _fact_order(decisions: list[dict]) -> list[str]:
 
 def _values_of_column(decisions: list[dict], column: str) -> list[str]:
     """決定表のセルに出てくる値だけを、出現順で集める(D4)。"""
-    from .wiring_generator import _cell_values  # 循環 import を避けて遅延で読む
-
     values: list[str] = []
     for d in decisions:
         if column not in d["input_columns"]:
@@ -317,9 +557,13 @@ def _values_of_column(decisions: list[dict], column: str) -> list[str]:
 
 
 def find_problems(decisions: list[dict], input_data: dict[str, str]) -> list[str]:
-    """初期登録の元にした DMN の不足・矛盾を列挙する(HANDOFF タスク2)。"""
-    from .wiring_generator import _cell_values
+    """初期登録の元にした DMN の不足・矛盾を列挙する(HANDOFF タスク2)。
 
+    承認済みの修正(D34)を当てたあとの木を渡すので、修正した2件(「未」と
+    参照されない inputData)はここに出ない。使われない出力(identity_result・
+    info_class)は、あおいの実行時に説明やログで使っている可能性があるため
+    削除せず、報告に残す。
+    """
     problems: list[str] = []
 
     # (1) どの決定表からも参照されていない inputData
@@ -394,21 +638,26 @@ def bootstrap(
     source_dmn: str | Path = SOURCE_DMN_DEFAULT,
     registry_path: str | Path = REGISTRY_PATH_DEFAULT,
     dmn_dir: str | Path = DMN_DIR_DEFAULT,
-) -> tuple[Registry, list[str]]:
-    """DMN を `registry/dmn/` に置き、登録簿を作って保存する(再実行可能)。"""
+    *,
+    fixes: Optional[list[dict]] = None,
+) -> BootstrapResult:
+    """DMN を `registry/dmn/` に置き、登録簿を作って保存する(再実行可能)。
+
+    置く DMN は、承認済みの修正(D34)を当てたもの。`reference/` の元ファイルは
+    書き換えない。同じ入力なら何度実行してもバイト単位で同じ結果になる。
+    """
     source = Path(source_dmn)
     if not source.exists():
         raise FileNotFoundError(
             f"初期登録の元にする DMN が見つかりません: {source}\n"
             "reference/ はリポジトリに入っていないため、別途配置が必要です。"
         )
-    registry, problems = build_registry(source)
+    result = build_registry(source, fixes=fixes)
     target = dmn_path(DMN_MODEL, dmn_dir)
     target.parent.mkdir(parents=True, exist_ok=True)
-    # DMN XML は書き換えずにそのまま置く(「DMN に書かれていることだけ」の原則)。
-    shutil.copyfile(source, target)
-    registry.save(registry_path)
-    return registry, problems
+    target.write_text(result.dmn_xml, encoding="utf-8")
+    result.registry.save(registry_path)
+    return result
 
 
 def main(argv: Optional[list[str]] = None) -> int:
@@ -418,7 +667,8 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--dmn-dir", default=DMN_DIR_DEFAULT)
     args = parser.parse_args(argv)
 
-    registry, problems = bootstrap(args.source_dmn, args.registry, args.dmn_dir)
+    result = bootstrap(args.source_dmn, args.registry, args.dmn_dir)
+    registry, problems = result.registry, result.problems
     print(f"元にした DMN: {args.source_dmn}")
     print(f"置いた DMN  : {dmn_path(DMN_MODEL, args.dmn_dir)}")
     print(f"登録簿      : {args.registry}")
@@ -440,6 +690,12 @@ def main(argv: Optional[list[str]] = None) -> int:
             f"  - {fact['variable']} [{fact['primitive']}]"
             f" {fact['possible_values']} used_by={fact['used_by']}"
         )
+    print()
+    print(f"元の DMN に当てた修正 {len(result.fixes)}件(承認者: {FIX_APPROVER}。D34):")
+    for record in result.fixes:
+        print(f"  * {record['description']}")
+        print(f"    理由: {record['reason']}")
+        print(f"    記録先: 層1・層2の history(scope={record['scope']})")
     print()
     if problems:
         print(f"元の DMN に見つかった不足・矛盾 {len(problems)}件(補っていない):")

@@ -30,16 +30,31 @@ DMN XML／バインディング設定JSON／ルーティング表JSON／Scope・
   あれば `SchemaWiringError` で停止する
 - **C11**(D13): ドット参照の列の条件値が参照先の判定の出力値にあること
 
+## v1.3 で変えた点(設計書2章 D24〜D35)
+
+- **D24**: D16 の洗い出しの起点は、IR が実際に行・列・出力値を足した既存の表だけ。
+  `reuse_value` の表と `new_table` の `compared_table_id` は起点にしない
+- **D25・D26**: C6 の網羅の基準を「IR が書いた行と表」にした。これで C6 は IR だけで
+  判定できるので、生成前の1か所(C4 の後)に戻した。C1 は「IR が言及しない中間判定の
+  fact の不足」を捕まえる歯止めとして残る
+- **D27**: `required_facts` の手順1で、この IR が `add_column` で足す列を加える
+- **D28**: FEEL のセル -> 値の集合 の変換は `_cell_values()` 1つだけを通す。
+  値を比べる処理(C5・C11・初期登録の検査)はすべてこれを使う
+- **D29**: `new_output_values` が dict(出力名 -> 値)になったので、C9条件3・C11 は
+  出力名ごとに突き合わせる(v1.2 は「その表のすべての出力名に足す」と緩く扱っていた)
+- **D30**: `final.action = no_change`。IR 自身のルートも既存の最終判定のルートになる
+- **D31**: C3 は `compound_fact_application.rejected_in_primitive` を見る
+- **D33**: 層3の `sources` が空の fact は、バインディング設定に `sources_undefined` を付ける
+- **D35**: 既存の表への行の挿入は、その表の `hit_policy` が FIRST のときだけ行う
+
 ## クロス検証の実行順序(設計書5章)
 
-設計書5章は2段構えを定めている(v1.1 の実装報告を受けて明文化された)。
+設計書5章は2段構えを定めている。
 
 1. 生成前(IR と登録簿だけで判定できるもの): C3 → C9 → C4 → C6 → C10 → C11 → C2
 2. 生成後(成果物を突合するもの): C1 → C5 → C7 → C8
 
-ただし C6 の「網羅」(D21: IR が使う既存 fact がすべて `referenced_facts` にある)は
-`required_facts` を必要とするため、実在の確認(上の位置)と網羅の確認
-(`required_facts` 導出の直後)に分けている。**要報告事項**。
+C9 が破れていると `required_facts` の算出自体が始められないため、この順にする。
 """
 from __future__ import annotations
 
@@ -156,7 +171,12 @@ def _feel_literal(value: str) -> str:
 
 
 def _cell_values(cell: str, *, where: str) -> list[str]:
-    """決定表のセルから、条件として参照している値の一覧を取り出す(C5用)。
+    """決定表のセルから、参照している値の一覧を取り出す。
+
+    **FEEL のセルを値の集合に変換するのはこの関数だけである(D28)。** 層2のセルは
+    DMN の表記のまま(`"高"` や `"中","未"`)、IR の行は素の値(`高`)を持つため、
+    値を比べる処理(C5・C11・初期登録の検査)はすべてここを通して揃える。
+    比べる場所ごとに揃え方を書くと、検証の間でずれる。
 
     - `-`(ワイルドカード) -> 空リスト(照合対象なし)
     - `"高", "中"` のような引用符付きのリテラル列 -> ["高", "中"]
@@ -332,15 +352,15 @@ def _changed_existing_tables(ir: ClauseIR, registry: Registry) -> list[dict]:
     D16 の洗い出しの起点になる。IR の `new_decision_tables` にある表(新規に作る表)は
     既存ではないので除く。
 
-    設計書4.1は起点を「rule_row_additions・intermediate の table_id・final の
-    compared_table_id」と書いているが、次の2つは「変更した表」ではないので除く
-    (**要報告事項**)。
+    設計書4.1の起点は「rule_row_additions の表・intermediate の add_row と
+    add_column の表・new_output_values を足した表・final.action が add_rows の表」
+    である(D24)。次の2つは比べた相手で、表には何も足さないので起点にしない。
 
     - `final.action = new_table` のときの `compared_table_id`: 既存の表と列集合を
       比べた結果「新しい表を作る」と決めた相手であり、その表は変更しない。
       含めると、新しい表を作るだけの IR が既存の DMN ファイルを要求してしまう
     - `intermediate.action = "reuse_value"`: 既存の出力値をそのまま使うので、
-      その表には何も足さない
+      その表には何も足さない(ただし `new_output_values` があれば起点に入れる)
     """
     ir_table_ids = {t.decision_table_id for t in ir.new_decision_tables}
     table_ids: list[str] = []
@@ -348,7 +368,7 @@ def _changed_existing_tables(ir: ClauseIR, registry: Registry) -> list[dict]:
         if row.decision_table_id not in table_ids:
             table_ids.append(row.decision_table_id)
     for change in ir.level_determination.intermediate:
-        if change.action == "reuse_value":
+        if change.action == "reuse_value" and not change.new_output_values:
             continue
         if change.table_id not in table_ids:
             table_ids.append(change.table_id)
@@ -383,6 +403,12 @@ def derive_routes(ir: ClauseIR, registry: Registry) -> list[dict]:
     とおりで、エラーにはしない(設計書4.5 層1「中間判定は空」)。
 
     `required_facts` はルートごとに、その判定を起点として求める。
+
+    `final.action = no_change`(D30)では、IR 自身のルートも既存の最終判定のルートで
+    ある。そのため1で作ったルートと3で作り直すルートが同じになるが、actor・action・
+    dmn_model・decision_id がすべて同じ行は1つにまとめるので、ルーティング表には
+    1行だけ出る(設計書4.1)。C9条件8 が、IR の actor・action が起点の判定の
+    `entry_points` にあることを確かめている。
     """
     routes: list[dict] = [
         {
@@ -405,7 +431,14 @@ def derive_routes(ir: ClauseIR, registry: Registry) -> list[dict]:
                     "dmn_model": entry.get("dmn_model"),
                     "decision_id": entry.get("decision_id"),
                 }
-                if route not in routes:
+                # 同じ actor・action・decision_id の行は1つにまとめる(設計書4.1)。
+                # no_change では IR 自身のルートがここで再び出てくる(D30)
+                if not any(
+                    r["actor"] == route["actor"]
+                    and r["action"] == route["action"]
+                    and r["decision_id"] == route["decision_id"]
+                    for r in routes
+                ):
                     routes.append(route)
 
     for route in routes:
@@ -427,8 +460,13 @@ def derive_routes(ir: ClauseIR, registry: Registry) -> list[dict]:
 
 
 def _check_c3_compound_fact(ir: ClauseIR) -> None:
-    """C3: 一致プリミティブ側で複合判定(AND)を組む案は採らない。"""
-    if ir.compound_fact_application.option_taken == "rejected_compound_in_primitive":
+    """C3: 一致プリミティブ側で複合判定(AND)を組む案は採らない(D31)。
+
+    v1.2 は `option_taken == "rejected_compound_in_primitive"` で判定していたが、
+    D31 で `option_taken` が導出に変わったため、手で書く印
+    (`rejected_in_primitive`)を見る。
+    """
+    if ir.compound_fact_application.rejected_in_primitive:
         raise SchemaWiringError(
             "C3検証失敗(複合fact禁止原則違反): 一致プリミティブ側で複合判定(AND)を組む案は"
             "採用できません。複合判定は決定表側の行として表現してください。"
@@ -436,8 +474,28 @@ def _check_c3_compound_fact(ir: ClauseIR) -> None:
         )
 
 
+def _output_columns_of_table(
+    ir: ClauseIR, registry: Registry, table_id: str
+) -> list[str] | None:
+    """決定表の出力列の名前を、IR の新規決定表 -> 層1の `output_columns` の順で引く。
+
+    どちらにも無ければ `None` を返す(呼び出し側が「検証できない」として止める)。
+    層2の行から集めて代用しない理由は D12 のとおり(行がまだ無い判定で誤って通る)。
+    """
+    for table in ir.new_decision_tables:
+        if table.decision_table_id != table_id:
+            continue
+        names: list[str] = []
+        for row in table.rule_rows:
+            for name in row.outputs:
+                if name not in names:
+                    names.append(name)
+        return names
+    return registry.output_columns_of(table_id)
+
+
 def _check_c9_level_determination(ir: ClauseIR, registry: Registry) -> None:
-    """C9: レベル判定の整合(設計書3.7の5条件)。"""
+    """C9: レベル判定の整合(設計書3.7の8条件。条件7・8 は D30)。"""
     lv = ir.level_determination
     entry_id = ir.target.entry_decision_id
 
@@ -483,7 +541,8 @@ def _check_c9_level_determination(ir: ClauseIR, registry: Registry) -> None:
             )
 
     # 条件3: intermediate の action が add_row なら、rule_row_additions に table_id の表の
-    #        行があり、new_output_values の値がその行の出力に現れる
+    #        行がある。new_output_values の出力名はその表の output_columns にあり、
+    #        値は追加した行の**同じ出力名の列**に現れる(D29)
     for change in lv.intermediate:
         if change.action != "add_row":
             continue
@@ -493,13 +552,39 @@ def _check_c9_level_determination(ir: ClauseIR, registry: Registry) -> None:
                 f"C9検証失敗(条件3): intermediate.action=add_row ですが、rule_row_additions に"
                 f"決定表 {change.table_id!r} の行がありません。"
             )
-        produced = {v for r in rows for v in r.outputs.values()}
-        missing_values = [v for v in change.new_output_values if v not in produced]
-        if missing_values:
+        if not change.new_output_values:
+            continue
+        columns = _output_columns_of_table(ir, registry, change.table_id)
+        if columns is None:
             raise SchemaWiringError(
-                f"C9検証失敗(条件3): new_output_values {missing_values} が、決定表 "
-                f"{change.table_id!r} へ追加する行の出力に現れません(出力値: {sorted(produced)})。"
+                f"C9検証失敗(条件3): 決定表 {change.table_id!r} の出力列が、IR にも"
+                "層1の output_columns にも見つかりません(D12)。new_output_values の"
+                "出力名を確かめられません。"
             )
+        for name, values in change.new_output_values.items():
+            if name not in columns:
+                raise SchemaWiringError(
+                    f"C9検証失敗(条件3): new_output_values の出力名 {name!r} が、決定表 "
+                    f"{change.table_id!r} の出力列 {columns} にありません(D29)。"
+                    "出力名を取り違えると、どの列にも足されない値ができます。"
+                )
+            produced: set[str] = set()
+            for row in rows:
+                if name not in row.outputs:
+                    continue
+                produced.update(
+                    _cell_values(
+                        str(row.outputs[name]),
+                        where=f"決定表 {change.table_id} の行 {row.row_id} の出力 {name}",
+                    )
+                )
+            missing_values = [v for v in values if v not in produced]
+            if missing_values:
+                raise SchemaWiringError(
+                    f"C9検証失敗(条件3): new_output_values の {name!r} に足す値 "
+                    f"{missing_values} が、決定表 {change.table_id!r} へ追加する行の "
+                    f"{name!r} 列に現れません(その列の値: {sorted(produced)})。"
+                )
 
     # 条件4: intermediate の table_id と final の compared_table_id は層1に実在する
     for change in lv.intermediate:
@@ -545,6 +630,52 @@ def _check_c9_level_determination(ir: ClauseIR, registry: Registry) -> None:
                 f"C9検証失敗(条件6): 追加する列 {missing_columns} が、決定表 "
                 f"{change.table_id!r} へ追加する行の条件に現れません"
                 f"(行の条件: {sorted(used)})。"
+            )
+
+    # 条件7: final.action が no_change なら、intermediate に add_row か add_column が
+    #        1つ以上あり、compared_table_id は None で、target.entry_decision_id は
+    #        層1に実在する最終判定(entry_points が空でない)である(D30)
+    if lv.final.action == "no_change":
+        if not any(c.action in ("add_row", "add_column") for c in lv.intermediate):
+            raise SchemaWiringError(
+                "C9検証失敗(条件7): final.action=no_change ですが、intermediate に"
+                "add_row も add_column もありません。どの表も変えない IR は、"
+                "4点セットに出すものがありません。"
+            )
+        if lv.final.compared_table_id is not None:
+            raise SchemaWiringError(
+                f"C9検証失敗(条件7): final.action=no_change ですが compared_table_id="
+                f"{lv.final.compared_table_id!r} が入っています(最終判定は変えないので"
+                "比べた相手は持ちません)。"
+            )
+        entry_table = registry.find_decision_table(decision_id=entry_id)
+        if entry_table is None:
+            raise SchemaWiringError(
+                f"C9検証失敗(条件7): final.action=no_change の target.entry_decision_id="
+                f"{entry_id!r} が登録簿の層1に実在しません(影響を受ける既存の最終判定を"
+                "1つ指してください)。"
+            )
+        if not entry_table.get("entry_points"):
+            raise SchemaWiringError(
+                f"C9検証失敗(条件7): target.entry_decision_id={entry_id!r} の "
+                "entry_points が空です(中間判定は最終判定ではないので、no_change の"
+                "起点にできません)。"
+            )
+
+    # 条件8: final.action が add_rows か no_change なら、IR の actor と
+    #        action.normalized の組が、起点の判定の entry_points にある(D30)
+    if lv.final.action in ("add_rows", "no_change"):
+        entry_table = registry.find_decision_table(decision_id=entry_id)
+        points = list(entry_table.get("entry_points", [])) if entry_table else []
+        if not any(
+            p.get("actor") == ir.actor and p.get("action") == ir.action.normalized
+            for p in points
+        ):
+            raise SchemaWiringError(
+                f"C9検証失敗(条件8): IR の actor・action("
+                f"{ir.actor!r} × {ir.action.normalized!r})が、起点の判定 {entry_id!r} の"
+                f"entry_points {points} にありません。既存のルートに足す条文が、"
+                "別の行為を名乗らないようにするための検査です。"
             )
 
 
@@ -594,11 +725,49 @@ def _check_one_fact_sources(fact: FactDef, *, in_new_facts: bool) -> None:
         )
 
 
-def _check_c6_referenced_facts_exist(ir: ClauseIR, registry: Registry) -> None:
-    """C6(実在): referenced_facts と value_additions のキーが層3に実在する。
+def existing_facts_used_by_ir(ir: ClauseIR) -> set[str]:
+    """「IR が使う既存 fact」を、IR が書いた行と表から求める(D25)。
 
-    網羅(D21)の確認は `_check_c6_referenced_facts_complete()` で、`required_facts` を
-    求めたあとに行う。
+    集める対象は3つ。
+
+    1. `new_decision_tables` の `input_columns`
+    2. `rule_row_additions` の条件のうち、値が「-」(ワイルドカード)でない列
+    3. `intermediate` の `new_input_columns`(add_column で足す列)
+
+    そこから、ドット参照の列(他の判定の出力であり fact ではない)と、この条文で
+    新しく定義する fact(`new_facts`)を除く。
+
+    基準を `required_facts`(ルート全体)にすると、既存の最終判定に1行足すだけの
+    条文に、その判定が使う全 fact の宣言を強いることになる(第18回のレベル2の
+    テストが7件を列挙していた)。条文が言及した fact だけを列挙させるため、
+    IR が書いた行と表を基準にする。
+    """
+    columns: set[str] = set()
+    for table in ir.new_decision_tables:
+        columns.update(table.input_columns)
+    for row in ir.rule_row_additions:
+        for column, cell in row.conditions.items():
+            if str(cell).strip() != "-":
+                columns.add(column)
+    for change in ir.level_determination.intermediate:
+        columns.update(change.new_input_columns)
+    new_names = {f.variable for f in ir.facts.new_facts}
+    return {
+        column
+        for column in columns
+        if not _is_dot_reference(column) and column not in new_names
+    }
+
+
+def _check_c6_referenced_facts(ir: ClauseIR, registry: Registry) -> None:
+    """C6: 参照 fact の実在と網羅(D21・D25・D26)。
+
+    1. `referenced_facts` と `value_additions` のキーが層3に実在する
+    2. D25 の「IR が使う既存 fact」と `referenced_facts` が**一致する**
+       (足りなくても余っても停止する)
+
+    D25 により IR だけで判定できるので、生成前に1回だけ行う(D26)。v1.2 は
+    `required_facts` を必要としたため、実在と網羅を2か所に分けていた。
     """
     missing_refs = [v for v in ir.facts.referenced_facts if registry.find_fact(v) is None]
     if missing_refs:
@@ -613,25 +782,21 @@ def _check_c6_referenced_facts_exist(ir: ClauseIR, registry: Registry) -> None:
             "登録簿の層3(fact台帳)に実在しません。"
         )
 
-
-def _check_c6_referenced_facts_complete(
-    ir: ClauseIR, required_facts: list[str]
-) -> None:
-    """C6(網羅): IR が使う既存 fact がすべて referenced_facts にある(D21)。
-
-    基準は「required_facts のうち facts.new_facts に無いもの」。IR だけを見て条文が
-    使う fact がすべて分かるようにするための欄なので、宣言の漏れを失敗とする。
-    """
-    new_names = {f.variable for f in ir.facts.new_facts}
+    used = existing_facts_used_by_ir(ir)
     declared = set(ir.facts.referenced_facts)
-    missing = [
-        v for v in required_facts if v not in new_names and v not in declared
-    ]
+    missing = sorted(used - declared)
     if missing:
         raise SchemaWiringError(
-            f"C6検証失敗(網羅): 既存 fact {sorted(missing)} を使っていますが、"
+            f"C6検証失敗(網羅): 既存 fact {missing} を IR の行・表で使っていますが、"
             "facts.referenced_facts に宣言されていません(D21: IR が使う既存 fact は"
             "漏れなく列挙する)。"
+        )
+    extra = sorted(declared - used)
+    if extra:
+        raise SchemaWiringError(
+            f"C6検証失敗(余り): facts.referenced_facts の {extra} を、IR のどの行・表も"
+            "使っていません(D25: 条文が言及した fact だけを列挙する)。"
+            f"IR が使う既存 fact は {sorted(used)} です。"
         )
 
 
@@ -700,12 +865,16 @@ def _produced_output_values(
 
     1. 登録簿の層2の行(既存の判定)
     2. IR の新規決定表の行・`rule_row_additions` の行
-    3. `intermediate` の `new_output_values`(出力名が分からないため、その表の
-       すべての出力名に足す。設計書の文言どおり「集める」側に寄せた)
+    3. `intermediate` の `new_output_values`(**出力名ごと**。D29)
 
-    集めた値は FEEL の表記を外して素の値に揃える。登録簿の層2は初期登録時に
-    DMN の表記のまま(`"高"`)入っているのに対し、IR の行は素の値(`高`)を持つため、
-    揃えないと同じ値が別物に見える。
+    3は v1.2 では「その表のすべての出力名に足す」と緩く扱っていたが、D29 で
+    `new_output_values` が dict(出力名 -> 値)になったので、宣言された出力名の分だけ
+    足す。緩いままだと、identity_result に足した値を identity_level の参照で使う
+    取り違え(あおいの「未」と同じ形)を C11 が見逃す。
+
+    集めた値は `_cell_values()` で FEEL の表記を外して素の値に揃える(D28)。
+    登録簿の層2は DMN の表記のまま(`"高"`)入っているのに対し、IR の行は素の値
+    (`高`)を持つため、揃えないと同じ値が別物に見える。
 
     戻り値の2つめは、どこから集めたかの説明(エラーメッセージ用)。
     """
@@ -746,8 +915,8 @@ def _produced_output_values(
         for change in ir.level_determination.intermediate:
             if change.table_id != table_id or not change.new_output_values:
                 continue
-            for name in list(values) or [""]:
-                for value in change.new_output_values:
+            for name, added_values in change.new_output_values.items():
+                for value in added_values:
                     add(name, value)
             sources.append("intermediate の new_output_values")
 
@@ -869,6 +1038,87 @@ def _check_c5_cell_values(
                     f"C5検証失敗: {where} の列 {column!r} が参照する値 {unknown} が、"
                     f"その fact の possible_values {sorted(allowed)} にありません"
                     "(この行は実行時に一度もヒットしません)。"
+                )
+
+
+def check_registry_cell_values(registry: Registry) -> None:
+    """登録簿そのものに C5・C11 を当てる(初期登録の検査用。D34)。
+
+    初期登録は IR を通らずに層1〜層3を作るので、`generate_wiring_bundle` の
+    クロス検証を受けない。元の DMN に矛盾があればそのまま台帳に入ってしまい、
+    あとで正解 IR がその値を参照するたびに C11 に当たる。そこで、登録簿の層2の行を
+    IR の行と同じ基準で確かめる。
+
+    - **C5 相当**: fact の列(ドットを含まない)の条件値が、その fact の層3の
+      `possible_values` にある
+    - **C11 相当**: 「判定名.出力名」の列の条件値が、参照先の判定の出力値にある
+
+    値の比べ方は D28 のとおり `_cell_values()` を通す。違反があれば
+    `SchemaWiringError` で停止する。
+    """
+    by_name = {
+        e.get("decision_name"): e for e in registry.decision_tables if e.get("decision_name")
+    }
+    for row in registry.rule_rows:
+        table_id = row.get("decision_table_id", "")
+        where = f"登録簿の決定表 {table_id} の行 {row.get('row_id')}"
+        for column, cell in (row.get("conditions") or {}).items():
+            values = _cell_values(str(cell), where=f"{where} の列 {column}")
+            if not values:
+                continue
+            if not _is_dot_reference(column):
+                fact = registry.find_fact(column)
+                if fact is None:
+                    raise SchemaWiringError(
+                        f"C5検証失敗(登録簿): {where} が参照する列 {column!r} の fact が"
+                        "層3(fact台帳)にありません。"
+                    )
+                allowed = set(fact.get("possible_values", []))
+                unknown = [v for v in values if v not in allowed]
+                if unknown:
+                    raise SchemaWiringError(
+                        f"C5検証失敗(登録簿): {where} の列 {column!r} が参照する値 "
+                        f"{unknown} が、その fact の possible_values {sorted(allowed)} に"
+                        "ありません(この行は実行時に一度もヒットしません)。"
+                    )
+                continue
+            name, output = _dot_prefix(column), _dot_suffix(column)
+            entry = by_name.get(name)
+            if entry is None:
+                raise SchemaWiringError(
+                    f"C11検証失敗(登録簿): {where} のドット参照 {column!r} の判定 "
+                    f"{name!r} が層1にありません。"
+                )
+            columns = entry.get("output_columns") or []
+            if output not in columns:
+                raise SchemaWiringError(
+                    f"C11検証失敗(登録簿): {where} のドット参照 {column!r} の出力 "
+                    f"{output!r} が、判定 {name!r} の output_columns {columns} に"
+                    "ありません。"
+                )
+            produced: set[str] = set()
+            for ref_row in registry.rows_of(entry.get("decision_table_id", "")):
+                outputs = ref_row.get("outputs") or {}
+                if output in outputs:
+                    produced.update(
+                        _cell_values(
+                            str(outputs[output]),
+                            where=f"判定 {name} の出力 {output}",
+                        )
+                    )
+                elif output in ref_row:
+                    produced.update(
+                        _cell_values(
+                            str(ref_row[output]),
+                            where=f"判定 {name} の出力 {output}",
+                        )
+                    )
+            unknown = [v for v in values if v not in produced]
+            if unknown:
+                raise SchemaWiringError(
+                    f"C11検証失敗(登録簿): {where} の列 {column!r} が参照する値 "
+                    f"{unknown} を、判定 {name!r} は出力しません"
+                    f"(出力値: {sorted(produced)})。この行は実行時に一度もヒットしません。"
                 )
 
 
@@ -1153,6 +1403,13 @@ def _insert_rule(table: ET.Element, row: RuleRowDraft) -> None:
     FIRST ヒットポリシーでは行の順序が意味を持つため、位置を守って挿入する。
     `position` が既存の行数を超える場合は末尾に足す。
     """
+    policy = (table.get("hitPolicy") or "UNIQUE").upper()
+    if policy != "FIRST":
+        raise SchemaWiringError(
+            f"D35違反: 決定表 {table.get('id')!r} の hit_policy は {policy!r} です。"
+            "既存の表への行の挿入は FIRST の表だけに行います(position による挿入は"
+            "FIRST でしか意味を持たないため)。"
+        )
     existing = table.findall(_tag("rule"))
     if any(r.get("id") == row.row_id for r in existing):
         raise SchemaWiringError(
@@ -1295,11 +1552,18 @@ def _build_bindings(
     対象は、作り直すすべてのルートの required_facts の和集合(D16)。`value_additions`
     があれば possible_values に加える。設計書4.3が `dmn_model` を出力項目に挙げている
     ため、{dmn_model, facts} のエンベロープにしている(v1 は裸の配列)。
+
+    `sources` が空の fact には `sources_undefined: true` を付ける(D33)。初期登録で
+    取得元が分からなかった fact(あおいの7件)がこれに当たる。空のまま出して隠さない
+    ことで、一致プリミティブの実装(U4)のときに埋める対象が見える。新しい条文の
+    fact は C4 が空の sources を通さないので、ここに来るのは層3から引いた分だけ。
     """
     facts_json = []
     for variable in required_facts:
         fact = fact_defs[variable]
         payload = fact.to_json()
+        if not payload["sources"]:
+            payload["sources_undefined"] = True
         additions = ir.facts.value_additions.get(variable)
         if additions:
             merged = list(payload["possible_values"])
@@ -1479,7 +1743,7 @@ def generate_wiring_bundle(
     _check_c3_compound_fact(ir)
     _check_c9_level_determination(ir, registry)
     _check_c4_sources_match_primitive(ir, registry)
-    _check_c6_referenced_facts_exist(ir, registry)
+    _check_c6_referenced_facts(ir, registry)
     _check_c10_dot_references(ir, registry)
     _check_c11_dot_reference_values(ir, registry)
     _check_c2_new_facts_used(ir)
@@ -1495,11 +1759,9 @@ def generate_wiring_bundle(
             if variable not in required_facts:
                 required_facts.append(variable)
     fact_defs = _collect_fact_defs(ir, registry, required_facts)
-    # C6の網羅は IR 自身のルート(routes[0])を基準にする。D16 で作り直す既存の最終
-    # 判定の required_facts まで含めると、この条文が使っていない fact の宣言を
-    # 要求してしまうため(D21「IR が使う既存 fact」)。**要報告事項**。
-    _check_c6_referenced_facts_complete(ir, routes[0]["required_facts"])
-    # C1 はバインディング設定に出す fact 全部(和集合)を見る
+    # C1 は作り直すすべてのルートの required_facts の和集合を見る(D26)。C6 が
+    # IR だけで判定できるようになった(D25)ので、IR が言及しない中間判定の fact の
+    # 不足を捕まえるのは C1 だけになった
     _check_c1_facts_available(required_facts, ir, registry)
 
     # --- 4点セットの生成 ---

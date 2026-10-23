@@ -31,6 +31,7 @@ from src.stage3_generate.wiring_generator import (
     SchemaWiringError,
     _check_c1_facts_available,
     _check_c2_new_facts_used,
+    derive_required_facts,
     generate_wiring_bundle,
 )
 
@@ -58,13 +59,28 @@ def test_fixtures_pass_all_checks(simple_ir, empty_registry, intermediate_ir, se
 # --------------------------------------------------------------------------
 
 
+def test_c1_missing_intermediate_fact(intermediate_ir, seeded_registry):
+    """通しで流して C1 が止まる: 参照先の中間判定が使う fact が層3に無い。
+
+    D25 で C6 の基準が「IR が書いた行と表」になったため、IR が言及しない中間判定の
+    fact の不足を捕まえるのは C1 だけになった(D26)。この IR の入力列はドット参照
+    1列だけなので C6 は通り、ドット参照をたどった先で不足が見つかる。
+    """
+    seeded_registry.decision_tables[0]["input_columns"] = [
+        "birth_match",
+        "phone_match",
+        "unregistered_fact",
+    ]
+    with pytest.raises(SchemaWiringError, match="C1検証失敗.*unregistered_fact"):
+        generate_wiring_bundle(intermediate_ir, registry=seeded_registry)
+
+
 def test_c1_missing_fact_definition(simple_ir, empty_registry):
     """required_facts の fact 定義が new_facts にも層3にも無ければ落ちる。
 
-    v1.2 で C6 が「IR が使う既存 fact を漏れなく列挙する」(D21)まで見るように
-    なったため、この違反は通しで流すと必ず C6 が先に捕まえる(宣言が無ければ
-    C6の網羅、宣言があれば C6の実在)。C1 は多重の歯止めとして残っているので、
-    検証関数を直接呼んで確かめる。**要報告事項**。
+    この形(IR が自分で使う fact の宣言漏れ)は、通しで流すと C6 が先に捕まえる
+    (宣言が無ければ C6の網羅、宣言があれば C6の実在)。C1 は多重の歯止めとして
+    残っているので、検証関数を直接呼んで確かめる。
     """
     simple_ir.facts.new_facts = [
         f for f in simple_ir.facts.new_facts if f.variable != "environment"
@@ -120,7 +136,7 @@ def test_c2_allows_fact_used_only_by_row_addition(simple_ir):
             table_id="dt_identity",
             relation="proper_subset",
             action="add_row",
-            new_output_values=["中"],
+            new_output_values={"identity_level": ["中"]},
         )
     ]
     # 例外が出ないこと自体が検証(extra_flag は required_facts には入らないが、
@@ -134,10 +150,10 @@ def test_c2_allows_fact_used_only_by_row_addition(simple_ir):
 
 
 def test_c3_rejected_compound_in_primitive(simple_ir, empty_registry):
-    """一致プリミティブ側で AND を組む案は拒否される(複合fact禁止原則)。"""
+    """一致プリミティブ側で AND を組む案は拒否される(複合fact禁止原則。D31)。"""
     simple_ir.compound_fact_application = dataclasses.replace(
         simple_ir.compound_fact_application,
-        option_taken="rejected_compound_in_primitive",
+        rejected_in_primitive=True,
     )
     with pytest.raises(SchemaWiringError, match="C3検証失敗"):
         generate_wiring_bundle(simple_ir, registry=empty_registry)
@@ -231,6 +247,18 @@ def test_c6_referenced_fact_not_in_registry(intermediate_ir, seeded_registry):
     """層3に無い fact を referenced_facts に書くと落ちる。"""
     intermediate_ir.facts.referenced_facts = ["birth_match", "no_such_fact"]
     with pytest.raises(SchemaWiringError, match="C6検証失敗"):
+        generate_wiring_bundle(intermediate_ir, registry=seeded_registry)
+
+
+def test_c6_extra_referenced_fact(intermediate_ir, seeded_registry):
+    """D25: IR のどの行・表も使っていない fact を referenced_facts に書くと落ちる。
+
+    第18回のレベル2のテストは、最終判定の全 fact(7件)を列挙していた。条文が
+    言及した fact だけを列挙させるため、余りも失敗とする。
+    """
+    # birth_match は層3に実在するが、この IR の入力列はドット参照1列だけ
+    intermediate_ir.facts.referenced_facts = ["birth_match"]
+    with pytest.raises(SchemaWiringError, match="C6検証失敗\\(余り\\).*birth_match"):
         generate_wiring_bundle(intermediate_ir, registry=seeded_registry)
 
 
@@ -342,7 +370,7 @@ def test_c9_cond3_add_row_without_matching_output_value(simple_ir, seeded_regist
             table_id="dt_identity",
             relation="proper_subset",
             action="add_row",
-            new_output_values=["中(氏名なし・2要素一致)"],
+            new_output_values={"identity_level": ["中(氏名なし・2要素一致)"]},
         )
     ]
     with pytest.raises(SchemaWiringError, match="C9検証失敗\\(条件3\\)"):
@@ -494,7 +522,8 @@ def test_c7_entry_decision_missing_from_existing_dmn(
             "decision_id": "decision_ghost",
             "decision_name": "幽霊判定",
             "dmn_model": "aoi_transmission",
-            "entry_points": [],
+            # C9条件8(D30): add_rows では IR の actor・action が entry_points にある
+            "entry_points": [{"actor": "あおい", "action": "テスト操作"}],
             "hit_policy": "FIRST",
             "input_columns": ["birth_match"],
             "output_columns": ["decision"],
@@ -617,6 +646,7 @@ def test_c11_accepts_value_added_by_this_ir(intermediate_ir, seeded_registry, tm
     intermediate_ir.new_decision_tables[0].rule_rows[0].conditions = {
         "本人確認判定.identity_level": '"中"'
     }
+    intermediate_ir.facts.referenced_facts = ["birth_match", "phone_match"]
     intermediate_ir.rule_row_additions = [
         RuleRowDraft(
             row_id="id_identity_2",
@@ -631,7 +661,7 @@ def test_c11_accepts_value_added_by_this_ir(intermediate_ir, seeded_registry, tm
             table_id="dt_identity",
             relation="exact_match",
             action="add_row",
-            new_output_values=["中"],
+            new_output_values={"identity_level": ["中"]},
         )
     ]
     # C11 はここを通る。dmn_dir を空のディレクトリにして後続で止まることを確認し、
@@ -653,3 +683,244 @@ def test_d17_rejects_dot_reference_to_another_dmn_model(
     )
     with pytest.raises(SchemaWiringError, match="D17違反"):
         generate_wiring_bundle(intermediate_ir, registry=seeded_registry)
+
+
+# --------------------------------------------------------------------------
+# v1.3 で変えた・足した検証の失敗テスト(第19回 HANDOFF タスク3)
+# --------------------------------------------------------------------------
+
+
+def test_c9_cond3_output_name_not_in_output_columns(simple_ir, seeded_registry):
+    """条件3(D29): new_output_values の出力名が、その表の output_columns に無い。
+
+    v1.2 は値の一覧しか持たなかったため、どの出力列に足す値なのかを確かめられず、
+    出力名の取り違えを通していた。
+    """
+    simple_ir.facts.referenced_facts = ["birth_match"]
+    simple_ir.rule_row_additions = [
+        RuleRowDraft(
+            row_id="id_identity_2",
+            decision_table_id="dt_identity",
+            position=2,
+            conditions={"birth_match": "一致"},
+            outputs={"identity_level": "中"},
+        )
+    ]
+    simple_ir.level_determination.intermediate = [
+        IntermediateChange(
+            table_id="dt_identity",
+            relation="proper_subset",
+            action="add_row",
+            # 本人確認判定の output_columns は identity_level だけ
+            new_output_values={"identity_result": ["済"]},
+        )
+    ]
+    with pytest.raises(
+        SchemaWiringError, match="C9検証失敗\\(条件3\\).*identity_result"
+    ):
+        generate_wiring_bundle(simple_ir, registry=seeded_registry)
+
+
+def test_c9_cond7_no_change_without_intermediate_change(simple_ir, seeded_registry):
+    """条件7(D30): no_change なのに intermediate に add_row も add_column も無い。
+
+    どの表も変えない IR は、4点セットに出すものがない。
+    """
+    _make_no_change_ir(simple_ir, seeded_registry)
+    simple_ir.level_determination.intermediate = []
+    with pytest.raises(SchemaWiringError, match="C9検証失敗\\(条件7\\)"):
+        generate_wiring_bundle(simple_ir, registry=seeded_registry)
+
+
+def test_c9_cond7_no_change_pointing_at_an_intermediate_decision(
+    simple_ir, seeded_registry
+):
+    """条件7(D30): no_change の起点が最終判定でない(entry_points が空)。"""
+    _make_no_change_ir(simple_ir, seeded_registry)
+    # 本人確認判定は中間判定なので entry_points が空
+    simple_ir.target = DecisionTarget(
+        dmn_model="aoi_transmission", entry_decision_id="decision_identity"
+    )
+    with pytest.raises(SchemaWiringError, match="C9検証失敗\\(条件7\\).*entry_points"):
+        generate_wiring_bundle(simple_ir, registry=seeded_registry)
+
+
+def test_c9_cond8_action_not_in_entry_points(simple_ir, seeded_registry):
+    """条件8(D30): 既存のルートに足す条文が、別の行為を名乗っている。"""
+    _make_no_change_ir(simple_ir, seeded_registry)
+    simple_ir.action.normalized = "別の行為"
+    with pytest.raises(SchemaWiringError, match="C9検証失敗\\(条件8\\)"):
+        generate_wiring_bundle(simple_ir, registry=seeded_registry)
+
+
+def _make_no_change_ir(simple_ir, seeded_registry) -> None:
+    """`simple_ir` を「中間判定に行を足すだけ」の no_change の形に作り替える。
+
+    `seeded_registry` に最終判定が無いので、呼び出し口(entry_points)を持つ
+    最終判定を1枚足す。
+    """
+    seeded_registry.decision_tables.append(
+        {
+            "decision_table_id": "dt_final",
+            "decision_id": "decision_final",
+            "decision_name": "既存の最終判定",
+            "dmn_model": "aoi_transmission",
+            "entry_points": [{"actor": "あおい", "action": "テスト操作"}],
+            "hit_policy": "FIRST",
+            "input_columns": ["本人確認判定.identity_level"],
+            "output_columns": ["decision"],
+            "depends_on_decisions": ["decision_identity"],
+            "depends_on_inputs": [],
+            "knowledge_sources": [],
+            "provenance": make_provenance("既存規程 第0条").to_json(),
+        }
+    )
+    simple_ir.target = DecisionTarget(
+        dmn_model="aoi_transmission", entry_decision_id="decision_final"
+    )
+    simple_ir.facts.new_facts = []
+    simple_ir.facts.referenced_facts = ["birth_match"]
+    simple_ir.new_decision_tables = []
+    simple_ir.rule_row_additions = [
+        RuleRowDraft(
+            row_id="id_identity_2",
+            decision_table_id="dt_identity",
+            position=2,
+            conditions={"birth_match": "一致"},
+            outputs={"identity_level": "中"},
+        )
+    ]
+    simple_ir.level_determination = LevelDetermination(
+        atomic_fact=AtomicFactLayer(covered=True),
+        intermediate=[
+            IntermediateChange(
+                table_id="dt_identity",
+                relation="proper_subset",
+                action="add_row",
+            )
+        ],
+        final=FinalLayer(compared_table_id=None, relation=None, action="no_change"),
+    )
+
+
+def test_c11_value_added_to_another_output_is_rejected(
+    intermediate_ir, seeded_registry, tmp_path
+):
+    """C11(D29): identity_result に足した値を identity_level の参照で使うと落ちる。
+
+    あおいの DMN の「未」の取り違えそのものの形である(「未」は identity_result の
+    値で、identity_level には来ない)。v1.2 は new_output_values が値の一覧だけ
+    だったため「その表のすべての出力名に足す」と扱い、この行を通していた。
+    """
+    seeded_registry.decision_tables[0]["output_columns"] = [
+        "identity_result",
+        "identity_level",
+    ]
+    intermediate_ir.new_decision_tables[0].rule_rows[0].conditions = {
+        "本人確認判定.identity_level": '"未"'
+    }
+    intermediate_ir.facts.referenced_facts = ["birth_match", "phone_match"]
+    intermediate_ir.rule_row_additions = [
+        RuleRowDraft(
+            row_id="id_identity_2",
+            decision_table_id="dt_identity",
+            position=2,
+            conditions={"birth_match": "一致", "phone_match": "不一致"},
+            outputs={"identity_result": "未", "identity_level": "中"},
+        )
+    ]
+    intermediate_ir.level_determination.intermediate = [
+        IntermediateChange(
+            table_id="dt_identity",
+            relation="exact_match",
+            action="add_row",
+            new_output_values={"identity_result": ["未"]},
+        )
+    ]
+    with pytest.raises(SchemaWiringError, match="C11検証失敗"):
+        generate_wiring_bundle(
+            intermediate_ir, registry=seeded_registry, dmn_dir=tmp_path
+        )
+
+
+def test_d35_rejects_row_insertion_into_a_non_first_table(
+    simple_ir, seeded_registry, tmp_path
+):
+    """D35: 挿入先の表の hit_policy が FIRST でなければ落ちる。
+
+    position による挿入は FIRST でしか意味を持たない。
+    """
+    seeded_registry.decision_tables[0]["hit_policy"] = "UNIQUE"
+    dmn_dir = tmp_path / "dmn"
+    dmn_dir.mkdir()
+    (dmn_dir / "aoi_transmission.dmn").write_text(
+        '<?xml version="1.0" encoding="UTF-8" ?>\n'
+        '<definitions xmlns="https://www.omg.org/spec/DMN/20240513/MODEL/"'
+        ' id="aoi_transmission_definitions" name="aoi_transmission"'
+        ' namespace="http://gijinka.example.com/dmn/aoi_transmission">\n'
+        '  <decision id="decision_identity" name="本人確認判定">\n'
+        '    <decisionTable id="dt_identity" hitPolicy="UNIQUE">\n'
+        '      <input id="in_birth_match"><inputExpression id="ie1" typeRef="string">'
+        "<text>birth_match</text></inputExpression></input>\n"
+        '      <output id="out_identity_level" label="identity_level"'
+        ' name="identity_level" typeRef="string" />\n'
+        "    </decisionTable>\n"
+        "  </decision>\n"
+        '  <decision id="decision_final" name="既存の最終判定">\n'
+        '    <decisionTable id="dt_final" hitPolicy="FIRST">\n'
+        '      <input id="in_level"><inputExpression id="ie2" typeRef="string">'
+        "<text>本人確認判定.identity_level</text></inputExpression></input>\n"
+        '      <output id="out_decision" label="decision" name="decision"'
+        ' typeRef="string" />\n'
+        "    </decisionTable>\n"
+        "  </decision>\n"
+        "</definitions>\n",
+        encoding="utf-8",
+    )
+    _make_no_change_ir(simple_ir, seeded_registry)
+    with pytest.raises(SchemaWiringError, match="D35違反"):
+        generate_wiring_bundle(simple_ir, registry=seeded_registry, dmn_dir=dmn_dir)
+
+
+def test_required_facts_include_a_column_added_to_a_dot_referenced_table(
+    intermediate_ir, seeded_registry
+):
+    """D27: ドット参照で置き換える先の表に add_column で足した列も加わる。
+
+    `required_facts` に入らないと、実行時に誰もその事実を集めない。手順1だけでなく
+    手順2(ドット参照の置き換え)でも加えることを確かめる。
+    """
+    from tests.conftest import passthrough_fact
+
+    intermediate_ir.facts.new_facts = [
+        passthrough_fact("address_match", ["一致"], "claimed.address")
+    ]
+    intermediate_ir.facts.referenced_facts = ["birth_match", "phone_match"]
+    intermediate_ir.rule_row_additions = [
+        RuleRowDraft(
+            row_id="id_identity_2",
+            decision_table_id="dt_identity",
+            position=2,
+            conditions={
+                "birth_match": "一致",
+                "phone_match": "一致",
+                "address_match": "一致",
+            },
+            outputs={"identity_level": "高"},
+        )
+    ]
+    intermediate_ir.level_determination.intermediate = [
+        IntermediateChange(
+            table_id="dt_identity",
+            relation="intersecting_non_subset",
+            action="add_column",
+            new_input_columns=["address_match"],
+        )
+    ]
+    # 起点は口頭伝達可否判定(入力列はドット参照1列)。その先の本人確認判定に
+    # 足した列まで含まれる
+    assert derive_required_facts(intermediate_ir, seeded_registry) == [
+        "birth_match",
+        "phone_match",
+        "address_match",
+    ]

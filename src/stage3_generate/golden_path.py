@@ -203,9 +203,10 @@ def build_golden_path_ir(
     )
 
     compound_fact = CompoundFactApplication(
-        # D18: 新しく作る表の行として表すので new_table_row。v1.1 までは選択肢が
-        # 無く existing_table_row_addition を充てていた(誤ラベル)。
-        option_taken="new_table_row",
+        # D31: どの案を採ったかは手で書かず、IR から導出する
+        # (この条文では dt_privileged_operation が new_table_row になる)。
+        # 手で書くのは「一致モジュール側で AND を組もうとして拒否された」印だけ。
+        rejected_in_primitive=False,
         rationale=(
             "「開発担当者 かつ 本番環境 かつ 特権権限」という複合条件は、"
             "一致プリミティブ側でANDを組まず、新しく作る決定表の1行(id_r_priv_1)の"

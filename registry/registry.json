@@ -31,7 +31,17 @@
         "clause_ref": "あおいの既存DMN(条文由来ではない)",
         "registered_by": "bootstrap",
         "registered_at": "2026-10-23T00:00:00+00:00"
-      }
+      },
+      "history": [
+        {
+          "change": "dmn_fix",
+          "fix_id": "drop_unreferenced_input_data",
+          "description": "inputData \"added by me\"(と対応する DMNDI の図形)を削除する",
+          "reason": "どの決定表も参照していない inputData。実行時に集める事実が1つ増えたように見えるだけで、判定には使われない",
+          "approved_by": "Kazuhiro",
+          "scope": "dmn_model"
+        }
+      ]
     },
     {
       "decision_table_id": "dt_classification",
@@ -64,7 +74,17 @@
         "clause_ref": "あおいの既存DMN(条文由来ではない)",
         "registered_by": "bootstrap",
         "registered_at": "2026-10-23T00:00:00+00:00"
-      }
+      },
+      "history": [
+        {
+          "change": "dmn_fix",
+          "fix_id": "drop_unreferenced_input_data",
+          "description": "inputData \"added by me\"(と対応する DMNDI の図形)を削除する",
+          "reason": "どの決定表も参照していない inputData。実行時に集める事実が1つ増えたように見えるだけで、判定には使われない",
+          "approved_by": "Kazuhiro",
+          "scope": "dmn_model"
+        }
+      ]
     },
     {
       "decision_table_id": "dt_transmission",
@@ -103,7 +123,30 @@
         "registered_by": "bootstrap",
         "registered_at": "2026-10-23T00:00:00+00:00",
         "note": "entry_points の出典: reference/gijinka-extraction-pipeline/docs/diagrams/sequence_diagram_explained.md:278 (existing_routes)"
-      }
+      },
+      "history": [
+        {
+          "change": "dmn_fix",
+          "fix_id": "drop_identity_result_value_from_identity_level_reference",
+          "description": "送信可否判定の tr_r3・tr_r5 の「確認レベル」のセルから \"未\" を削除する",
+          "reason": "「未」は本人確認判定の identity_result(済／未)の値で、identity_level(高／中／不一致検出／情報不足)には決して来ない。残すと、この値を参照する行が実行時に当たらないまま C11 に当たり続ける",
+          "approved_by": "Kazuhiro",
+          "scope": "rule",
+          "decision_table_id": "dt_transmission",
+          "row_ids": [
+            "tr_r3",
+            "tr_r5"
+          ]
+        },
+        {
+          "change": "dmn_fix",
+          "fix_id": "drop_unreferenced_input_data",
+          "description": "inputData \"added by me\"(と対応する DMNDI の図形)を削除する",
+          "reason": "どの決定表も参照していない inputData。実行時に集める事実が1つ増えたように見えるだけで、判定には使われない",
+          "approved_by": "Kazuhiro",
+          "scope": "dmn_model"
+        }
+      ]
     }
   ],
   "rule_rows": [
@@ -386,7 +429,7 @@
       "position": 3,
       "conditions": {
         "情報分類判定.sensitivity": "\"最高\"",
-        "本人確認判定.identity_level": "\"中\",\"未\",\"不一致検出\",\"情報不足\"",
+        "本人確認判定.identity_level": "\"中\",\"不一致検出\",\"情報不足\"",
         "contact_consent": "\"同意\""
       },
       "outputs": {
@@ -399,7 +442,21 @@
         "registered_by": "bootstrap",
         "registered_at": "2026-10-23T00:00:00+00:00"
       },
-      "history": []
+      "history": [
+        {
+          "change": "dmn_fix",
+          "fix_id": "drop_identity_result_value_from_identity_level_reference",
+          "description": "送信可否判定の tr_r3・tr_r5 の「確認レベル」のセルから \"未\" を削除する",
+          "reason": "「未」は本人確認判定の identity_result(済／未)の値で、identity_level(高／中／不一致検出／情報不足)には決して来ない。残すと、この値を参照する行が実行時に当たらないまま C11 に当たり続ける",
+          "approved_by": "Kazuhiro",
+          "scope": "rule",
+          "decision_table_id": "dt_transmission",
+          "row_ids": [
+            "tr_r3",
+            "tr_r5"
+          ]
+        }
+      ]
     },
     {
       "row_id": "tr_r4",
@@ -428,7 +485,7 @@
       "position": 5,
       "conditions": {
         "情報分類判定.sensitivity": "\"高\"",
-        "本人確認判定.identity_level": "\"未\",\"不一致検出\",\"情報不足\"",
+        "本人確認判定.identity_level": "\"不一致検出\",\"情報不足\"",
         "contact_consent": "\"同意\""
       },
       "outputs": {
@@ -441,7 +498,21 @@
         "registered_by": "bootstrap",
         "registered_at": "2026-10-23T00:00:00+00:00"
       },
-      "history": []
+      "history": [
+        {
+          "change": "dmn_fix",
+          "fix_id": "drop_identity_result_value_from_identity_level_reference",
+          "description": "送信可否判定の tr_r3・tr_r5 の「確認レベル」のセルから \"未\" を削除する",
+          "reason": "「未」は本人確認判定の identity_result(済／未)の値で、identity_level(高／中／不一致検出／情報不足)には決して来ない。残すと、この値を参照する行が実行時に当たらないまま C11 に当たり続ける",
+          "approved_by": "Kazuhiro",
+          "scope": "rule",
+          "decision_table_id": "dt_transmission",
+          "row_ids": [
+            "tr_r3",
+            "tr_r5"
+          ]
+        }
+      ]
     },
     {
       "row_id": "tr_r6",

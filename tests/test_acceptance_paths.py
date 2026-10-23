@@ -4,11 +4,16 @@
 (`registry/registry.json` と `registry/dmn/aoi_transmission.dmn`)を入力にして、
 次の3つを確かめる。
 
-| テスト | 確かめること |
-| --- | --- |
-| 中間判定への行追加 | 既存モデルへの行の挿入(D15)、D16 の作り直し、C11 |
-| レベル2 | 送信可否判定への行の挿入(`final.action=add_rows`)と C7(D15) |
-| 列の追加 | 既存の全行が「-」で埋まること、required_facts に新しい列が入ること(D19) |
+| テスト | 条文 | 確かめること |
+| --- | --- | --- |
+| 中間判定への行追加 | 第901条 | 既存モデルへの行の挿入(D15)、D16 の作り直し、C11 |
+| レベル2 | 第902条 | 送信可否判定への行の挿入(`final.action=add_rows`)と C7(D15) |
+| 列の追加 | 第903条 | 既存の全行が「-」で埋まること、required_facts に新しい列が入ること(D19) |
+| 最終判定は変えない | 第904条 | `final.action=no_change`(D30)、ルートが1本にまとまること |
+
+`referenced_facts` は D25 の基準(IR が書いた行と表で使う既存 fact)で書く。とくに
+第902条は、条文が使う fact が contact_consent だけなので1件だけになる(v1.2 では
+最終判定の全 fact 7件を列挙していた)。
 
 各テストに、挿入後の DMN を評価するシナリオを2つ置く。1つは追加した行・列に当たる
 ケース、もう1つは**既定の行(ワイルドカード)に落ちる**ケースである(設計書6.2・U2)。
@@ -53,7 +58,10 @@ from src.stage3_generate.ir_schema import (  # noqa: E402
     build_review_gates,
 )
 from src.stage3_generate.registry import Registry  # noqa: E402
-from src.stage3_generate.wiring_generator import generate_wiring_bundle  # noqa: E402
+from src.stage3_generate.wiring_generator import (  # noqa: E402
+    existing_facts_used_by_ir,
+    generate_wiring_bundle,
+)
 
 from tests.conftest import make_axis  # noqa: E402
 
@@ -95,7 +103,6 @@ def _assemble_test_ir(
     level: LevelDetermination,
     new_tables: list[NewDecisionTableDraft],
     row_additions: list[RuleRowDraft],
-    compound_option: str,
 ) -> ClauseIR:
     axis1, axis2 = make_axis("ハード制約"), make_axis("宣言的")
     action = ActionRef(
@@ -118,8 +125,9 @@ def _assemble_test_ir(
         level_determination=level,
         rule_row_additions=row_additions,
         new_decision_tables=new_tables,
+        # D31: option_taken は導出するので、手で書くのは拒否の印だけ
         compound_fact_application=CompoundFactApplication(
-            option_taken=compound_option, rationale="(テスト用)"
+            rejected_in_primitive=False, rationale="(テスト用)"
         ),
         provenance=Provenance(
             origin="regulation_clause",
@@ -228,7 +236,9 @@ def intermediate_row_ir() -> ClauseIR:
                     table_id=DT_IDENTITY,
                     relation="exact_match",
                     action="add_row",
-                    new_output_values=["中"],
+                    # D29: 出力名ごとに足す値を書く。identity_result の「済」は
+                    # 既にある値なので、足すのは identity_level の「中」だけ
+                    new_output_values={"identity_level": ["中"]},
                 )
             ],
             final=FinalLayer(
@@ -237,8 +247,29 @@ def intermediate_row_ir() -> ClauseIR:
         ),
         new_tables=[new_table],
         row_additions=[added_row],
-        compound_option="existing_table_row_addition",
     )
+
+
+def test_intermediate_row_option_taken_is_derived_per_table(intermediate_row_ir):
+    """D31: 1つの IR が既存の表への行追加と新しい表を両方作ることを導出で表す。"""
+    assert intermediate_row_ir.option_taken == {
+        VERBAL_TABLE_ID: "new_table_row",
+        DT_IDENTITY: "existing_table_row_addition",
+    }
+
+
+def test_intermediate_row_referenced_facts_match_d25(intermediate_row_ir):
+    """D25: IR が書いた行で使う既存 fact(3件)が referenced_facts と一致する。"""
+    assert existing_facts_used_by_ir(intermediate_row_ir) == {
+        "name_match",
+        "birth_match",
+        "phone_match",
+    }
+    assert set(intermediate_row_ir.facts.referenced_facts) == {
+        "name_match",
+        "birth_match",
+        "phone_match",
+    }
 
 
 def test_intermediate_row_is_inserted_at_the_declared_position(
@@ -383,16 +414,11 @@ def level2_ir() -> ClauseIR:
         target=DecisionTarget(
             dmn_model=DMN_MODEL, entry_decision_id=DECISION_TRANSMISSION
         ),
+        # D25: この条文が使う既存 fact は contact_consent だけ(足した行の条件の
+        # うち「-」でない列は contact_consent の1列)。v1.2 は最終判定の全 fact
+        # 7件の列挙を強いていた
         facts=FactUsage(
-            referenced_facts=[
-                "name_match",
-                "birth_match",
-                "phone_match",
-                "has_medical",
-                "has_pii",
-                "identifiable",
-                "contact_consent",
-            ],
+            referenced_facts=["contact_consent"],
             value_additions={
                 "contact_consent": [ValueAddition(value="保留", approved_by=APPROVER)]
             },
@@ -408,8 +434,26 @@ def level2_ir() -> ClauseIR:
         ),
         new_tables=[],
         row_additions=[added_row],
-        compound_option="existing_table_row_addition",
     )
+
+
+def test_level2_referenced_facts_are_only_the_clause_fact(level2_ir, aoi_registry):
+    """D25 の主な確認点: レベル2でも、条文が使う fact だけを列挙すれば通る。
+
+    最終判定(送信可否判定)の required_facts は7件だが、この条文が言及したのは
+    連絡同意だけである。7件の列挙なしでクロス検証が通ることを確かめる。
+    """
+    assert existing_facts_used_by_ir(level2_ir) == {"contact_consent"}
+    assert level2_ir.facts.referenced_facts == ["contact_consent"]
+    bundle = generate_wiring_bundle(level2_ir, registry=aoi_registry, dmn_dir=DMN_DIR)
+    # ルーティング表とバインディング設定には、集めるべき7件すべてが出る
+    assert len(bundle.routing_table["routes"][0]["required_facts"]) == 7
+    assert len(bundle.bindings["facts"]) == 7
+
+
+def test_level2_option_taken_is_existing_table_row_addition(level2_ir):
+    """D31: 既存の表に行を足すだけなので existing_table_row_addition。"""
+    assert level2_ir.option_taken == {DT_TRANSMISSION: "existing_table_row_addition"}
 
 
 def test_level2_row_is_inserted_and_c7_passes(level2_ir, aoi_registry):
@@ -560,7 +604,9 @@ def add_column_ir() -> ClauseIR:
                     table_id=DT_IDENTITY,
                     relation="intersecting_non_subset",
                     action="add_column",
-                    new_output_values=["中"],
+                    # D29: 足す行の確認レベル「中」は本人確認判定に既にある値
+                    # (r2・r3)なので、足す出力値は無い
+                    new_output_values={},
                     new_input_columns=["address_match"],
                 )
             ],
@@ -570,8 +616,25 @@ def add_column_ir() -> ClauseIR:
         ),
         new_tables=[new_table],
         row_additions=[added_row],
-        compound_option="existing_table_row_addition",
     )
+
+
+def test_add_column_referenced_facts_exclude_the_new_fact(add_column_ir):
+    """D25: 足した列(address_match)は new_facts なので referenced_facts に入らない。"""
+    assert existing_facts_used_by_ir(add_column_ir) == {
+        "name_match",
+        "birth_match",
+        "phone_match",
+    }
+    assert set(add_column_ir.facts.referenced_facts) == {
+        "name_match",
+        "birth_match",
+        "phone_match",
+    }
+    assert add_column_ir.option_taken == {
+        ADDR_TABLE_ID: "new_table_row",
+        DT_IDENTITY: "existing_table_row_addition",
+    }
 
 
 def test_add_column_fills_existing_rows_with_wildcard(add_column_ir, aoi_registry):
@@ -672,3 +735,181 @@ def test_add_column_dmn_scenarios(
     result = _evaluate(bundle, tmp_path, ADDR_DECISION_ID, facts)
     assert result["decision"] == expected_decision, name
     assert result["reason_code"] == expected_reason, name
+
+
+# --------------------------------------------------------------------------
+# 4. 最終判定は変えない(no_change)
+# --------------------------------------------------------------------------
+
+
+@pytest.fixture
+def no_change_ir() -> ClauseIR:
+    """中間判定にだけ行を足し、最終判定は変えない IR(`final.action=no_change`。D30)。
+
+    条文の例: 「氏名と生年月日が一致すれば、電話番号が一致しなくても確認レベルを
+    中とする」。本人確認判定に行を1本足すだけで、新しい最終判定は作らない。
+
+    `target.entry_decision_id` には影響を受ける既存の最終判定(送信可否判定)を入れ、
+    actor・action はその `entry_points`(あおい × 外部送信)と揃える(C9条件7・8)。
+    電話番号の列は「-」なので、D25 の基準では phone_match は「IR が使う既存 fact」
+    に入らない。
+    """
+    added_row = RuleRowDraft(
+        row_id="test_identity_r_birth_only",
+        decision_table_id=DT_IDENTITY,
+        position=3,
+        conditions={"name_match": "一致", "birth_match": "一致", "phone_match": "-"},
+        outputs={"identity_result": "済", "identity_level": "中"},
+    )
+    return _assemble_test_ir(
+        clause_ref="(テスト用) 架空規程 第904条",
+        action_normalized=EXISTING_ROUTE["action"],
+        action_is_new=False,
+        target=DecisionTarget(
+            dmn_model=DMN_MODEL, entry_decision_id=DECISION_TRANSMISSION
+        ),
+        facts=FactUsage(referenced_facts=["name_match", "birth_match"]),
+        level=LevelDetermination(
+            atomic_fact=AtomicFactLayer(covered=True),
+            intermediate=[
+                IntermediateChange(
+                    table_id=DT_IDENTITY,
+                    relation="proper_subset",
+                    action="add_row",
+                    # 確認レベル「中」は既にある値なので、足す出力値は無い
+                    new_output_values={},
+                )
+            ],
+            final=FinalLayer(compared_table_id=None, relation=None, action="no_change"),
+        ),
+        new_tables=[],
+        row_additions=[added_row],
+    )
+
+
+def test_no_change_outcome_and_option_taken(no_change_ir):
+    """D30・D31: outcome は level2_intermediate_only、導出は行追加だけ。"""
+    assert no_change_ir.level_determination.outcome == "level2_intermediate_only"
+    assert no_change_ir.option_taken == {DT_IDENTITY: "existing_table_row_addition"}
+    # D25: 「-」の列(phone_match)は IR が使う既存 fact に入らない
+    assert existing_facts_used_by_ir(no_change_ir) == {"name_match", "birth_match"}
+
+
+def test_no_change_routing_table_has_one_row(no_change_ir, aoi_registry):
+    """D30: IR 自身のルートと、D16 で洗い出した既存のルートが1行にまとまる。
+
+    どちらも「あおい × 外部送信 → 送信可否判定」なので、同じ actor・action・
+    decision_id の行は1つにする(設計書4.1)。
+    """
+    bundle = generate_wiring_bundle(no_change_ir, registry=aoi_registry, dmn_dir=DMN_DIR)
+    routes = bundle.routing_table["routes"]
+    assert len(routes) == 1
+    assert routes[0]["actor"] == EXISTING_ROUTE["actor"]
+    assert routes[0]["action"] == EXISTING_ROUTE["action"]
+    assert routes[0]["decision_id"] == DECISION_TRANSMISSION
+    # 送信可否判定を評価するのに集める事実は7件すべて
+    assert set(routes[0]["required_facts"]) == {
+        "name_match",
+        "birth_match",
+        "phone_match",
+        "has_medical",
+        "has_pii",
+        "identifiable",
+        "contact_consent",
+    }
+    # 新しい決定表は作らないので、層1は増えない
+    assert len(bundle.registry["decision_tables"]) == len(aoi_registry.decision_tables)
+
+
+def test_no_change_inserts_the_row_into_the_intermediate_table(
+    no_change_ir, aoi_registry
+):
+    """中間判定には行が入る(最終判定は変えない)。"""
+    bundle = generate_wiring_bundle(no_change_ir, registry=aoi_registry, dmn_dir=DMN_DIR)
+    identity = _rules_of(bundle.dmn_xml, DT_IDENTITY)
+    assert len(identity) == 7, "6行 + 追加1行"
+    assert identity[2] == ['"一致"', '"一致"', "-"]
+    assert len(_rules_of(bundle.dmn_xml, DT_TRANSMISSION)) == 7, "送信可否判定は7行のまま"
+
+
+@pytest.mark.parametrize(
+    "name,facts,expected_decision,expected_reason",
+    [
+        (
+            "追加した行に当たる(氏名・生年月日一致・電話不一致 → 確認レベル中 → 許可)",
+            {
+                "name_match": "一致",
+                "birth_match": "一致",
+                "phone_match": "不一致",
+                "has_medical": "含まない",
+                "has_pii": "含む",
+                "identifiable": "可能",
+                "contact_consent": "同意",
+            },
+            "許可",
+            "本人確認充足",
+        ),
+        (
+            "既定の行(ワイルドカード)に落ちる(氏名不一致 → id_r5 → 不一致検出 → 禁止)",
+            {
+                "name_match": "不一致",
+                "birth_match": "一致",
+                "phone_match": "一致",
+                "has_medical": "含まない",
+                "has_pii": "含む",
+                "identifiable": "可能",
+                "contact_consent": "同意",
+            },
+            "禁止",
+            "本人未確認",
+        ),
+    ],
+)
+def test_no_change_dmn_scenarios(
+    no_change_ir,
+    aoi_registry,
+    tmp_path,
+    name,
+    facts,
+    expected_decision,
+    expected_reason,
+):
+    """挿入後の DMN を、送信可否判定まで通して評価する。
+
+    1件目は、行を足さなければ id_r6(情報不足)に落ちて「禁止・本人未確認」に
+    なるケースである(足した行が効いていることの確認)。2件目は本人確認判定の
+    既定の行(ワイルドカード)に落ちるケース(U2)。
+    """
+    bundle = generate_wiring_bundle(no_change_ir, registry=aoi_registry, dmn_dir=DMN_DIR)
+    result = _evaluate(bundle, tmp_path, DECISION_TRANSMISSION, facts)
+    assert result["decision"] == expected_decision, name
+    assert result["reason_code"] == expected_reason, name
+
+
+# --------------------------------------------------------------------------
+# 5. バインディング設定の sources_undefined(D33)
+# --------------------------------------------------------------------------
+
+
+def test_bindings_mark_facts_whose_sources_are_undefined(level2_ir, aoi_registry):
+    """D33: 初期登録で取得元が分からなかった fact に sources_undefined を付ける。
+
+    空の sources をそのまま出すと、取得元があるのか無いのかが読み取れない。
+    埋めると創作になるので、空のまま印を付けて出す(埋めるのは U4 のとき)。
+    """
+    bundle = generate_wiring_bundle(level2_ir, registry=aoi_registry, dmn_dir=DMN_DIR)
+    assert len(bundle.bindings["facts"]) == 7
+    for fact in bundle.bindings["facts"]:
+        assert fact["sources"] == {}, fact["variable"]
+        assert fact["sources_undefined"] is True, fact["variable"]
+
+
+def test_bindings_do_not_mark_facts_that_have_sources(add_column_ir, aoi_registry):
+    """D33: 取得元が分かっている fact には印を付けない。"""
+    bundle = generate_wiring_bundle(add_column_ir, registry=aoi_registry, dmn_dir=DMN_DIR)
+    bound = {f["variable"]: f for f in bundle.bindings["facts"]}
+    # この条文で定義した fact は sources を持つ
+    assert set(bound["address_match"]["sources"]) == {"claimed", "registered"}
+    assert "sources_undefined" not in bound["address_match"]
+    # 初期登録分には印が付く
+    assert bound["name_match"]["sources_undefined"] is True

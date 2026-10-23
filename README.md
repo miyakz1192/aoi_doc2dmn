@@ -41,7 +41,8 @@ aoi_doc2dmn/
 │   ├── registry.json     # 永続化した登録簿（③の入力。既存の決定表とfact台帳）
 │   └── dmn/              # 既存のDMNモデル（<dmn_model>.dmn。行・列の追加先）
 ├── tests/                # pytest（クロス検証C1〜C11の失敗テスト・ゴールデンパス固定・
-│                         #         受け入れ経路（レベル2/行追加/列追加）のテスト）
+│                         #         受け入れ経路（レベル2/行追加/列追加/no_change）・
+│                         #         初期登録した DMN の修正（D34）のテスト）
 ├── docs/design/          # ③aの設計書（IR v2設計書・9e66776時点のAsIs仕様書）
 ├── out/                  # ③の4点セット生成物（gitignore対象。再生成可能）
 └── reference/
@@ -71,16 +72,20 @@ aoi_doc2dmn/
   パイプライン）への移行フェーズに入った。詳細は`testdata/schema.md`「軸1・軸2分類の精度改善
   フェーズの区切り」節、「gold label判定の方針」節を参照
 - `src/stage3_generate/`: ③a（宣言的×ハード制約）の**後半**（IR → 4点セット）は
-  IR v2（`docs/design/aoi_doc2dmn_IRv2_design.md` v1.2）で実装済み。fact の定義がIRに入り
+  IR v2（`docs/design/aoi_doc2dmn_IRv2_design.md` v1.3）で実装済み。fact の定義がIRに入り
   （`facts.new_facts`）、4点すべてをIRと登録簿から生成する。クロス検証はC1〜C11で、
   それぞれの失敗テストが`tests/`にある
 - v1.2 で**受け入れ経路**を実装した。新しい表を作るだけ（レベル1）でなく、既存のDMN
   モデルへの行の挿入（レベル2・中間判定への行追加）と列の追加ができる。既存の表に
   手を入れた場合は、その表を使うすべての最終判定のルーティング表とバインディング設定を
   作り直す（D16）
+- v1.3 では、中間判定だけを直す条文（`final.action = no_change`）、決定表ごとの
+  `option_taken`の導出（D31）、`new_output_values`の出力名付き化（D29）を実装した。
+  C6 は「IRが書いた行と表で使う既存fact」と`referenced_facts`の一致を見る（D25）
 - `registry/registry.json`には、あおいの送信可否判定（本人確認判定・情報分類判定・
   送信可否判定）を初期登録済み（`provenance.origin = bootstrap`）。層1が3件・層2が18件・
-  層3が7件。元のDMNは`registry/dmn/aoi_transmission.dmn`
+  層3が7件。DMNは`registry/dmn/aoi_transmission.dmn`（元のDMNに承認済みの修正2件を
+  当てたもの。D34）
 - ③aの**前段**（条文 → IR）は未実装。現状は`golden_path.py`がゴールデンパス1件のIRを
   手で組み立てている。これが③の本丸であり次の作業対象
 
@@ -138,10 +143,17 @@ pipのシステム直接インストールができないため、プロジェ�
 .venv/bin/python3 -m src.stage3_generate.bootstrap_aoi
 ```
 
-`reference/`以下の既存DMNを`registry/dmn/aoi_transmission.dmn`に置き、そこから層1・層2・
-層3を機械的に起こして`registry/registry.json`に保存する。同じ入力なら何度実行しても同じ
-結果になる。元のDMNの不足・矛盾（参照されないinputData、出力されない値を参照している行など）
-も一覧で表示する。`reference/`はリポジトリに入っていないため、別途配置が必要。
+`reference/`以下の既存DMNに承認済みの修正（`bootstrap_aoi.DMN_FIXES`）を当てて
+`registry/dmn/aoi_transmission.dmn`に置き、そこから層1・層2・層3を機械的に起こして
+`registry/registry.json`に保存する。同じ入力なら何度実行してもバイト単位で同じ結果になる。
+
+- **元のDMNの修正（D34）**：`reference/`の元ファイルは書き換えず、`registry/`の側だけを
+  直す。内容・理由・承認者（Kazuhiro）は`DMN_FIXES`の1か所にまとめ、層1・層2の`history`に
+  残す。修正後の登録簿にはC5・C11を当て、違反があれば止める
+- 修正していない不足・矛盾（どの決定表も参照しない中間判定の出力など）は、補わずに
+  一覧で表示する
+- `reference/`はリポジトリに入っていないため、初期登録を流し直すには別途配置が必要
+  （生成済みの`registry/`はコミットしてある）
 
 ### テスト
 
@@ -149,14 +161,17 @@ pipのシステム直接インストールができないため、プロジェ�
 .venv/bin/python3 -m pytest tests/ -v
 ```
 
-Ollamaは不要。3つのファイルに分かれている。
+Ollamaは不要。4つのファイルに分かれている。
 
 - `test_cross_validation.py`：クロス検証C1〜C11の失敗テスト（わざと違反させたIRで
   `SchemaWiringError`になること）
 - `test_golden_path.py`：ゴールデンパスがC1〜C11を通過しDMN評価4/4になること、承認者を
   入れるとレビューゲートが下りること
 - `test_acceptance_paths.py`：初期登録したあおいの登録簿を使い、レベル2・中間判定への
-  行追加・列の追加が通ること（挿入後のDMNの評価シナリオ込み。既定の行に落ちるケースを含む）
+  行追加・列の追加・no_change（第901〜904条）が通ること（挿入後のDMNの評価シナリオ込み。
+  既定の行に落ちるケースを含む）
+- `test_bootstrap_fixes.py`：初期登録したDMNの修正（D34）。修正を外すとC11で止まること、
+  修正の前後で評価結果が変わらないこと。`reference/`を使うテストは、無ければ飛ばす
 
 空欄（`［　］`）の扱い方針は`testdata/schema.md`「空欄の扱い方針」節を、
 ①関連判定の基準（解釈A/B）は同ファイル「①関連判定の基準」節を参照。

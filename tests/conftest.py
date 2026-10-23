@@ -8,6 +8,10 @@
    参照する最終判定。ゴールデンパスには登録簿のエントリ・ドット参照・`value_additions` が
    無いため、C6・C9条件3・C9条件4・C10・C11 はこちらでしか破れない
 
+**C6 の基準は IR が書いた行と表である**(D25)。そのため `intermediate_ir` の
+`referenced_facts` は空になる(入力列がドット参照1列だけで、fact の列を使っていない)。
+参照先の中間判定が使う fact の不足は C1 が捕まえる(D26)。
+
 2 の登録簿はテスト内だけで組み立てる(永続台帳 `registry/registry.json` には書き込まない)。
 D17(中間判定を参照する最終判定は同じ DMN モデルに入れる)に合わせて、`seeded_registry` と
 `intermediate_ir` は同じ `dmn_model` を使う。
@@ -110,7 +114,8 @@ def _assemble(
         rule_row_additions=row_additions,
         new_decision_tables=new_tables,
         compound_fact_application=CompoundFactApplication(
-            option_taken="new_table_row",
+            # D31: 手で書くのは拒否の印だけ。option_taken は IR から導出する
+            rejected_in_primitive=False,
             rationale="テスト",
         ),
         provenance=make_provenance(clause_ref),
@@ -235,6 +240,11 @@ def intermediate_ir() -> ClauseIR:
     {birth_match, phone_match} になる(入力列はドット参照1列だけ)。
 
     D17 により、参照先(本人確認判定)と同じ `dmn_model` に入れる。
+
+    `referenced_facts` が空なのは D25 のため。この IR が書いた表の入力列は
+    ドット参照1列だけで、fact の列を1つも使っていない。birth_match・phone_match は
+    参照先の中間判定が使う fact であり、「IR が使う既存 fact」ではない
+    (この2件の不足を捕まえるのは C1 の役目。D26)。
     """
     table = NewDecisionTableDraft(
         decision_table_id="dt_verbal",
@@ -265,7 +275,7 @@ def intermediate_ir() -> ClauseIR:
         target=DecisionTarget(
             dmn_model="aoi_transmission", entry_decision_id="decision_verbal"
         ),
-        facts=FactUsage(referenced_facts=["birth_match", "phone_match"]),
+        facts=FactUsage(referenced_facts=[]),
         level=LevelDetermination(
             atomic_fact=AtomicFactLayer(covered=True),
             intermediate=[],

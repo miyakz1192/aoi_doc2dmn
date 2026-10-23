@@ -29,6 +29,20 @@ v1(コミット 9e66776)との差分は同書 付録A。
 - **D23**: `identifiability_classifier` を一致プリミティブ表に戻す。ただし
   `new_facts` では使えない(あおいの初期登録分だけの境界事例。C4 で止める)
 
+## v1.3 で変わった点(設計書2章 D29・D30・D31)
+
+- **D29**: `IntermediateChange.new_output_values` を `dict[str, list[str]]`
+  (出力名 -> 足す値)にした。中間判定は出力を複数持つため、値の一覧だけでは
+  どの出力列の値かが分からず、列の取り違え(「未」を identity_level に足す類)を
+  型で防げなかった
+- **D30**: `FinalLayer.action` に `no_change`(最終判定は変えない)を足した。
+  `outcome` は `level2_intermediate_only` を返す。中間判定だけを直す条文を、
+  存在しない最終判定を作らずに表せるようにするため
+- **D31**: `CompoundFactApplication` から `option_taken` を外し、手で書くのは
+  `rejected_in_primitive`(一致モジュールで AND を組もうとして拒否された印)だけに
+  した。`option_taken` は決定表ごとに `ClauseIR.option_taken` で導出する。
+  1つの IR が新しい表の行と既存の表の行を両方作ることがあるため
+
 ## 引き継ぐ原則(設計書1.4)
 
 - 4点セットの同時生成、複合 fact 禁止、FIRST と行の順序、来歴の表し方、Action 正規化
@@ -46,13 +60,19 @@ ColumnSetRelationKind = Literal[
     "intersecting_non_subset",
 ]
 
-LevelOutcome = Literal["level1_new_table", "level2_row_addition"]
+LevelOutcome = Literal[
+    "level1_new_table",
+    "level2_row_addition",
+    # D30: 中間判定だけを直し、最終判定は変えない
+    "level2_intermediate_only",
+]
 
+# D31: 決定表ごとに導出する値。「拒否」は option_taken ではなく
+# CompoundFactApplication.rejected_in_primitive で表す。
 CompoundFactOption = Literal[
     "new_table_row",
     "existing_table_row_addition",
     "new_intermediate_table",
-    "rejected_compound_in_primitive",
 ]
 
 HumanReviewStatus = Literal["pending", "approved", "rejected"]
@@ -61,7 +81,7 @@ SourceKind = Literal["action_request", "master", "literal"]
 
 IntermediateAction = Literal["reuse_value", "add_row", "add_column"]
 
-FinalAction = Literal["add_rows", "new_table"]
+FinalAction = Literal["add_rows", "new_table", "no_change"]
 
 CONFIDENCE_THRESHOLD = 0.7
 
@@ -282,7 +302,10 @@ class IntermediateChange:
     table_id: str
     relation: ColumnSetRelationKind
     action: IntermediateAction
-    new_output_values: list[str] = field(default_factory=list)
+    # 中間判定に足す出力値。出力名 -> 足す値(D29)。中間判定は出力を複数持つため、
+    # 値の一覧だけではどの出力列の値かが分からない(例: 本人確認判定の「未」は
+    # identity_result の値で、identity_level には来ない)。
+    new_output_values: dict[str, list[str]] = field(default_factory=dict)
     # action が add_column のとき足す入力列(D19)。足した列は層1の input_columns に
     # 加わり、既存の全行はその列が「-」で埋まる。
     new_input_columns: list[str] = field(default_factory=list)
@@ -290,7 +313,12 @@ class IntermediateChange:
 
 @dataclass
 class FinalLayer:
-    """③ 最終判定の層: 既存の最終判定に行を足すか、新しい表を作るか。"""
+    """③ 最終判定の層: 既存の最終判定に行を足すか、新しい表を作るか、変えないか。
+
+    `action="no_change"`(D30)は「中間判定だけを直す条文」を表す。このとき
+    `compared_table_id`・`relation` は None で、`target.entry_decision_id` には
+    影響を受ける既存の最終判定の1つを入れる(C9条件7・8 が確かめる)。
+    """
 
     compared_table_id: Optional[str]
     relation: Optional[ColumnSetRelationKind]
@@ -310,7 +338,10 @@ class LevelDetermination:
         """結論は最終判定の層の action から導く(値として持たない)。"""
         if self.final.action == "new_table":
             return "level1_new_table"
-        return "level2_row_addition"
+        if self.final.action == "add_rows":
+            return "level2_row_addition"
+        # D30: no_change = 中間判定だけを直した
+        return "level2_intermediate_only"
 
 
 # --------------------------------------------------------------------------
@@ -350,10 +381,19 @@ class NewDecisionTableDraft:
 
 @dataclass
 class CompoundFactApplication:
-    """複合fact禁止原則の適用結果(どの案を採ったか)。"""
+    """複合fact禁止原則の適用結果(D31)。
 
-    option_taken: CompoundFactOption
-    rationale: str
+    手で書くのは `rejected_in_primitive`(一致モジュール側で AND を組もうとして
+    拒否されたか)だけにする。True なら配線ジェネレータが C3 で停止する。
+
+    どの案を採ったか(`option_taken`)は IR の他の欄から決定表ごとに導出する
+    (`ClauseIR.option_taken`)。1つの IR が新しい表の行と既存の表への行追加を
+    両方作ることがあり、IR に1つだけ手で書かせると、正解 IR と前段の出力の比較で
+    揺れるため。
+    """
+
+    rejected_in_primitive: bool = False
+    rationale: str = ""
 
 
 @dataclass
@@ -480,6 +520,47 @@ class ClauseIR:
             for row in table.rule_rows:
                 keys.update(row.conditions.keys())
         return keys
+
+    @property
+    def option_taken(self) -> dict[str, CompoundFactOption]:
+        """複合条件をどう表したかを、決定表ごとに導出する(D31。設計書3.4)。
+
+        - `new_decision_tables` の表: 他の判定から参照されていれば
+          `new_intermediate_table`、それ以外は `new_table_row`
+        - `rule_row_additions` だけがある既存の表: `existing_table_row_addition`
+
+        キーは決定表ID。IR が新しい表の行と既存の表の行を両方作る場合、両方が入る
+        (v1.2 までは IR に1つだけ手で書いていたため、どちらかが隠れていた)。
+
+        「他の判定から参照されている」は、この IR の中の別の表が
+        `判定名.出力名` でこの表の判定名を参照しているか、`depends_on_decisions` に
+        この表の決定IDを挙げているかで判定する。新しく作る表を既存の判定が参照して
+        いることはない(登録簿は過去の条文の結果であり、今回の表を知らない)。
+        """
+        out: dict[str, CompoundFactOption] = {}
+        for table in self.new_decision_tables:
+            referenced = False
+            for other in self.new_decision_tables:
+                if other.decision_table_id == table.decision_table_id:
+                    continue
+                if table.decision_id in other.depends_on_decisions:
+                    referenced = True
+                    break
+                if any(
+                    column.split(".", 1)[0] == table.decision_name
+                    for column in other.input_columns
+                    if "." in column
+                ):
+                    referenced = True
+                    break
+            out[table.decision_table_id] = (
+                "new_intermediate_table" if referenced else "new_table_row"
+            )
+        for row in self.rule_row_additions:
+            if row.decision_table_id in out:
+                continue  # 新しく作る表の行は、その表の導出結果に含まれる
+            out[row.decision_table_id] = "existing_table_row_addition"
+        return out
 
 
 def build_review_gates(

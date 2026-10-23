@@ -193,13 +193,29 @@ def test_dmn_namespace_unchanged_from_v1(golden_bundle):
 # --------------------------------------------------------------------------
 
 
-def test_compound_fact_option_is_new_table_row(golden_bundle):
-    """D18: 新しく作る表の行として表すので new_table_row。
+def test_compound_fact_option_is_derived_as_new_table_row(golden_bundle):
+    """D18・D31: 新しく作る表の行なので new_table_row。導出で出す。
 
     v1.1 までは選択肢が無く existing_table_row_addition を名乗っていた(誤ラベル)。
+    v1.3 では IR に手で書かず、決定表ごとに導出する(D31)。IR が手で書くのは
+    「一致モジュール側で AND を組もうとして拒否された」印だけ。
     """
     ir, _ = golden_bundle
-    assert ir.compound_fact_application.option_taken == "new_table_row"
+    assert ir.option_taken == {"dt_privileged_operation": "new_table_row"}
+    assert ir.compound_fact_application.rejected_in_primitive is False
+    # 導出なので dataclass のフィールドではない
+    assert "option_taken" not in {
+        f.name for f in ir.compound_fact_application.__dataclass_fields__.values()
+    }
+
+
+def test_sources_undefined_is_not_set_for_clause_facts(golden_bundle):
+    """D33: sources が入っている fact には sources_undefined を付けない。
+
+    印が付くのは、初期登録で取得元が分からなかった fact(あおいの7件)だけである。
+    """
+    _, bundle = golden_bundle
+    assert all("sources_undefined" not in f for f in bundle.bindings["facts"])
 
 
 def test_knowledge_sources_drop_the_unsupported_registry(golden_bundle):

@@ -154,7 +154,9 @@ def run(
     print(f"  actor={ir.actor} action={ir.action.normalized}(parent={ir.action.parent}, "
           f"is_new={ir.action.is_new}) scope={ir.scope}")
     print(f"  level_outcome={ir.level_determination.outcome}")
-    print(f"  compound_fact={ir.compound_fact_application.option_taken}")
+    # D31: option_taken は決定表ごとに導出する(IR には拒否の印だけを持つ)
+    print(f"  compound_fact={ir.option_taken} "
+          f"rejected_in_primitive={ir.compound_fact_application.rejected_in_primitive}")
     print(f"  human_review_status={ir.human_review_status} should_review={ir.review_gates.should_review}")
     for reason in ir.review_gates.reasons():
         print(f"    - gate: {reason}")
