@@ -1,0 +1,280 @@
+{
+  "gold_id": "mhlw_r7dec_art21_3",
+  "source": {
+    "document": "厚生労働省 モデル就業規則(令和7年12月版)",
+    "article": "第21条 時間外及び休日労働等(第3項)",
+    "clause_ref": "厚生労働省モデル就業規則 第21条(時間外及び休日労働等)第3項",
+    "testdata": "testdata/clauses/clauses_v1.json clause_id=mhlw_r7dec_art21_3",
+    "text_variant": "text_raw",
+    "note": "この条文は text_raw と text_filled が同一(parameter_slots なし)"
+  },
+  "context": [],
+  "ir": {
+    "clause_ref": "厚生労働省モデル就業規則 第21条(時間外及び休日労働等)第3項",
+    "clause_text": "妊娠中の女性、産後１年を経過しない女性労働者（以下「妊産婦」という。）であって請求した者及び１８歳未満の者については、第２項による時間外労働又は休日若しくは深夜（午後１０時から午前５時まで）労働に従事させない。",
+    "axis1_result": {
+      "label": "ハード制約",
+      "confidence": 1.0,
+      "rationale": "testdata の正解ラベル(oracle.axis1)をそのまま使う",
+      "evidence_quote": "労働に従事させない",
+      "quote_verified": true,
+      "vocab_flagged": false
+    },
+    "axis2_result": {
+      "label": "宣言的",
+      "confidence": 1.0,
+      "rationale": "testdata の正解ラベル(oracle.axis2)をそのまま使う",
+      "evidence_quote": "妊娠中の女性、産後１年を経過しない女性労働者",
+      "quote_verified": true,
+      "vocab_flagged": false
+    },
+    "actor": "あおい",
+    "action": {
+      "surface": "労働に従事させない",
+      "normalized": "時間外労働等指示",
+      "parent": "労働時間管理",
+      "is_new": true,
+      "approved_by": null
+    },
+    "scope": "妊産婦及び18歳未満の者の時間外・休日・深夜労働",
+    "target": {
+      "dmn_model": "overtime_assignment",
+      "entry_decision_id": "decision_overtime_assignment"
+    },
+    "facts": {
+      "new_facts": [
+        {
+          "variable": "worker_category",
+          "primitive": "passthrough",
+          "possible_values": ["妊娠中の女性", "産後１年を経過しない女性労働者", "１８歳未満の者"],
+          "sources": {"value": {"from": "action_request", "path": "worker.category"}},
+          "approved_by": null
+        },
+        {
+          "variable": "exemption_request",
+          "primitive": "passthrough",
+          "possible_values": ["請求した者"],
+          "sources": {"value": {"from": "action_request", "path": "worker.exemption_request"}},
+          "approved_by": null
+        },
+        {
+          "variable": "work_type",
+          "primitive": "passthrough",
+          "possible_values": ["時間外労働", "休日労働", "深夜労働"],
+          "sources": {"value": {"from": "action_request", "path": "work.type"}},
+          "approved_by": null
+        }
+      ],
+      "referenced_facts": [],
+      "value_additions": {}
+    },
+    "level_determination": {
+      "atomic_fact": {"covered": true, "new_primitives": []},
+      "intermediate": [],
+      "final": {"compared_table_id": null, "relation": null, "action": "new_table"}
+    },
+    "rule_row_additions": [],
+    "new_decision_tables": [
+      {
+        "decision_table_id": "dt_overtime_assignment",
+        "decision_id": "decision_overtime_assignment",
+        "decision_name": "時間外労働等従事可否判定",
+        "input_columns": ["worker_category", "exemption_request", "work_type"],
+        "knowledge_sources": ["ks_action_request"],
+        "rule_rows": [
+          {
+            "row_id": "id_r_ota_1",
+            "decision_table_id": "dt_overtime_assignment",
+            "position": 1,
+            "conditions": {
+              "worker_category": "\"妊娠中の女性\",\"産後１年を経過しない女性労働者\"",
+              "exemption_request": "請求した者",
+              "work_type": "\"時間外労働\",\"休日労働\",\"深夜労働\""
+            },
+            "outputs": {"decision": "禁止", "reason_code": "maternity_requested_overtime_prohibited"}
+          },
+          {
+            "row_id": "id_r_ota_2",
+            "decision_table_id": "dt_overtime_assignment",
+            "position": 2,
+            "conditions": {
+              "worker_category": "１８歳未満の者",
+              "exemption_request": "-",
+              "work_type": "\"時間外労働\",\"休日労働\",\"深夜労働\""
+            },
+            "outputs": {"decision": "禁止", "reason_code": "minor_overtime_prohibited"}
+          },
+          {
+            "row_id": "id_r_ota_3",
+            "decision_table_id": "dt_overtime_assignment",
+            "position": 3,
+            "conditions": {
+              "worker_category": "-",
+              "exemption_request": "-",
+              "work_type": "-"
+            },
+            "outputs": {"decision": "許可", "reason_code": "not_prohibited_combination"}
+          }
+        ]
+      }
+    ],
+    "compound_fact_application": {
+      "rejected_in_primitive": false,
+      "rationale": "条文は「妊産婦であって請求した者」と「１８歳未満の者」を並列に挙げており、請求の要否が前者だけに係る。一致プリミティブ側でANDを組まず、決定表の2行(id_r_ota_1・id_r_ota_2)に分けて表現する(複合fact禁止原則)。1行にまとめると、18歳未満の者にも請求を要求してしまう。"
+    },
+    "provenance": {
+      "origin": "regulation_clause",
+      "clause_ref": "厚生労働省モデル就業規則 第21条(時間外及び休日労働等)第3項",
+      "registered_by": "claude_code",
+      "registered_at": "2026-10-23T00:00:00+00:00"
+    },
+    "human_review_status": "pending"
+  },
+  "evidence": {
+    "action_surface": {
+      "value": "労働に従事させない",
+      "quote": "労働に従事させない",
+      "verbatim": true
+    },
+    "possible_values": [
+      {
+        "fact": "worker_category",
+        "value": "妊娠中の女性",
+        "quote": "妊娠中の女性",
+        "verbatim": true
+      },
+      {
+        "fact": "worker_category",
+        "value": "産後１年を経過しない女性労働者",
+        "quote": "産後１年を経過しない女性労働者",
+        "verbatim": true
+      },
+      {
+        "fact": "worker_category",
+        "value": "１８歳未満の者",
+        "quote": "１８歳未満の者",
+        "verbatim": true,
+        "note": "条文の全角数字をそのまま使っている。半角に直すと逐語でなくなるため、表記を変えていない"
+      },
+      {
+        "fact": "exemption_request",
+        "value": "請求した者",
+        "quote": "請求した者",
+        "verbatim": true
+      },
+      {
+        "fact": "work_type",
+        "value": "時間外労働",
+        "quote": "時間外労働",
+        "verbatim": true
+      },
+      {
+        "fact": "work_type",
+        "value": "休日労働",
+        "quote": "休日若しくは深夜（午後１０時から午前５時まで）労働",
+        "verbatim": false,
+        "note": "条文は「休日若しくは深夜…労働」と後ろの「労働」を共有している。これを「休日労働」「深夜労働」に展開した。逐語ではないが、語の並べ替えだけで外部知識は足していない"
+      },
+      {
+        "fact": "work_type",
+        "value": "深夜労働",
+        "quote": "休日若しくは深夜（午後１０時から午前５時まで）労働",
+        "verbatim": false,
+        "note": "同上。「午後１０時から午前５時まで」という深夜の時間帯の定義は、この IR では表していない(時刻から深夜かを判定する層が必要。要レビュー)"
+      }
+    ],
+    "rule_rows": [
+      {
+        "row_id": "id_r_ota_1",
+        "quote": "妊娠中の女性、産後１年を経過しない女性労働者（以下「妊産婦」という。）であって請求した者……については、第２項による時間外労働又は休日若しくは深夜（午後１０時から午前５時まで）労働に従事させない。",
+        "verbatim": true
+      },
+      {
+        "row_id": "id_r_ota_2",
+        "quote": "１８歳未満の者については、第２項による時間外労働又は休日若しくは深夜（午後１０時から午前５時まで）労働に従事させない。",
+        "verbatim": true,
+        "note": "「であって請求した者」は妊産婦に係るため、18歳未満の者の行では請求の列を「-」にしている"
+      },
+      {
+        "row_id": "id_r_ota_3",
+        "quote": null,
+        "verbatim": false,
+        "note": "既定の行(ワイルドカード)。条文が禁止していない組み合わせを「許可」にするもので、条文に逐語の根拠はない"
+      }
+    ],
+    "not_modeled": [
+      {
+        "quote": "第２項による",
+        "note": "第2項(36協定に基づく時間外労働命令)への参照。条文間の参照を IR で表す仕組みがないため、列にしていない"
+      },
+      {
+        "quote": "午後１０時から午前５時まで",
+        "note": "深夜の時間帯の定義。時刻から「深夜労働」かを判定する層が必要で、この条文の決定表の列にはしていない"
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "name": "妊娠中の女性が請求 → 時間外労働は禁止",
+      "kind": "条文の禁止の行に当たる",
+      "facts": {
+        "worker_category": "妊娠中の女性",
+        "exemption_request": "請求した者",
+        "work_type": "時間外労働"
+      },
+      "expected": {"decision": "禁止", "reason_code": "maternity_requested_overtime_prohibited"}
+    },
+    {
+      "name": "産後1年を経過しない女性労働者が請求 → 休日労働は禁止",
+      "kind": "条文の禁止の行に当たる",
+      "facts": {
+        "worker_category": "産後１年を経過しない女性労働者",
+        "exemption_request": "請求した者",
+        "work_type": "休日労働"
+      },
+      "expected": {"decision": "禁止", "reason_code": "maternity_requested_overtime_prohibited"}
+    },
+    {
+      "name": "18歳未満の者は請求がなくても深夜労働は禁止",
+      "kind": "ワイルドカードの列に当たる(請求の有無を問わない)",
+      "facts": {
+        "worker_category": "１８歳未満の者",
+        "exemption_request": "請求していない",
+        "work_type": "深夜労働"
+      },
+      "expected": {"decision": "禁止", "reason_code": "minor_overtime_prohibited"}
+    },
+    {
+      "name": "妊産婦でも請求していなければ禁止されない",
+      "kind": "possible_values 外の値が既定の行に落ちる(U2)",
+      "facts": {
+        "worker_category": "妊娠中の女性",
+        "exemption_request": "請求していない",
+        "work_type": "時間外労働"
+      },
+      "expected": {"decision": "許可", "reason_code": "not_prohibited_combination"}
+    },
+    {
+      "name": "所定労働時間内の労働 → 許可",
+      "kind": "possible_values 外の値が既定の行に落ちる(U2)",
+      "facts": {
+        "worker_category": "１８歳未満の者",
+        "exemption_request": "請求した者",
+        "work_type": "所定労働"
+      },
+      "expected": {"decision": "許可", "reason_code": "not_prohibited_combination"}
+    }
+  ],
+  "review": {
+    "status": "draft",
+    "reviewed_by": null,
+    "expected_gates": ["new_action_unapproved", "new_fact_unapproved"],
+    "notes": [
+      "actor: この条文の主語は使用者(会社)側である(「従事させない」)。他の4件は従業員が主語なので、あおいへの当てはめの意味が違う。あおいが労働の割当を行う立場として扱ってよいかの判断をお願いしたい",
+      "「請求した者」が妊産婦だけに係ることを、1行にまとめずに2行に分けて表した。これが条文の読み方として正しいかを見てほしい",
+      "「午後１０時から午前５時まで」(深夜の定義)と「第２項による」(他の条文への参照)は表していない(evidence.not_modeled)。前者は時刻から深夜かを判定する層が、後者は条文間の参照を表す欄が必要で、どちらも IR v2 の型にない",
+      "possible_values は6値で、5件の中では最も値の種類が多い(設計書6.1の「値の種類が多い条文」に当たる)",
+      "「請求していない」は possible_values に無い値なので、妊産婦の場合は既定の行(許可)に落ちる。条文の「請求した者」だけを値にした結果で、D4 のとおりだが、シナリオ4のように「請求なし→許可」を確かめている"
+    ]
+  }
+}

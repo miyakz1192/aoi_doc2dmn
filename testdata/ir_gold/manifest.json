@@ -1,0 +1,36 @@
+{
+  "note": "正解IR の適用順(設計書6.2・D43)。初期登録した登録簿から始め、この順に配線ジェネレータへ通し、出力された登録簿を次の IR の入力にする。registry/ には反映しない。",
+  "order": [
+    {
+      "gold_id": "ipa_secguide_v4_6_7_1",
+      "file": "ipa_secguide_v4_6_7_1.json",
+      "reason": "ゴールデンパス。v2 の基本形なので先頭に置く(設計書6.1)"
+    },
+    {
+      "gold_id": "mhlw_r7dec_art11_1",
+      "file": "mhlw_r7dec_art11_1.json",
+      "reason": "新しい DMN モデルを1枚作るだけで、他の条文に依存しない"
+    },
+    {
+      "gold_id": "ipa_secguide_v4_personnel_2",
+      "file": "ipa_secguide_v4_personnel_2.json",
+      "reason": "同じく独立。Action の親(情報開示)が第14条と同じ階層になるため、第14条より前に置く"
+    },
+    {
+      "gold_id": "mhlw_r7dec_art21_3",
+      "file": "mhlw_r7dec_art21_3.json",
+      "reason": "同じく独立。値の種類が最も多い条文"
+    },
+    {
+      "gold_id": "aoi_johokanri_art14",
+      "file": "aoi_johokanri_art14.json",
+      "reason": "既存の決定表(あおいの本人確認判定)に行を足し、その出力を参照する唯一の条文。初期登録した登録簿と DMN に手を入れるので最後に置く"
+    }
+  ],
+  "not_expressible": [
+    {
+      "clause_id": "mhlw_r7dec_art12",
+      "reason": "IR v2 の型で表しきれない。testdata/ir_gold/NOT_EXPRESSIBLE.md を参照"
+    }
+  ]
+}

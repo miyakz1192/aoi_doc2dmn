@@ -649,3 +649,135 @@ def build_review_gates(
             and not level_determination.atomic_fact.covered
         ),
     )
+
+
+# --------------------------------------------------------------------------
+# JSON から ClauseIR を復元する(正解IR の読み込み用。設計書6.2)
+# --------------------------------------------------------------------------
+
+
+def _axis_from_json(payload: dict) -> AxisResult:
+    return AxisResult(
+        label=payload["label"],
+        confidence=payload["confidence"],
+        rationale=payload.get("rationale", ""),
+        evidence_quote=payload.get("evidence_quote", ""),
+        quote_verified=payload.get("quote_verified", False),
+        vocab_flagged=payload.get("vocab_flagged", False),
+        strategy_id=payload.get("strategy_id"),
+    )
+
+
+def _rule_row_from_json(payload: dict) -> RuleRowDraft:
+    return RuleRowDraft(
+        row_id=payload["row_id"],
+        decision_table_id=payload["decision_table_id"],
+        position=payload["position"],
+        conditions=dict(payload.get("conditions", {})),
+        outputs=dict(payload.get("outputs", {})),
+    )
+
+
+def _level_from_json(payload: dict) -> LevelDetermination:
+    atomic = payload["atomic_fact"]
+    final = payload["final"]
+    return LevelDetermination(
+        atomic_fact=AtomicFactLayer(
+            covered=atomic["covered"],
+            new_primitives=list(atomic.get("new_primitives", [])),
+        ),
+        intermediate=[
+            IntermediateChange(
+                table_id=change["table_id"],
+                relation=change["relation"],
+                action=change["action"],
+                new_output_values={
+                    name: [ValueAddition.from_json(v) for v in values]
+                    for name, values in change.get("new_output_values", {}).items()
+                },
+                new_input_columns=list(change.get("new_input_columns", [])),
+            )
+            for change in payload.get("intermediate", [])
+        ],
+        final=FinalLayer(
+            compared_table_id=final.get("compared_table_id"),
+            relation=final.get("relation"),
+            action=final["action"],
+        ),
+    )
+
+
+def clause_ir_from_json(payload: dict) -> ClauseIR:
+    """正解IR の JSON から `ClauseIR` を復元する(設計書6.2)。
+
+    `review_gates` は JSON から読まず、`build_review_gates()` で**導出する**。
+    ゲートは軸1・軸2・Action・fact・レベル判定から機械的に決まるので、正解IR に
+    手で書かせると、他の欄と食い違っても検査されない(D31・D38 と同じ考え方)。
+    期待するゲートの一覧は、正解IR のファイルの `review.expected_gates` に書き、
+    評価スクリプトが導出結果と突き合わせる。
+    """
+    axis1 = _axis_from_json(payload["axis1_result"])
+    axis2 = _axis_from_json(payload["axis2_result"])
+    action_payload = payload["action"]
+    action = ActionRef(
+        surface=action_payload["surface"],
+        normalized=action_payload["normalized"],
+        parent=action_payload.get("parent"),
+        is_new=action_payload["is_new"],
+        approved_by=action_payload.get("approved_by"),
+    )
+    facts_payload = payload.get("facts", {})
+    facts = FactUsage(
+        new_facts=[FactDef.from_json(f) for f in facts_payload.get("new_facts", [])],
+        referenced_facts=list(facts_payload.get("referenced_facts", [])),
+        value_additions={
+            name: [ValueAddition.from_json(v) for v in values]
+            for name, values in facts_payload.get("value_additions", {}).items()
+        },
+    )
+    level = _level_from_json(payload["level_determination"])
+    target_payload = payload["target"]
+    provenance_payload = payload["provenance"]
+    return ClauseIR(
+        clause_ref=payload["clause_ref"],
+        clause_text=payload["clause_text"],
+        axis1_result=axis1,
+        axis2_result=axis2,
+        actor=payload["actor"],
+        action=action,
+        scope=payload["scope"],
+        target=DecisionTarget(
+            dmn_model=target_payload["dmn_model"],
+            entry_decision_id=target_payload["entry_decision_id"],
+        ),
+        facts=facts,
+        level_determination=level,
+        rule_row_additions=[
+            _rule_row_from_json(r) for r in payload.get("rule_row_additions", [])
+        ],
+        new_decision_tables=[
+            NewDecisionTableDraft(
+                decision_table_id=t["decision_table_id"],
+                decision_id=t["decision_id"],
+                decision_name=t["decision_name"],
+                input_columns=list(t["input_columns"]),
+                rule_rows=[_rule_row_from_json(r) for r in t.get("rule_rows", [])],
+                knowledge_sources=list(t.get("knowledge_sources", [])),
+            )
+            for t in payload.get("new_decision_tables", [])
+        ],
+        compound_fact_application=CompoundFactApplication(
+            rejected_in_primitive=payload["compound_fact_application"].get(
+                "rejected_in_primitive", False
+            ),
+            rationale=payload["compound_fact_application"].get("rationale", ""),
+        ),
+        provenance=Provenance(
+            origin=provenance_payload["origin"],
+            clause_ref=provenance_payload["clause_ref"],
+            registered_by=provenance_payload["registered_by"],
+            registered_at=provenance_payload["registered_at"],
+        ),
+        review_gates=build_review_gates(axis1, axis2, action, facts, level),
+        human_review_status=payload.get("human_review_status", "pending"),
+    )

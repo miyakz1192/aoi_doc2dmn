@@ -1,0 +1,210 @@
+{
+  "gold_id": "ipa_secguide_v4_personnel_2",
+  "source": {
+    "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程",
+    "article": "人的対策-2 従業員の責務",
+    "clause_ref": "IPA情報セキュリティ関連規程 人的対策-2(従業員の責務)",
+    "testdata": "testdata/clauses/clauses_v1.json clause_id=ipa_secguide_v4_personnel_2",
+    "text_variant": "text_raw",
+    "note": "この条文は text_raw と text_filled が同一(parameter_slots なし)"
+  },
+  "context": [],
+  "ir": {
+    "clause_ref": "IPA情報セキュリティ関連規程 人的対策-2(従業員の責務)",
+    "clause_text": "従業員は、当社が営業秘密として管理する情報及びその複製物の一切を許可されていない組織、人に提供してはならない。",
+    "axis1_result": {
+      "label": "ハード制約",
+      "confidence": 1.0,
+      "rationale": "testdata の正解ラベル(oracle.axis1)をそのまま使う",
+      "evidence_quote": "提供してはならない",
+      "quote_verified": true,
+      "vocab_flagged": false
+    },
+    "axis2_result": {
+      "label": "宣言的",
+      "confidence": 1.0,
+      "rationale": "testdata の正解ラベル(oracle.axis2)をそのまま使う",
+      "evidence_quote": "営業秘密として管理する情報及びその複製物の一切を許可されていない組織、人に提供してはならない",
+      "quote_verified": true,
+      "vocab_flagged": false
+    },
+    "actor": "あおい",
+    "action": {
+      "surface": "提供してはならない",
+      "normalized": "情報提供",
+      "parent": "情報開示",
+      "is_new": true,
+      "approved_by": null
+    },
+    "scope": "営業秘密として管理する情報の社外提供",
+    "target": {
+      "dmn_model": "trade_secret_provision",
+      "entry_decision_id": "decision_trade_secret_provision"
+    },
+    "facts": {
+      "new_facts": [
+        {
+          "variable": "provided_information",
+          "primitive": "passthrough",
+          "possible_values": ["営業秘密として管理する情報", "複製物"],
+          "sources": {"value": {"from": "action_request", "path": "provided_information.category"}},
+          "approved_by": null
+        },
+        {
+          "variable": "recipient_authorization",
+          "primitive": "passthrough",
+          "possible_values": ["許可されていない"],
+          "sources": {"value": {"from": "action_request", "path": "recipient.authorization"}},
+          "approved_by": null
+        }
+      ],
+      "referenced_facts": [],
+      "value_additions": {}
+    },
+    "level_determination": {
+      "atomic_fact": {"covered": true, "new_primitives": []},
+      "intermediate": [],
+      "final": {"compared_table_id": null, "relation": null, "action": "new_table"}
+    },
+    "rule_row_additions": [],
+    "new_decision_tables": [
+      {
+        "decision_table_id": "dt_trade_secret_provision",
+        "decision_id": "decision_trade_secret_provision",
+        "decision_name": "営業秘密提供可否判定",
+        "input_columns": ["provided_information", "recipient_authorization"],
+        "knowledge_sources": ["ks_action_request"],
+        "rule_rows": [
+          {
+            "row_id": "id_r_tsp_1",
+            "decision_table_id": "dt_trade_secret_provision",
+            "position": 1,
+            "conditions": {
+              "provided_information": "\"営業秘密として管理する情報\",\"複製物\"",
+              "recipient_authorization": "許可されていない"
+            },
+            "outputs": {"decision": "禁止", "reason_code": "trade_secret_to_unauthorized_recipient"}
+          },
+          {
+            "row_id": "id_r_tsp_2",
+            "decision_table_id": "dt_trade_secret_provision",
+            "position": 2,
+            "conditions": {
+              "provided_information": "-",
+              "recipient_authorization": "-"
+            },
+            "outputs": {"decision": "許可", "reason_code": "not_prohibited_combination"}
+          }
+        ]
+      }
+    ],
+    "compound_fact_application": {
+      "rejected_in_primitive": false,
+      "rationale": "「営業秘密として管理する情報(又はその複製物) かつ 許可されていない相手」という複合条件は、一致プリミティブ側でANDを組まず、新しく作る決定表の1行(id_r_tsp_1)の2列の条件として表現する(複合fact禁止原則)。情報と複製物は同じ列の2値として並べる。"
+    },
+    "provenance": {
+      "origin": "regulation_clause",
+      "clause_ref": "IPA情報セキュリティ関連規程 人的対策-2(従業員の責務)",
+      "registered_by": "claude_code",
+      "registered_at": "2026-10-23T00:00:00+00:00"
+    },
+    "human_review_status": "pending"
+  },
+  "evidence": {
+    "action_surface": {
+      "value": "提供してはならない",
+      "quote": "提供してはならない",
+      "verbatim": true
+    },
+    "possible_values": [
+      {
+        "fact": "provided_information",
+        "value": "営業秘密として管理する情報",
+        "quote": "当社が営業秘密として管理する情報",
+        "verbatim": true,
+        "note": "「当社が」は主体の限定なので値から外した。何が営業秘密に当たるか(顧客名簿・設計図など)は条文にないので足していない"
+      },
+      {
+        "fact": "provided_information",
+        "value": "複製物",
+        "quote": "その複製物",
+        "verbatim": true
+      },
+      {
+        "fact": "recipient_authorization",
+        "value": "許可されていない",
+        "quote": "許可されていない",
+        "verbatim": true
+      }
+    ],
+    "rule_rows": [
+      {
+        "row_id": "id_r_tsp_1",
+        "quote": "当社が営業秘密として管理する情報及びその複製物の一切を許可されていない組織、人に提供してはならない。",
+        "verbatim": true,
+        "note": "「一切を」は、情報と複製物のどちらでも禁止であることを表す。同じ列の2値を並べた1行で表している"
+      },
+      {
+        "row_id": "id_r_tsp_2",
+        "quote": null,
+        "verbatim": false,
+        "note": "既定の行(ワイルドカード)。条文が禁止していない組み合わせを「許可」にするもので、条文に逐語の根拠はない"
+      }
+    ],
+    "not_modeled": [
+      {
+        "quote": "組織、人",
+        "note": "提供先が組織か人かで結果が変わらない(どちらも禁止)ため、列にしていない。列にすると、判定に効かない列が増える"
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "name": "営業秘密を許可されていない相手に提供 → 禁止",
+      "kind": "条文の禁止の行に当たる",
+      "facts": {
+        "provided_information": "営業秘密として管理する情報",
+        "recipient_authorization": "許可されていない"
+      },
+      "expected": {"decision": "禁止", "reason_code": "trade_secret_to_unauthorized_recipient"}
+    },
+    {
+      "name": "複製物を許可されていない相手に提供 → 禁止(同じ列の2値目)",
+      "kind": "条文の禁止の行に当たる",
+      "facts": {
+        "provided_information": "複製物",
+        "recipient_authorization": "許可されていない"
+      },
+      "expected": {"decision": "禁止", "reason_code": "trade_secret_to_unauthorized_recipient"}
+    },
+    {
+      "name": "許可された相手への提供 → 許可",
+      "kind": "possible_values 外の値が既定の行に落ちる(U2)",
+      "facts": {
+        "provided_information": "営業秘密として管理する情報",
+        "recipient_authorization": "許可されている"
+      },
+      "expected": {"decision": "許可", "reason_code": "not_prohibited_combination"}
+    },
+    {
+      "name": "営業秘密でない情報の提供 → 許可",
+      "kind": "possible_values 外の値が既定の行に落ちる(U2)",
+      "facts": {
+        "provided_information": "公開情報",
+        "recipient_authorization": "許可されていない"
+      },
+      "expected": {"decision": "許可", "reason_code": "not_prohibited_combination"}
+    }
+  ],
+  "review": {
+    "status": "draft",
+    "reviewed_by": null,
+    "expected_gates": ["new_action_unapproved", "new_fact_unapproved"],
+    "notes": [
+      "actor: 条文の主語は「従業員」。擬人化の前提であおいに当てた(ゴールデンパスと同じ扱い)",
+      "「組織、人」を列にしていない(evidence.not_modeled)。提供先の種別で結果が変わらないため。列を持たせるべきかの判断をお願いしたい",
+      "action.normalized「情報提供」と parent「情報開示」は提案である。あおいの既存 Action 階層には「情報開示」の子として「外部送信」「口頭伝達」があり、その兄弟に置く案になる。ただしこの条文は別の規程(IPA)のもので、同じ階層に入れてよいかは判断が要る",
+      "営業秘密該当性(何が営業秘密か)は、この IR では fact の値としてそのまま受け取る形にしている。実際の判定では「営業秘密として管理する情報」に当たるかの判断が前段に必要で、条文だけでは決まらない"
+    ]
+  }
+}

@@ -1,0 +1,244 @@
+{
+  "gold_id": "aoi_johokanri_art14",
+  "source": {
+    "document": "情報管理規程(あおいの既存実装のゴールデンパス条文)",
+    "article": "第14条 口頭による情報提供の制限",
+    "clause_ref": "情報管理規程 第14条",
+    "testdata": null,
+    "text_variant": "clause_text(出典ファイルの逐語)",
+    "quoted_from": [
+      "reference/gijinka-extraction-pipeline/tests/fixtures/article14_clause.json の clause_text",
+      "reference/gijinka-extraction-pipeline/FINAL_REPORT.md:59-61(同じ条文を引用)"
+    ],
+    "note": "この条文は testdata/clauses/clauses_v1.json には入っていない。あおいの既存実装(reference/)の資料から逐語で引いた。reference/ はリポジトリに入っていないため、条文本文はこのファイルに逐語で持たせている"
+  },
+  "context": [
+    {
+      "item": "actor = あおい",
+      "value": "あおい",
+      "source": "reference/gijinka-extraction-pipeline/tests/fixtures/article14_clause.json の \"actor\": \"あおい\"",
+      "note": "条文の主語は「当法人の職員」。あおいへの当てはめは、出典の資料が明示している"
+    },
+    {
+      "item": "既存の決定表(本人確認判定・情報分類判定・送信可否判定)",
+      "value": "registry/registry.json(初期登録。provenance.origin=bootstrap)",
+      "source": "registry/registry.json・registry/dmn/aoi_transmission.dmn(D32・D34)",
+      "note": "この条文は既存の本人確認判定に行を足し、その出力を参照する。登録簿にこれらがあることが前提"
+    },
+    {
+      "item": "確認レベル「高」の意味",
+      "value": "氏名・生年月日・電話番号のすべてが一致したとき(id_r1)",
+      "source": "registry/dmn/aoi_transmission.dmn の dt_identity(id_r1)",
+      "note": "「高」は生年月日・連絡先の一致を含むので、この条文では口頭伝達を許可する側に入れた"
+    }
+  ],
+  "ir": {
+    "clause_ref": "情報管理規程 第14条",
+    "clause_text": "当法人の職員は、患者又はその代理人からの電話等による問い合わせに対し、当該患者の生年月日及び連絡先の一致が確認できない場合、検査結果その他の医療情報を口頭で伝達してはならない。",
+    "axis1_result": {
+      "label": "ハード制約",
+      "confidence": 1.0,
+      "rationale": "出典資料の正解ラベル(oracle.axis1.label)をそのまま使う",
+      "evidence_quote": "口頭で伝達してはならない",
+      "quote_verified": true,
+      "vocab_flagged": false
+    },
+    "axis2_result": {
+      "label": "宣言的",
+      "confidence": 1.0,
+      "rationale": "出典資料の正解ラベル(oracle.axis2.label)をそのまま使う",
+      "evidence_quote": "当該患者の生年月日及び連絡先の一致が確認できない場合",
+      "quote_verified": true,
+      "vocab_flagged": false
+    },
+    "actor": "あおい",
+    "action": {
+      "surface": "口頭で伝達してはならない",
+      "normalized": "口頭伝達",
+      "parent": "情報開示",
+      "is_new": true,
+      "approved_by": null
+    },
+    "scope": "患者又はその代理人からの電話等による問い合わせ",
+    "target": {
+      "dmn_model": "aoi_transmission",
+      "entry_decision_id": "decision_verbal_disclosure"
+    },
+    "facts": {
+      "new_facts": [],
+      "referenced_facts": ["birth_match", "phone_match"],
+      "value_additions": {}
+    },
+    "level_determination": {
+      "atomic_fact": {"covered": true, "new_primitives": []},
+      "intermediate": [
+        {
+          "table_id": "dt_identity",
+          "relation": "proper_subset",
+          "action": "add_row",
+          "new_output_values": {
+            "identity_level": [
+              {"value": "中(生年月日・連絡先一致)", "approved_by": null}
+            ]
+          },
+          "new_input_columns": []
+        }
+      ],
+      "final": {
+        "compared_table_id": "dt_transmission",
+        "relation": "proper_subset",
+        "action": "new_table"
+      }
+    },
+    "rule_row_additions": [
+      {
+        "row_id": "id_r_art14",
+        "decision_table_id": "dt_identity",
+        "position": 4,
+        "conditions": {
+          "name_match": "-",
+          "birth_match": "一致",
+          "phone_match": "一致"
+        },
+        "outputs": {
+          "identity_result": "済",
+          "identity_level": "中(生年月日・連絡先一致)"
+        }
+      }
+    ],
+    "new_decision_tables": [
+      {
+        "decision_table_id": "dt_verbal_disclosure",
+        "decision_id": "decision_verbal_disclosure",
+        "decision_name": "口頭伝達可否判定",
+        "input_columns": ["本人確認判定.identity_level"],
+        "knowledge_sources": [],
+        "rule_rows": [
+          {
+            "row_id": "vd_r1",
+            "decision_table_id": "dt_verbal_disclosure",
+            "position": 1,
+            "conditions": {
+              "本人確認判定.identity_level": "\"高\",\"中(生年月日・連絡先一致)\""
+            },
+            "outputs": {"decision": "許可", "reason_code": "生年月日及び連絡先の一致を確認"}
+          },
+          {
+            "row_id": "vd_r2",
+            "decision_table_id": "dt_verbal_disclosure",
+            "position": 2,
+            "conditions": {"本人確認判定.identity_level": "-"},
+            "outputs": {"decision": "禁止", "reason_code": "生年月日又は連絡先の一致を確認できない"}
+          }
+        ]
+      }
+    ],
+    "compound_fact_application": {
+      "rejected_in_primitive": false,
+      "rationale": "「生年月日の一致 かつ 連絡先の一致」という複合条件は、一致プリミティブ側でANDを組まず、既存の本人確認判定(dt_identity)に行を1本足して表現する(複合fact禁止原則)。氏名の一致は条文が問わないので、その列は「-」にする。"
+    },
+    "provenance": {
+      "origin": "regulation_clause",
+      "clause_ref": "情報管理規程 第14条",
+      "registered_by": "claude_code",
+      "registered_at": "2026-10-23T00:00:00+00:00"
+    },
+    "human_review_status": "pending"
+  },
+  "evidence": {
+    "action_surface": {
+      "value": "口頭で伝達してはならない",
+      "quote": "口頭で伝達してはならない",
+      "verbatim": true
+    },
+    "possible_values": [],
+    "new_output_values": [
+      {
+        "output": "identity_level",
+        "value": "中(生年月日・連絡先一致)",
+        "quote": "当該患者の生年月日及び連絡先の一致",
+        "verbatim": false,
+        "note": "値の名前は条文にない。既存の「中」は「氏名・生年月日が一致し電話が未提供」(id_r2)などを指すので、そのまま使うと、連絡先の一致を確認できていない場合まで口頭伝達が許可されてしまう。条文が求める区別(生年月日と連絡先の両方が一致)を表すために新しい値が必要で、名前は条文の語「生年月日及び連絡先の一致」から付けた。あおいの既存実装は同じ行に「中(氏名なし・2要素一致)」を当てているが、「氏名なし」は条文にない語なので使わなかった"
+      }
+    ],
+    "rule_rows": [
+      {
+        "row_id": "id_r_art14",
+        "quote": "当該患者の生年月日及び連絡先の一致が確認できない場合、……口頭で伝達してはならない。",
+        "verbatim": true,
+        "note": "禁止の裏(生年月日と連絡先が一致する場合)を、本人確認判定の行として表した。氏名の列は条文が問わないので「-」"
+      },
+      {
+        "row_id": "vd_r1",
+        "quote": "当該患者の生年月日及び連絡先の一致が確認できない場合、検査結果その他の医療情報を口頭で伝達してはならない。",
+        "verbatim": true,
+        "note": "「高」を許可側に含めたのは、「高」が氏名・生年月日・電話番号のすべての一致を指し(context 参照)、生年月日・連絡先の一致を含むため。条文本文と登録簿から導いている"
+      },
+      {
+        "row_id": "vd_r2",
+        "quote": "生年月日及び連絡先の一致が確認できない場合、……口頭で伝達してはならない。",
+        "verbatim": true,
+        "note": "既定の行だが、この条文では禁止側が既定になる(他の4件とは逆)。逐語の根拠がある"
+      }
+    ],
+    "not_modeled": [
+      {
+        "quote": "電話等による問い合わせ",
+        "note": "問い合わせの経路。条文の scope に書いたが、決定表の列にはしていない。経路で結果が変わる記述が条文にない"
+      },
+      {
+        "quote": "検査結果その他の医療情報",
+        "note": "伝達する情報の種別。あおいの登録簿には情報分類判定(has_medical など)があるが、この条文は情報の種別で結果を変えていない(どの医療情報でも、一致が確認できなければ禁止)ため、列にしていない。既存の情報分類判定を参照するかは要レビュー"
+      },
+      {
+        "quote": "患者又はその代理人",
+        "note": "問い合わせ者の別。代理人でも扱いが変わる記述が条文にないため、列にしていない"
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "name": "氏名は未提供だが生年月日・連絡先が一致 → 口頭伝達は許可",
+      "kind": "追加した行に当たる",
+      "facts": {"name_match": "未提供", "birth_match": "一致", "phone_match": "一致"},
+      "expected": {"decision": "許可", "reason_code": "生年月日及び連絡先の一致を確認"}
+    },
+    {
+      "name": "氏名・生年月日・電話番号のすべてが一致 → 許可(既存の「高」)",
+      "kind": "既存の行に当たる",
+      "facts": {"name_match": "一致", "birth_match": "一致", "phone_match": "一致"},
+      "expected": {"decision": "許可", "reason_code": "生年月日及び連絡先の一致を確認"}
+    },
+    {
+      "name": "生年月日が不一致 → 禁止",
+      "kind": "既定の行(ワイルドカード)に落ちる",
+      "facts": {"name_match": "未提供", "birth_match": "不一致", "phone_match": "一致"},
+      "expected": {"decision": "禁止", "reason_code": "生年月日又は連絡先の一致を確認できない"}
+    },
+    {
+      "name": "連絡先が未提供 → 禁止(既存の「中」でも許可にならない)",
+      "kind": "既定の行(ワイルドカード)に落ちる",
+      "facts": {"name_match": "一致", "birth_match": "一致", "phone_match": "未提供"},
+      "expected": {"decision": "禁止", "reason_code": "生年月日又は連絡先の一致を確認できない"}
+    },
+    {
+      "name": "生年月日の照合結果が possible_values 外の値 → 禁止",
+      "kind": "possible_values 外の値が既定の行に落ちる(U2)",
+      "facts": {"name_match": "未提供", "birth_match": "未照合", "phone_match": "一致"},
+      "expected": {"decision": "禁止", "reason_code": "生年月日又は連絡先の一致を確認できない"}
+    }
+  ],
+  "review": {
+    "status": "draft",
+    "reviewed_by": null,
+    "expected_gates": ["new_action_unapproved", "new_fact_unapproved"],
+    "notes": [
+      "**最も見てほしい点**: 新しい確認レベルの値「中(生年月日・連絡先一致)」。既存の「中」を使い回すと、連絡先が未提供の場合(id_r2)まで口頭伝達が許可されてしまう(シナリオ4がこれを確かめている)。一方で、この値の名前は条文にない。あおいの既存実装の「中(氏名なし・2要素一致)」とも違う名前にした(「氏名なし」は条文にない語)",
+      "**実行時の穴(要検討)**: 本人確認判定に新しい出力値を足すと、それを参照する既存の送信可否判定(dt_transmission)には、その値に当たる行が無い。外部送信で確認レベルが「中(生年月日・連絡先一致)」になった行動要求は、dt_transmission のどの行にも当たらず評価が失敗する。C11 は「参照する値が出力されるか」だけを見ており、逆方向(出力した値が参照側で受け止められるか)を見ていない。検証を1つ足す提案を第22回の報告に書いた",
+      "referenced_facts は birth_match・phone_match の2件。name_match は条文が問わないので行の条件が「-」で、D25・D41 により入らない。一方で required_facts には3件(name_match を含む)が入る(本人確認判定の入力列だから)。この差が出る実例になっている",
+      "新しい最終判定(口頭伝達可否判定)は、D17 により参照先と同じ DMN モデル aoi_transmission に入れた。既存モデルの namespace は変えていない(D39)",
+      "「検査結果その他の医療情報」を列にしていない(evidence.not_modeled)。あおいには情報分類判定があるので、それを参照すべきかの判断をお願いしたい",
+      "knowledge_sources は空にした。この判定の入力はドット参照1列だけで、条文に知識源の根拠がない(D22)"
+    ]
+  }
+}

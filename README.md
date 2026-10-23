@@ -24,6 +24,7 @@ aoi_doc2dmn/
 │   │   ├── wiring_generator.py # 4点セット同時生成+クロス検証C1〜C11
 │   │   ├── bootstrap_aoi.py    # あおいの送信可否判定DMNを登録簿へ初期登録
 │   │   ├── golden_path.py      # ゴールデンパス条文のIR構築
+│   │   ├── run_ir_gold.py      # 正解IRをmanifest順に通して確かめる
 │   │   ├── dmn_engine.py       # 軽量DMN検証エンジン(reference/から移植)
 │   │   └── run_golden_path.py  # 一気通貫実行スクリプト
 │   └── common/
@@ -35,14 +36,16 @@ aoi_doc2dmn/
 ├── testdata/
 │   ├── clauses/clauses_v1.json  # オラクル付きテストデータ（28件。厚労省モデル就業規則16件＋
 │   │                             IPA情報セキュリティ関連規程等12件）
+│   ├── ir_gold/                 # 正解IRの下書き（5件＋manifest.json。review.status=draft）
 │   ├── candidates/              # テストデータ拡張時の候補・レビュー記録
 │   └── schema.md                # オラクルのスキーマ定義・カバレッジ表・①関連判定の基準
 ├── registry/
 │   ├── registry.json     # 永続化した登録簿（③の入力。既存の決定表とfact台帳）
 │   └── dmn/              # 既存のDMNモデル（<dmn_model>.dmn。行・列の追加先）
 ├── tests/                # pytest（クロス検証C1〜C11の失敗テスト・ゴールデンパス固定・
-│                         #         受け入れ経路（レベル2/行追加/列追加/no_change）・
-│                         #         初期登録した DMN の修正（D34）のテスト）
+│   │                     #         受け入れ経路（レベル2/行追加/列追加/no_change）・
+│   │                     #         初期登録した DMN の修正（D34）・正解IRのテスト）
+│   └── fixtures/         # あおいの元のDMN（初期登録の入力。D42）
 ├── docs/design/          # ③aの設計書（IR v2設計書・9e66776時点のAsIs仕様書）
 ├── out/                  # ③の4点セット生成物（gitignore対象。再生成可能）
 └── reference/
@@ -72,7 +75,7 @@ aoi_doc2dmn/
   パイプライン）への移行フェーズに入った。詳細は`testdata/schema.md`「軸1・軸2分類の精度改善
   フェーズの区切り」節、「gold label判定の方針」節を参照
 - `src/stage3_generate/`: ③a（宣言的×ハード制約）の**後半**（IR → 4点セット）は
-  IR v2（`docs/design/aoi_doc2dmn_IRv2_design.md` v1.3）で実装済み。fact の定義がIRに入り
+  IR v2（`docs/design/aoi_doc2dmn_IRv2_design.md` v1.4）で実装済み。fact の定義がIRに入り
   （`facts.new_facts`）、4点すべてをIRと登録簿から生成する。クロス検証はC1〜C11で、
   それぞれの失敗テストが`tests/`にある
 - v1.2 で**受け入れ経路**を実装した。新しい表を作るだけ（レベル1）でなく、既存のDMN
@@ -86,6 +89,13 @@ aoi_doc2dmn/
   送信可否判定）を初期登録済み（`provenance.origin = bootstrap`）。層1が3件・層2が18件・
   層3が7件。DMNは`registry/dmn/aoi_transmission.dmn`（元のDMNに承認済みの修正2件を
   当てたもの。D34）
+- v1.4 では、中間判定の新しい出力値を承認の対象にし（D37）、C9条件3を双方向の一致に
+  した（D36）。`depends_on_decisions`／`depends_on_inputs`はIRから外し、`input_columns`
+  からの導出にした（D38）
+- `testdata/ir_gold/`に**正解IRの下書き**が5件ある（`review.status = "draft"`）。
+  `run_ir_gold.py`が`manifest.json`の順に配線ジェネレータへ通し、C1〜C11とDMN評価
+  シナリオを確かめる（登録簿はメモリ上で持ち回り、`registry/`には反映しない。D43）。
+  型で表しきれなかった条文は`testdata/ir_gold/NOT_EXPRESSIBLE.md`に記録してある
 - ③aの**前段**（条文 → IR）は未実装。現状は`golden_path.py`がゴールデンパス1件のIRを
   手で組み立てている。これが③の本丸であり次の作業対象
 
@@ -155,13 +165,24 @@ pipのシステム直接インストールができないため、プロジェ�
 - `reference/`はリポジトリに入っていないため、初期登録を流し直すには別途配置が必要
   （生成済みの`registry/`はコミットしてある）
 
+### 正解IRの確認（Ollama不要）
+
+```bash
+.venv/bin/python3 -m src.stage3_generate.run_ir_gold
+```
+
+`testdata/ir_gold/manifest.json`の順に正解IRを配線ジェネレータへ通し、各件が
+C1〜C11を通過すること・DMN評価シナリオが一致することを確かめる。出力された登録簿を
+次のIRの入力にするので、既存のfactや決定表を使う条文も確かめられる（D43）。
+`registry/`は書き換えない。
+
 ### テスト
 
 ```bash
 .venv/bin/python3 -m pytest tests/ -v
 ```
 
-Ollamaは不要。4つのファイルに分かれている。
+Ollamaは不要。5つのファイルに分かれている。
 
 - `test_cross_validation.py`：クロス検証C1〜C11の失敗テスト（わざと違反させたIRで
   `SchemaWiringError`になること）
@@ -171,7 +192,12 @@ Ollamaは不要。4つのファイルに分かれている。
   行追加・列の追加・no_change（第901〜904条）が通ること（挿入後のDMNの評価シナリオ込み。
   既定の行に落ちるケースを含む）
 - `test_bootstrap_fixes.py`：初期登録したDMNの修正（D34）。修正を外すとC11で止まること、
-  修正の前後で評価結果が変わらないこと。`reference/`を使うテストは、無ければ飛ばす
+  修正の前後で評価結果が変わらないこと
+- `test_ir_gold.py`：正解IRの下書きが全件C1〜C11を通りシナリオが一致すること、
+  evidenceに各値・各行の根拠があること、`registry/`を書き換えないこと
+
+元のDMNは`tests/fixtures/`にコミットしてあるため（D42）、`reference/`が無い環境でも
+全件が動く（skipは0件）。
 
 空欄（`［　］`）の扱い方針は`testdata/schema.md`「空欄の扱い方針」節を、
 ①関連判定の基準（解釈A/B）は同ファイル「①関連判定の基準」節を参照。
