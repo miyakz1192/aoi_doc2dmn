@@ -18,6 +18,17 @@ v1(コミット 9e66776)との差分は同書 付録A。
 - **D7**: 判定先(`target`)を IR に持たせる。v1 は DMN モデル名を引数で渡していた
 - **D10**: `ReviewGates` に `new_fact_unapproved` を追加
 
+## v1.2 で変わった点(設計書2章 D14・D18・D19・D20・D23)
+
+- **D14**: fact の承認を記録する。`FactDef.approved_by` と `ValueAddition` を追加し、
+  `new_fact_unapproved` は「承認者のいない新しい fact・値がある」ときだけ立つ
+  (v1.1 は「新語彙あり」で立てていたため、新 fact を持つ条文では常に立ち目印にならなかった)
+- **D18**: `CompoundFactOption` に `new_table_row` を追加
+- **D19**: `IntermediateChange.new_input_columns` を追加
+- **D20**: `ReviewGates` に `new_primitive_required` を追加
+- **D23**: `identifiability_classifier` を一致プリミティブ表に戻す。ただし
+  `new_facts` では使えない(あおいの初期登録分だけの境界事例。C4 で止める)
+
 ## 引き継ぐ原則(設計書1.4)
 
 - 4点セットの同時生成、複合 fact 禁止、FIRST と行の順序、来歴の表し方、Action 正規化
@@ -38,6 +49,7 @@ ColumnSetRelationKind = Literal[
 LevelOutcome = Literal["level1_new_table", "level2_row_addition"]
 
 CompoundFactOption = Literal[
+    "new_table_row",
     "existing_table_row_addition",
     "new_intermediate_table",
     "rejected_compound_in_primitive",
@@ -62,7 +74,13 @@ PRIMITIVE_ARGS: dict[str, tuple[str, ...]] = {
     "fuzzy_match_name": ("claimed", "registered"),
     "date_match": ("claimed", "registered"),
     "ontology_class_match": ("subject", "target_class"),
+    # D23: あおいの情報分類判定の初期登録分だけで使える境界事例。
+    # 新しい条文の new_facts では C4 が止める(BOOTSTRAP_ONLY_PRIMITIVES)。
+    "identifiability_classifier": ("data_category", "care_setting"),
 }
+
+# new_facts では宣言できないプリミティブ(設計書2章 D23)。
+BOOTSTRAP_ONLY_PRIMITIVES: frozenset[str] = frozenset({"identifiability_classifier"})
 
 
 # --------------------------------------------------------------------------
@@ -153,6 +171,8 @@ class FactDef:
     sources: dict[str, SourceRef]
     # 語彙登録時に人が付ける比較の種類の注釈(任意)
     comparison_kind: Optional[str] = None
+    # この fact の追加を承認した人。未承認なら None(D14)
+    approved_by: Optional[str] = None
 
     def to_json(self) -> dict:
         out: dict = {
@@ -163,6 +183,7 @@ class FactDef:
         }
         if self.comparison_kind is not None:
             out["comparison_kind"] = self.comparison_kind
+        out["approved_by"] = self.approved_by
         return out
 
     @classmethod
@@ -175,7 +196,27 @@ class FactDef:
                 k: source_ref_from_json(v) for k, v in payload.get("sources", {}).items()
             },
             comparison_kind=payload.get("comparison_kind"),
+            approved_by=payload.get("approved_by"),
         )
+
+
+@dataclass
+class ValueAddition:
+    """既存 fact の `possible_values` に足す値1つ分(設計書3.6・D14)。
+
+    値ごとに承認者を持たせるのは、1つの fact に複数回にわたって値が足され、
+    承認の単位が値ごとになるため。
+    """
+
+    value: str
+    approved_by: Optional[str] = None
+
+    def to_json(self) -> dict:
+        return {"value": self.value, "approved_by": self.approved_by}
+
+    @classmethod
+    def from_json(cls, payload: dict) -> "ValueAddition":
+        return cls(value=payload["value"], approved_by=payload.get("approved_by"))
 
 
 @dataclass
@@ -184,12 +225,24 @@ class FactUsage:
 
     `new_facts` は登録簿の層3(fact 台帳)に追加され、`referenced_facts` は層3に
     登録済みの fact を名前で参照する。`value_additions` は既存 fact の
-    `possible_values` に値を足す場合に使う。
+    `possible_values` に値を足す場合に使う(fact 名 -> 値と承認者の一覧。D14)。
+
+    `referenced_facts` は「IR が使う既存 fact を漏れなく列挙する欄」である(D21)。
+    実在すること(層3にあること)と漏れがないことの両方を C6 が確かめる。
     """
 
     new_facts: list[FactDef] = field(default_factory=list)
     referenced_facts: list[str] = field(default_factory=list)
-    value_additions: dict[str, list[str]] = field(default_factory=dict)
+    value_additions: dict[str, list[ValueAddition]] = field(default_factory=dict)
+
+    def unapproved_fact_names(self) -> list[str]:
+        """承認者のいない新しい fact・新しい値を列挙する(D14。宣言順)。"""
+        out = [f.variable for f in self.new_facts if f.approved_by is None]
+        for variable, additions in self.value_additions.items():
+            for addition in additions:
+                if addition.approved_by is None:
+                    out.append(f"{variable}={addition.value}")
+        return out
 
 
 # --------------------------------------------------------------------------
@@ -230,6 +283,9 @@ class IntermediateChange:
     relation: ColumnSetRelationKind
     action: IntermediateAction
     new_output_values: list[str] = field(default_factory=list)
+    # action が add_column のとき足す入力列(D19)。足した列は層1の input_columns に
+    # 加わり、既存の全行はその列が「-」で埋まる。
+    new_input_columns: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -334,8 +390,11 @@ class ReviewGates:
     vocab_flagged: bool = False
     # Action正規化で新規語彙が検出された場合に立てる。
     new_action_unapproved: bool = False
-    # fact の語彙(新しい fact・既存 fact への新しい値)を増やす場合に立てる(D10)。
+    # 承認者のいない新しい fact・既存 fact への新しい値がある場合に立てる(D10・D14)。
     new_fact_unapproved: bool = False
+    # 新しい一致プリミティブが必要な場合(atomic_fact.covered=False)に立てる(D20)。
+    # 新規プリミティブの追加は③aの範囲外なので、必ず人間レビューに回す。
+    new_primitive_required: bool = False
 
     @property
     def should_review(self) -> bool:
@@ -346,6 +405,7 @@ class ReviewGates:
                 self.vocab_flagged,
                 self.new_action_unapproved,
                 self.new_fact_unapproved,
+                self.new_primitive_required,
             )
         )
 
@@ -357,6 +417,7 @@ class ReviewGates:
             "vocab_flagged",
             "new_action_unapproved",
             "new_fact_unapproved",
+            "new_primitive_required",
         ]
         return [n for n in names if getattr(self, n)]
 
@@ -373,6 +434,8 @@ class ReviewGates:
             out.append("新規Actionが未承認")
         if self.new_fact_unapproved:
             out.append("新規fact・既存factへの新規値が未承認")
+        if self.new_primitive_required:
+            out.append("新しい一致プリミティブが必要(③aの範囲外)")
         return out
 
 
@@ -424,10 +487,12 @@ def build_review_gates(
     axis2: AxisResult,
     action: ActionRef,
     facts: FactUsage,
+    level_determination: Optional[LevelDetermination] = None,
 ) -> ReviewGates:
     """②の判定結果・Action正規化・fact の使い方から、④人間レビューのゲートを組み立てる。
 
     軸1・軸2のいずれかがゲート条件に該当すれば、そのゲートを立てる(OR条件)。
+    `level_determination` を渡すと `new_primitive_required` も判定する(D20)。
     """
     return ReviewGates(
         confidence_below_threshold=(
@@ -436,5 +501,11 @@ def build_review_gates(
         quote_unverified=(not axis1.quote_verified) or (not axis2.quote_verified),
         vocab_flagged=axis1.vocab_flagged or axis2.vocab_flagged,
         new_action_unapproved=action.is_new and action.approved_by is None,
-        new_fact_unapproved=bool(facts.new_facts) or bool(facts.value_additions),
+        # D14: 「新語彙あり」ではなく「承認者がいない新語彙あり」で立てる。
+        # これにより、承認者を入れればゲートが下りる。
+        new_fact_unapproved=bool(facts.unapproved_fact_names()),
+        new_primitive_required=(
+            level_determination is not None
+            and not level_determination.atomic_fact.covered
+        ),
     )

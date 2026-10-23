@@ -16,15 +16,30 @@ DMN XML／バインディング設定JSON／ルーティング表JSON／Scope・
 - 返す登録簿は、入力登録簿にマージした**更新後の全体**(設計書4章「registry(更新後)」)
 - クロス検証を3項目から10項目に増やした(D9)
 
-## クロス検証の実行順序(設計書5章の補完。要報告事項)
+## v1.2 で追加した受け入れ経路(第17回 HANDOFF タスク3)
 
-設計書5章は「4点セットを作った後に確かめる」とあるが、C3・C4・C6・C9・C10 は生成の
-**前提**である。特に C9 条件1が破れていると `required_facts` の導出自体が始められず、
-設計書が要求する「わざと違反させた IR で SchemaWiringError になる」失敗テストが
-`KeyError` になってしまう。そのため次の2段構えにした。
+- **既存モデルへの行の挿入**(D15): `registry/dmn/<dmn_model>.dmn` を読み込み、
+  `position` の位置に rule を挿入する。レベル2(`final.action=add_rows`)と
+  中間判定への行追加(`intermediate.action=add_row`)の両方
+- **列の追加**(D19): `intermediate.action=add_column` のとき、input と inputData を
+  足し、既存の全 rule のその列を「-」で埋める
+- **影響を受ける最終判定の作り直し**(D16): IR が変更した既存の表を起点に層1の
+  `depends_on_decisions` を逆にたどり、影響を受ける最終判定をすべて洗い出して
+  ルーティング表の行とバインディング設定を作り直す
+- **同一モデルの原則**(D17): ドット参照の参照先・作り直す最終判定が別の DMN モデルに
+  あれば `SchemaWiringError` で停止する
+- **C11**(D13): ドット参照の列の条件値が参照先の判定の出力値にあること
 
-1. 生成前(IR と登録簿だけで判定できるもの): C3 → C9 → C4 → C6 → C10
+## クロス検証の実行順序(設計書5章)
+
+設計書5章は2段構えを定めている(v1.1 の実装報告を受けて明文化された)。
+
+1. 生成前(IR と登録簿だけで判定できるもの): C3 → C9 → C4 → C6 → C10 → C11 → C2
 2. 生成後(成果物を突合するもの): C1 → C5 → C7 → C8
+
+ただし C6 の「網羅」(D21: IR が使う既存 fact がすべて `referenced_facts` にある)は
+`required_facts` を必要とするため、実在の確認(上の位置)と網羅の確認
+(`required_facts` 導出の直後)に分けている。**要報告事項**。
 """
 from __future__ import annotations
 
@@ -36,12 +51,13 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 
 from .ir_schema import (
+    BOOTSTRAP_ONLY_PRIMITIVES,
     PRIMITIVE_ARGS,
     ClauseIR,
     FactDef,
     RuleRowDraft,
 )
-from .registry import Registry
+from .registry import Registry, dmn_path
 
 DMN_NS = "https://www.omg.org/spec/DMN/20240513/MODEL/"
 DMNDI_NS = "https://www.omg.org/spec/DMN/20230324/DMNDI/"
@@ -54,6 +70,9 @@ DI_NS = "http://www.omg.org/spec/DMN/20180521/DI/"
 # id・name の導出元(target.dmn_model)だけを定めており namespace の規則が無いため、
 # v1 のゴールデンパスと同じ値になるこの base を本実装で定める(要報告事項)。
 DMN_NAMESPACE_BASE = "http://gijinka.example.com/dmn"
+
+# 既存の DMN ファイルの置き場所(D15)。`registry/dmn/<dmn_model>.dmn`。
+DMN_DIR_DEFAULT = "registry/dmn"
 
 # 決定表のセルに書ける FEEL のサブセット: ワイルドカード、文字列リテラル、
 # カンマ区切りのリテラル列のみ。範囲・比較・否定は未対応(AsIs 5.4)。
@@ -189,6 +208,19 @@ def _ir_tables_by_decision_name(ir: ClauseIR) -> dict[str, object]:
     return {t.decision_name: t for t in ir.new_decision_tables}
 
 
+def _with_added_columns(ir: ClauseIR, entry: dict) -> list[str]:
+    """層1の `input_columns` に、この IR が `add_column` で足す列を加える(D19)。"""
+    columns = list(entry.get("input_columns", []))
+    table_id = entry.get("decision_table_id")
+    for change in ir.level_determination.intermediate:
+        if change.action != "add_column" or change.table_id != table_id:
+            continue
+        for column in change.new_input_columns:
+            if column not in columns:
+                columns.append(column)
+    return columns
+
+
 def _resolve_decision_columns(
     ir: ClauseIR,
     registry: Registry,
@@ -198,6 +230,10 @@ def _resolve_decision_columns(
 ) -> list[str]:
     """判定の入力列を、IRの新規決定表 -> 登録簿の層1 の順で探す。
 
+    登録簿の層1から引く場合は、この IR が `add_column` で足す列も加える(D19)。
+    加えないと、足した列が `required_facts` から漏れ、実行時に誰もその事実を
+    集めない(第16回の報告 #6)。
+
     見つからない場合は `SchemaWiringError`(`KeyError` を外に出さない)。
     """
     if decision_id is not None:
@@ -206,7 +242,7 @@ def _resolve_decision_columns(
             return list(table.input_columns)  # type: ignore[attr-defined]
         entry = registry.find_decision_table(decision_id=decision_id)
         if entry is not None:
-            return list(entry.get("input_columns", []))
+            return _with_added_columns(ir, entry)
         raise SchemaWiringError(
             f"判定 decision_id={decision_id!r} が IR の new_decision_tables にも"
             "登録簿の層1にも見つかりません。"
@@ -217,7 +253,7 @@ def _resolve_decision_columns(
             return list(table.input_columns)  # type: ignore[attr-defined]
         entry = registry.find_decision_table(decision_name=decision_name)
         if entry is not None:
-            return list(entry.get("input_columns", []))
+            return _with_added_columns(ir, entry)
         raise SchemaWiringError(
             f"判定 decision_name={decision_name!r} が IR の new_decision_tables にも"
             "登録簿の層1にも見つかりません。"
@@ -228,10 +264,12 @@ def _resolve_decision_columns(
 _MAX_DECISION_DEPTH = 50
 
 
-def derive_required_facts(ir: ClauseIR, registry: Registry) -> list[str]:
+def derive_required_facts(
+    ir: ClauseIR, registry: Registry, *, entry_decision_id: str | None = None
+) -> list[str]:
     """最終判定を評価するために実際に集める事実を求める(設計書4.1)。
 
-    1. `target.entry_decision_id` の決定表の入力列から始める
+    1. 起点(既定は `target.entry_decision_id`)の決定表の入力列から始める
     2. 「判定名.出力名」の形の列は、その判定の入力列に置き換える
     3. 2 を、ドットを含む列がなくなるまで繰り返す
     4. 残った列の集合が required_facts
@@ -248,6 +286,9 @@ def derive_required_facts(ir: ClauseIR, registry: Registry) -> list[str]:
     - 展開の経路上に同じ判定が再び現れる(循環参照)
     - 参照先の判定が IR にも登録簿の層1にも無い
     - 参照先の判定に入力列が無い(required_facts が静かに空になるのを防ぐ)
+
+    D16 の作り直しでは、IR の起点ではない既存の最終判定についても求めるため、
+    `entry_decision_id` で起点を差し替えられるようにしている。
     """
     required: list[str] = []
     seen_facts: set[str] = set()
@@ -279,10 +320,105 @@ def derive_required_facts(ir: ClauseIR, registry: Registry) -> list[str]:
             expand(sub_columns, path + (name,))
 
     entry_columns = _resolve_decision_columns(
-        ir, registry, decision_id=ir.target.entry_decision_id
+        ir, registry, decision_id=entry_decision_id or ir.target.entry_decision_id
     )
     expand(entry_columns, ())
     return required
+
+
+def _changed_existing_tables(ir: ClauseIR, registry: Registry) -> list[dict]:
+    """IR が行・列・出力値を足した「既存の」決定表の層1エントリ(宣言順・重複なし)。
+
+    D16 の洗い出しの起点になる。IR の `new_decision_tables` にある表(新規に作る表)は
+    既存ではないので除く。
+
+    設計書4.1は起点を「rule_row_additions・intermediate の table_id・final の
+    compared_table_id」と書いているが、次の2つは「変更した表」ではないので除く
+    (**要報告事項**)。
+
+    - `final.action = new_table` のときの `compared_table_id`: 既存の表と列集合を
+      比べた結果「新しい表を作る」と決めた相手であり、その表は変更しない。
+      含めると、新しい表を作るだけの IR が既存の DMN ファイルを要求してしまう
+    - `intermediate.action = "reuse_value"`: 既存の出力値をそのまま使うので、
+      その表には何も足さない
+    """
+    ir_table_ids = {t.decision_table_id for t in ir.new_decision_tables}
+    table_ids: list[str] = []
+    for row in ir.rule_row_additions:
+        if row.decision_table_id not in table_ids:
+            table_ids.append(row.decision_table_id)
+    for change in ir.level_determination.intermediate:
+        if change.action == "reuse_value":
+            continue
+        if change.table_id not in table_ids:
+            table_ids.append(change.table_id)
+    final = ir.level_determination.final
+    if (
+        final.action == "add_rows"
+        and final.compared_table_id is not None
+        and final.compared_table_id not in table_ids
+    ):
+        table_ids.append(final.compared_table_id)
+
+    out: list[dict] = []
+    for table_id in table_ids:
+        if table_id in ir_table_ids:
+            continue
+        entry = registry.find_decision_table(decision_table_id=table_id)
+        if entry is not None:
+            out.append(entry)
+    return out
+
+
+def derive_routes(ir: ClauseIR, registry: Registry) -> list[dict]:
+    """作り直すルートを洗い出す(D16・設計書4.1「影響を受ける最終判定の洗い出し」)。
+
+    1. IR の起点(`target.entry_decision_id`)のルートは必ず作る。actor・action は
+       IR のもの(`ir.actor` / `ir.action.normalized`)を使う
+    2. IR が変更した既存の表を起点に、層1の `depends_on_decisions` を逆にたどる
+    3. 集めた判定のうち `entry_points` を持つもの(= 最終判定)のルートも作り直す。
+       actor・action は層1の `entry_points` から引く
+
+    中間判定は `entry_points` が空なので、2で集まっても3で除かれる。これは設計の
+    とおりで、エラーにはしない(設計書4.5 層1「中間判定は空」)。
+
+    `required_facts` はルートごとに、その判定を起点として求める。
+    """
+    routes: list[dict] = [
+        {
+            "actor": ir.actor,
+            "action": ir.action.normalized,
+            "dmn_model": ir.target.dmn_model,
+            "decision_id": ir.target.entry_decision_id,
+        }
+    ]
+    changed = _changed_existing_tables(ir, registry)
+    if changed:
+        origins = {
+            e.get("decision_id") for e in changed if e.get("decision_id") is not None
+        }
+        for entry in list(changed) + registry.dependents_of(origins):
+            for entry_point in entry.get("entry_points", []):
+                route = {
+                    "actor": entry_point.get("actor"),
+                    "action": entry_point.get("action"),
+                    "dmn_model": entry.get("dmn_model"),
+                    "decision_id": entry.get("decision_id"),
+                }
+                if route not in routes:
+                    routes.append(route)
+
+    for route in routes:
+        if route["dmn_model"] != ir.target.dmn_model:
+            raise SchemaWiringError(
+                f"D17違反: 作り直す最終判定 {route['decision_id']!r} は DMN モデル "
+                f"{route['dmn_model']!r} にありますが、この IR の target.dmn_model は "
+                f"{ir.target.dmn_model!r} です(モデル間 import は未対応。U9)。"
+            )
+        route["required_facts"] = derive_required_facts(
+            ir, registry, entry_decision_id=route["decision_id"]
+        )
+    return routes
 
 
 # --------------------------------------------------------------------------
@@ -386,6 +522,31 @@ def _check_c9_level_determination(ir: ClauseIR, registry: Registry) -> None:
             "新しいプリミティブの追加は③aの範囲外なので、何が必要かを明示してください。"
         )
 
+    # 条件6: intermediate の action が add_column なら、new_input_columns が空でなく、
+    #        追加した列が rule_row_additions のその表の行の条件に現れる(D19)
+    for change in lv.intermediate:
+        if change.action != "add_column":
+            continue
+        if not change.new_input_columns:
+            raise SchemaWiringError(
+                f"C9検証失敗(条件6): intermediate.action=add_column ですが、決定表 "
+                f"{change.table_id!r} の new_input_columns が空です。どの列を足すのかを"
+                "明示してください(required_facts の算出から漏れます)。"
+            )
+        used = {
+            column
+            for row in ir.rule_row_additions
+            if row.decision_table_id == change.table_id
+            for column in row.conditions
+        }
+        missing_columns = [c for c in change.new_input_columns if c not in used]
+        if missing_columns:
+            raise SchemaWiringError(
+                f"C9検証失敗(条件6): 追加する列 {missing_columns} が、決定表 "
+                f"{change.table_id!r} へ追加する行の条件に現れません"
+                f"(行の条件: {sorted(used)})。"
+            )
+
 
 def _check_c4_sources_match_primitive(ir: ClauseIR, registry: Registry) -> None:
     """C4: sources のキーが primitive の引数名と一致する(設計書3.5)。
@@ -395,16 +556,24 @@ def _check_c4_sources_match_primitive(ir: ClauseIR, registry: Registry) -> None:
     エラーとして止める(要報告事項)。
     """
     for fact in ir.facts.new_facts:
-        _check_one_fact_sources(fact)
-    # 層3から引く既存 fact も、台帳が壊れていないか同じ基準で確かめる
+        _check_one_fact_sources(fact, in_new_facts=True)
+    # 層3から引く既存 fact も、台帳が壊れていないか同じ基準で確かめる。
+    # 初期登録分(identifiability_classifier)はここを通るため、in_new_facts=False。
     for variable in ir.facts.referenced_facts:
         entry = registry.find_fact(variable)
         if entry is None:
             continue  # 実在確認は C6 の責務
-        _check_one_fact_sources(FactDef.from_json(entry))
+        _check_one_fact_sources(FactDef.from_json(entry), in_new_facts=False)
 
 
-def _check_one_fact_sources(fact: FactDef) -> None:
+def _check_one_fact_sources(fact: FactDef, *, in_new_facts: bool) -> None:
+    if in_new_facts and fact.primitive in BOOTSTRAP_ONLY_PRIMITIVES:
+        raise SchemaWiringError(
+            f"C4検証失敗: fact {fact.variable!r} の primitive={fact.primitive!r} は"
+            "あおいの初期登録分(provenance.origin=bootstrap)でだけ使える境界事例です"
+            "(D23)。新しい条文では、複合fact禁止原則に従って決定表側の列に分けて"
+            "ください。"
+        )
     expected = PRIMITIVE_ARGS.get(fact.primitive)
     if expected is None:
         raise SchemaWiringError(
@@ -413,6 +582,10 @@ def _check_one_fact_sources(fact: FactDef) -> None:
             "sources を検証できません。"
         )
     actual = set(fact.sources.keys())
+    if not actual and not in_new_facts:
+        # 初期登録分は sources が未設定(元の DMN に情報が無く補っていない。
+        # bootstrap_aoi.SOURCE_GAP_NOTE)。台帳の既存エントリは通す。
+        return
     if actual != set(expected):
         raise SchemaWiringError(
             f"C4検証失敗: fact {fact.variable!r}(primitive={fact.primitive!r})の sources の"
@@ -422,7 +595,11 @@ def _check_one_fact_sources(fact: FactDef) -> None:
 
 
 def _check_c6_referenced_facts_exist(ir: ClauseIR, registry: Registry) -> None:
-    """C6: referenced_facts と value_additions のキーが層3に実在する。"""
+    """C6(実在): referenced_facts と value_additions のキーが層3に実在する。
+
+    網羅(D21)の確認は `_check_c6_referenced_facts_complete()` で、`required_facts` を
+    求めたあとに行う。
+    """
     missing_refs = [v for v in ir.facts.referenced_facts if registry.find_fact(v) is None]
     if missing_refs:
         raise SchemaWiringError(
@@ -437,12 +614,34 @@ def _check_c6_referenced_facts_exist(ir: ClauseIR, registry: Registry) -> None:
         )
 
 
+def _check_c6_referenced_facts_complete(
+    ir: ClauseIR, required_facts: list[str]
+) -> None:
+    """C6(網羅): IR が使う既存 fact がすべて referenced_facts にある(D21)。
+
+    基準は「required_facts のうち facts.new_facts に無いもの」。IR だけを見て条文が
+    使う fact がすべて分かるようにするための欄なので、宣言の漏れを失敗とする。
+    """
+    new_names = {f.variable for f in ir.facts.new_facts}
+    declared = set(ir.facts.referenced_facts)
+    missing = [
+        v for v in required_facts if v not in new_names and v not in declared
+    ]
+    if missing:
+        raise SchemaWiringError(
+            f"C6検証失敗(網羅): 既存 fact {sorted(missing)} を使っていますが、"
+            "facts.referenced_facts に宣言されていません(D21: IR が使う既存 fact は"
+            "漏れなく列挙する)。"
+        )
+
+
 def _check_c10_dot_references(ir: ClauseIR, registry: Registry) -> None:
     """C10: 「判定名.出力名」の判定が実在し、その出力名を持つ。
 
     接頭辞は decision の名前。出力名は、IR の新規決定表なら行の outputs のキー、
-    登録簿のみに存在する判定なら層2の行から集める(層1に出力列の一覧が無いため。
-    要報告事項)。
+    登録簿のみに存在する判定なら**層1の output_columns**(D12)で確かめる。
+    v1.1 は層2の行から集めて代用していたが、行がまだ無い判定で誤って通るため
+    層1を見る形に置き換えた。
     """
     dot_refs = sorted({k for k in ir.all_fact_keys() if _is_dot_reference(k)})
     by_name = _ir_tables_by_decision_name(ir)
@@ -465,11 +664,148 @@ def _check_c10_dot_references(ir: ClauseIR, registry: Registry) -> None:
                 f"C10検証失敗: ドット参照 {ref!r} の判定 {name!r} が IR にも"
                 "登録簿の層1にも実在しません。"
             )
-        produced = registry.output_names_of(entry.get("decision_table_id", ""))
-        if output not in produced:
+        table_id = entry.get("decision_table_id", "")
+        columns = registry.output_columns_of(table_id)
+        if columns is None:
+            raise SchemaWiringError(
+                f"C10検証失敗: ドット参照 {ref!r} の判定 {name!r}(決定表 {table_id!r})の"
+                "層1エントリに output_columns がありません(D12)。出力列の一覧が無いと"
+                "出力名を確かめられません。"
+            )
+        if output not in columns:
             raise SchemaWiringError(
                 f"C10検証失敗: ドット参照 {ref!r} の判定 {name!r} に出力 {output!r} が"
-                f"ありません(層2の行から集めた出力: {sorted(produced)})。"
+                f"ありません(層1の output_columns: {columns})。"
+            )
+
+
+def _dot_reference_rows(ir: ClauseIR) -> list[tuple[str, RuleRowDraft]]:
+    """決定表の行を「どこの行か」の説明付きで集める(C5・C11 共用)。"""
+    rows: list[tuple[str, RuleRowDraft]] = [
+        (f"決定表 {row.decision_table_id} の行 {row.row_id}", row)
+        for row in ir.rule_row_additions
+    ]
+    for table in ir.new_decision_tables:
+        for row in table.rule_rows:
+            rows.append((f"決定表 {table.decision_table_id} の行 {row.row_id}", row))
+    return rows
+
+
+def _produced_output_values(
+    ir: ClauseIR, registry: Registry, *, decision_name: str
+) -> tuple[dict[str, set[str]], str]:
+    """判定が出しうる出力値を、出力名ごとに集める(C11用。設計書5章 C11)。
+
+    集める先は3つ。
+
+    1. 登録簿の層2の行(既存の判定)
+    2. IR の新規決定表の行・`rule_row_additions` の行
+    3. `intermediate` の `new_output_values`(出力名が分からないため、その表の
+       すべての出力名に足す。設計書の文言どおり「集める」側に寄せた)
+
+    集めた値は FEEL の表記を外して素の値に揃える。登録簿の層2は初期登録時に
+    DMN の表記のまま(`"高"`)入っているのに対し、IR の行は素の値(`高`)を持つため、
+    揃えないと同じ値が別物に見える。
+
+    戻り値の2つめは、どこから集めたかの説明(エラーメッセージ用)。
+    """
+    values: dict[str, set[str]] = {}
+    sources: list[str] = []
+
+    def add(name: str, cell: str) -> None:
+        for value in _cell_values(str(cell), where=f"判定 {decision_name} の出力 {name}"):
+            values.setdefault(name, set()).add(value)
+
+    ir_table = _ir_tables_by_decision_name(ir).get(decision_name)
+    table_id = None
+    if ir_table is not None:
+        table_id = ir_table.decision_table_id  # type: ignore[attr-defined]
+        for row in ir_table.rule_rows:  # type: ignore[attr-defined]
+            for name, value in row.outputs.items():
+                add(name, value)
+        sources.append("IR の新規決定表の行")
+    else:
+        entry = registry.find_decision_table(decision_name=decision_name)
+        if entry is not None:
+            table_id = entry.get("decision_table_id")
+            for name, vals in registry.output_values_of(table_id or "").items():
+                for value in vals:
+                    add(name, value)
+            sources.append("登録簿の層2の行")
+
+    if table_id is not None:
+        added = False
+        for row in ir.rule_row_additions:
+            if row.decision_table_id != table_id:
+                continue
+            added = True
+            for name, value in row.outputs.items():
+                add(name, value)
+        if added:
+            sources.append("IR の rule_row_additions")
+        for change in ir.level_determination.intermediate:
+            if change.table_id != table_id or not change.new_output_values:
+                continue
+            for name in list(values) or [""]:
+                for value in change.new_output_values:
+                    add(name, value)
+            sources.append("intermediate の new_output_values")
+
+    return values, "／".join(dict.fromkeys(sources)) or "(出力値の情報なし)"
+
+
+def _check_c11_dot_reference_values(ir: ClauseIR, registry: Registry) -> None:
+    """C11: ドット参照の列の条件値が、参照先の判定の出力値にある(D13)。
+
+    C5(fact の値)の中間判定版。綴りの違いや中間判定への行の追加し忘れで、
+    実行時に絶対に当たらない行ができるのを防ぐ。
+    """
+    for where, row in _dot_reference_rows(ir):
+        for column, cell in row.conditions.items():
+            if not _is_dot_reference(column):
+                continue
+            values = _cell_values(cell, where=f"{where} の列 {column}")
+            if not values:
+                continue
+            name, output = _dot_prefix(column), _dot_suffix(column)
+            produced, origin = _produced_output_values(
+                ir, registry, decision_name=name
+            )
+            allowed = produced.get(output, set())
+            unknown = [v for v in values if v not in allowed]
+            if unknown:
+                raise SchemaWiringError(
+                    f"C11検証失敗: {where} の列 {column!r} が参照する値 {unknown} を、"
+                    f"判定 {name!r} は出力しません(出力値: {sorted(allowed)}／"
+                    f"出典: {origin})。この行は実行時に一度もヒットしません。"
+                )
+
+
+def _check_d17_same_dmn_model(ir: ClauseIR, registry: Registry) -> None:
+    """D17: 中間判定を参照する最終判定は、参照先と同じ DMN モデルに入れる。
+
+    DMN のモデル間 import は当面使わない(U9)ため、別モデルの判定をドット参照
+    していたら停止する。既存の表に行を足す場合、その表も同じモデルでなければ
+    `registry/dmn/<dmn_model>.dmn` への挿入ができない。
+    """
+    model = ir.target.dmn_model
+    checked: list[tuple[str, str]] = []
+    for ref in sorted({k for k in ir.all_fact_keys() if _is_dot_reference(k)}):
+        checked.append(("ドット参照", _dot_prefix(ref)))
+    for table in _changed_existing_tables(ir, registry):
+        checked.append(("行・列を足す既存の表", table.get("decision_name", "")))
+    for kind, name in checked:
+        if not name or _ir_tables_by_decision_name(ir).get(name) is not None:
+            continue
+        entry = registry.find_decision_table(decision_name=name)
+        if entry is None:
+            continue  # 実在確認は C9条件4・C10 の責務
+        other = entry.get("dmn_model")
+        if other is not None and other != model:
+            raise SchemaWiringError(
+                f"D17違反: {kind} の判定 {name!r} は DMN モデル {other!r} にありますが、"
+                f"この IR の target.dmn_model は {model!r} です。中間判定を参照する"
+                "最終判定は同じモデルに入れてください(モデル間 import は未対応。U9)。"
             )
 
 
@@ -509,17 +845,9 @@ def _check_c5_cell_values(
     """C5: 決定表の各条件の値(「-」以外)が、その fact の possible_values にある。
 
     `new_decision_tables` の行と `rule_row_additions` の両方を見る。ドット参照の列は
-    fact ではない(他の判定の出力)ため対象外(その値の検証は設計書に無い。要報告事項)。
+    fact ではない(他の判定の出力)ため対象外で、その値は C11 が確かめる(D13)。
     """
-    rows: list[tuple[str, RuleRowDraft]] = [
-        (f"決定表 {row.decision_table_id} の行 {row.row_id}", row)
-        for row in ir.rule_row_additions
-    ]
-    for table in ir.new_decision_tables:
-        for row in table.rule_rows:
-            rows.append((f"決定表 {table.decision_table_id} の行 {row.row_id}", row))
-
-    for where, row in rows:
+    for where, row in _dot_reference_rows(ir):
         for column, cell in row.conditions.items():
             if _is_dot_reference(column):
                 continue
@@ -532,9 +860,9 @@ def _check_c5_cell_values(
                     f"C5検証失敗: {where} が参照する列 {column!r} の fact 定義が"
                     "見つかりません(facts.new_facts にも登録簿の層3にもありません)。"
                 )
-            allowed = set(fact.possible_values) | set(
-                ir.facts.value_additions.get(column, [])
-            )
+            allowed = set(fact.possible_values) | {
+                a.value for a in ir.facts.value_additions.get(column, [])
+            }
             unknown = [v for v in values if v not in allowed]
             if unknown:
                 raise SchemaWiringError(
@@ -547,9 +875,8 @@ def _check_c5_cell_values(
 def _check_c7_target_exists(ir: ClauseIR, dmn_xml: str, updated: Registry) -> None:
     """C7: target.entry_decision_id が DMN XML と層1に実在する。
 
-    DMN XML 側の確認は `final.action = new_table` のときのみ行う。既存モデルへの
-    行挿入(レベル2)は今回の範囲外で、`add_rows` では DMN XML を生成しないため
-    (要報告事項)。
+    v1.2 では `add_rows`(レベル2)でも既存モデルへ行を挿入して DMN XML を出力する
+    ようになったため(D15)、DMN XML 側の確認を `new_table` に限らず常に行う。
     """
     entry_id = ir.target.entry_decision_id
     if updated.find_decision_table(decision_id=entry_id) is None:
@@ -557,12 +884,12 @@ def _check_c7_target_exists(ir: ClauseIR, dmn_xml: str, updated: Registry) -> No
             f"C7検証失敗: target.entry_decision_id={entry_id!r} が更新後の登録簿の層1に"
             "実在しません。"
         )
-    if ir.level_determination.final.action == "new_table":
-        if f'id="{entry_id}"' not in dmn_xml:
-            raise SchemaWiringError(
-                f"C7検証失敗: target.entry_decision_id={entry_id!r} の decision が"
-                "生成した DMN XML に存在しません。"
-            )
+    if f'id="{entry_id}"' not in dmn_xml:
+        raise SchemaWiringError(
+            f"C7検証失敗: target.entry_decision_id={entry_id!r} の decision が"
+            "出力した DMN XML に存在しません"
+            f"(final.action={ir.level_determination.final.action})。"
+        )
 
 
 def _check_c8_routing_matches_bindings(routing_table: dict, bindings: dict) -> None:
@@ -603,12 +930,7 @@ def render_dmn_xml(
     `inputExpression/text` と input の id はドット付きの名前のまま残す
     (`dmn_engine.py` の `_resolve_expression` が名前で引くため)。
     """
-    ET.register_namespace("", DMN_NS)
-    ET.register_namespace("dmndi", DMNDI_NS)
-    ET.register_namespace("dc", DC_NS)
-    ET.register_namespace("feel", FEEL_NS)
-    ET.register_namespace("kie", KIE_NS)
-    ET.register_namespace("di", DI_NS)
+    _register_namespaces()
 
     definitions = ET.Element(
         f"{{{DMN_NS}}}definitions",
@@ -714,9 +1036,230 @@ def render_dmn_xml(
     for ks in all_knowledge_sources:
         ET.SubElement(definitions, f"{{{DMN_NS}}}knowledgeSource", {"id": ks, "name": ks})
 
+    return _serialize(definitions)
+
+
+# --------------------------------------------------------------------------
+# 既存の DMN モデルへの行の挿入・列の追加(D15・D19)
+# --------------------------------------------------------------------------
+
+
+def _register_namespaces() -> None:
+    ET.register_namespace("", DMN_NS)
+    ET.register_namespace("dmndi", DMNDI_NS)
+    ET.register_namespace("dc", DC_NS)
+    ET.register_namespace("feel", FEEL_NS)
+    ET.register_namespace("kie", KIE_NS)
+    ET.register_namespace("di", DI_NS)
+
+
+def _serialize(definitions: ET.Element) -> str:
     ET.indent(definitions, space="  ")
     xml_body = ET.tostring(definitions, encoding="unicode")
     return f'<?xml version="1.0" encoding="UTF-8" ?>\n{xml_body}\n'
+
+
+def _tag(name: str) -> str:
+    return f"{{{DMN_NS}}}{name}"
+
+
+def _decision_tables_in(definitions: ET.Element) -> dict[str, tuple[ET.Element, ET.Element]]:
+    """DMN XML の decisionTable を、決定表ID -> (decision, decisionTable) で引く。"""
+    out: dict[str, tuple[ET.Element, ET.Element]] = {}
+    for decision in definitions.findall(_tag("decision")):
+        table = decision.find(_tag("decisionTable"))
+        if table is not None and table.get("id"):
+            out[table.get("id")] = (decision, table)
+    return out
+
+
+def _table_input_columns(table: ET.Element) -> list[str]:
+    columns = []
+    for inp in table.findall(_tag("input")):
+        text = inp.find(f"{_tag('inputExpression')}/{_tag('text')}")
+        columns.append("" if text is None or text.text is None else text.text.strip())
+    return columns
+
+
+def _table_output_names(table: ET.Element) -> list[str]:
+    return [o.get("name") or "" for o in table.findall(_tag("output"))]
+
+
+def _insert_after(parent: ET.Element, anchors: list[ET.Element], element: ET.Element) -> None:
+    """`anchors` の最後の要素の直後に挿入する(無ければ先頭)。"""
+    if anchors:
+        parent.insert(list(parent).index(anchors[-1]) + 1, element)
+    else:
+        parent.insert(0, element)
+
+
+def _add_input_column(
+    definitions: ET.Element, decision: ET.Element, table: ET.Element, column: str
+) -> None:
+    """既存の決定表に入力列を1つ足し、既存の全 rule のその列を「-」で埋める(D19)。"""
+    if column in _table_input_columns(table):
+        raise SchemaWiringError(
+            f"列の追加に失敗: 決定表 {table.get('id')!r} には列 {column!r} が既にあります"
+            "(add_column で足す列は、既存の列と重なってはいけません)。"
+        )
+
+    inp = ET.Element(
+        _tag("input"), {"id": f"in_{column.replace('.', '_')}", "label": column}
+    )
+    expr = ET.SubElement(
+        inp, _tag("inputExpression"), {"id": _uid("ie"), "typeRef": "string"}
+    )
+    ET.SubElement(expr, _tag("text")).text = column
+    _insert_after(table, table.findall(_tag("input")), inp)
+
+    # 既存の全 rule の末尾の inputEntry のあとに「-」を1つ足す
+    for rule in table.findall(_tag("rule")):
+        entry = ET.Element(_tag("inputEntry"), {"id": _uid("in")})
+        ET.SubElement(entry, _tag("text")).text = "-"
+        _insert_after(rule, rule.findall(_tag("inputEntry")), entry)
+
+    if _is_dot_reference(column):
+        # 他の判定の出力を足す場合は inputData ではなく requiredDecision になるが、
+        # 中間判定に他の判定を足す経路は今回の受け入れ範囲外なので止める。
+        raise SchemaWiringError(
+            f"列の追加に失敗: ドット参照の列 {column!r} の追加(判定の依存を増やす)は"
+            "未対応です。add_column では fact の列だけを足してください。"
+        )
+
+    requirement = ET.Element(_tag("informationRequirement"), {"id": _uid("ir")})
+    ET.SubElement(requirement, _tag("requiredInput"), {"href": f"#id_{column}"})
+    existing = decision.findall(_tag("informationRequirement"))
+    if existing:
+        _insert_after(decision, existing, requirement)
+    else:
+        _insert_after(decision, decision.findall(_tag("variable")), requirement)
+
+    if not any(
+        i.get("name") == column for i in definitions.findall(_tag("inputData"))
+    ):
+        data = ET.SubElement(
+            definitions, _tag("inputData"), {"id": f"id_{column}", "name": column}
+        )
+        ET.SubElement(
+            data,
+            _tag("variable"),
+            {"id": f"var_id_{column}", "name": column, "typeRef": "string"},
+        )
+
+
+def _insert_rule(table: ET.Element, row: RuleRowDraft) -> None:
+    """既存の決定表に rule を1本、`position` の位置に挿入する(D15)。
+
+    FIRST ヒットポリシーでは行の順序が意味を持つため、位置を守って挿入する。
+    `position` が既存の行数を超える場合は末尾に足す。
+    """
+    existing = table.findall(_tag("rule"))
+    if any(r.get("id") == row.row_id for r in existing):
+        raise SchemaWiringError(
+            f"行の挿入に失敗: 決定表 {table.get('id')!r} には行 {row.row_id!r} が"
+            "既にあります。"
+        )
+    input_columns = _table_input_columns(table)
+    unknown = [c for c in row.conditions if c not in input_columns]
+    if unknown:
+        raise SchemaWiringError(
+            f"行の挿入に失敗: 行 {row.row_id!r} の条件の列 {sorted(unknown)} が、"
+            f"決定表 {table.get('id')!r} の入力列 {input_columns} にありません"
+            "(綴り違いの列は「-」として黙って無視されるため停止します)。"
+        )
+
+    rule = ET.Element(_tag("rule"), {"id": row.row_id})
+    for column in input_columns:
+        entry = ET.SubElement(rule, _tag("inputEntry"), {"id": _uid("in")})
+        ET.SubElement(entry, _tag("text")).text = _feel_literal(
+            row.conditions.get(column, "-")
+        )
+    for name in _table_output_names(table):
+        entry = ET.SubElement(rule, _tag("outputEntry"), {"id": _uid("out")})
+        ET.SubElement(entry, _tag("text")).text = _feel_literal(
+            row.outputs.get(name, "-")
+        )
+
+    index = row.position - 1
+    if 0 <= index < len(existing):
+        table.insert(list(table).index(existing[index]), rule)
+    elif existing:
+        table.insert(list(table).index(existing[-1]) + 1, rule)
+    else:
+        table.append(rule)
+
+
+def patch_existing_dmn(ir: ClauseIR, registry: Registry, *, dmn_dir: str | Path) -> str:
+    """`registry/dmn/<dmn_model>.dmn` を読み込み、IR の変更を反映した XML を返す(D15)。
+
+    反映する順序は、列の追加(D19) -> 行の挿入(D15) -> 新規の表の追加(D17)。
+    列を先に足すのは、挿入する行がその列の値を持つためである。
+
+    元のファイルは書き換えない(出力は `out/` に書き出す。永続台帳への反映は
+    人間レビューを経た別操作。設計書4章)。
+    """
+    path = dmn_path(ir.target.dmn_model, dmn_dir)
+    if not path.exists():
+        raise SchemaWiringError(
+            f"既存モデルへの反映に失敗: DMN ファイル {path} がありません。"
+            f"既存の表に行・列を足す IR では、registry/dmn/{ir.target.dmn_model}.dmn が"
+            "必要です(D15)。"
+        )
+    _register_namespaces()
+    definitions = ET.parse(str(path)).getroot()
+    tables = _decision_tables_in(definitions)
+
+    # 1) 列の追加(D19)
+    for change in ir.level_determination.intermediate:
+        if change.action != "add_column":
+            continue
+        found = tables.get(change.table_id)
+        if found is None:
+            raise SchemaWiringError(
+                f"列の追加に失敗: 決定表 {change.table_id!r} が DMN ファイル {path} に"
+                "ありません。"
+            )
+        decision, table = found
+        for column in change.new_input_columns:
+            _add_input_column(definitions, decision, table, column)
+
+    # 2) 行の挿入(D15)。同じ表の複数行は position の昇順で入れる
+    ir_table_ids = {t.decision_table_id for t in ir.new_decision_tables}
+    by_table: dict[str, list[RuleRowDraft]] = {}
+    for row in ir.rule_row_additions:
+        if row.decision_table_id in ir_table_ids:
+            continue  # 新規に作る表の行は render_dmn_xml 側で出力される
+        by_table.setdefault(row.decision_table_id, []).append(row)
+    for table_id, rows in by_table.items():
+        found = tables.get(table_id)
+        if found is None:
+            raise SchemaWiringError(
+                f"行の挿入に失敗: 決定表 {table_id!r} が DMN ファイル {path} に"
+                "ありません(新規に作る表なら new_decision_tables に入れてください)。"
+            )
+        for row in sorted(rows, key=lambda r: r.position):
+            _insert_rule(found[1], row)
+
+    # 3) 新規の表を同じモデルに足す(D17)。render_dmn_xml の出力から decision・
+    #    inputData・knowledgeSource を移し、既にある id は足さない
+    if ir.new_decision_tables:
+        model = ir.target.dmn_model
+        rendered = ET.fromstring(
+            render_dmn_xml(
+                ir,
+                registry,
+                definitions_id=f"{model}_definitions",
+                definitions_name=model,
+                namespace=f"{DMN_NAMESPACE_BASE}/{model}",
+            )
+        )
+        existing_ids = {e.get("id") for e in definitions.iter() if e.get("id")}
+        for child in list(rendered):
+            if child.get("id") in existing_ids:
+                continue
+            definitions.append(child)
+
+    return _serialize(definitions)
 
 
 # --------------------------------------------------------------------------
@@ -749,9 +1292,9 @@ def _build_bindings(
 ) -> dict:
     """バインディング設定(設計書4.3)。
 
-    対象は required_facts のすべて。`value_additions` があれば possible_values に加える。
-    設計書4.3が `dmn_model` を出力項目に挙げているため、{dmn_model, facts} の
-    エンベロープにしている(v1 は裸の配列。要報告事項)。
+    対象は、作り直すすべてのルートの required_facts の和集合(D16)。`value_additions`
+    があれば possible_values に加える。設計書4.3が `dmn_model` を出力項目に挙げている
+    ため、{dmn_model, facts} のエンベロープにしている(v1 は裸の配列)。
     """
     facts_json = []
     for variable in required_facts:
@@ -760,29 +1303,35 @@ def _build_bindings(
         additions = ir.facts.value_additions.get(variable)
         if additions:
             merged = list(payload["possible_values"])
-            for value in additions:
-                if value not in merged:
-                    merged.append(value)
+            for addition in additions:
+                if addition.value not in merged:
+                    merged.append(addition.value)
             payload["possible_values"] = merged
         facts_json.append(payload)
     return {"dmn_model": ir.target.dmn_model, "facts": facts_json}
 
 
-def _build_routing_table(ir: ClauseIR, required_facts: list[str]) -> dict:
+def _build_routing_table(routes: list[dict]) -> dict:
     """ルーティング表(設計書4.4)。
 
     v1 の `actor_action` の入れ子と `input_columns` は廃止し、actor・action・
     dmn_model・decision_id・required_facts のフラットな1行にする(D8)。
+
+    D16 で複数の最終判定を作り直す場合も、**1つのファイルに複数の行**として出す
+    (ファイルは分けない)。ルーティング表は「actor×action から判定を引く1枚の表」
+    であり、分割すると引く側が全ファイルを読む必要が出るため。先頭は必ず IR の
+    起点のルートで、以降は D16 で洗い出した既存の最終判定のルートが続く。
     """
     return {
         "routes": [
             {
-                "actor": ir.actor,
-                "action": ir.action.normalized,
-                "dmn_model": ir.target.dmn_model,
-                "decision_id": ir.target.entry_decision_id,
-                "required_facts": list(required_facts),
+                "actor": route["actor"],
+                "action": route["action"],
+                "dmn_model": route["dmn_model"],
+                "decision_id": route["decision_id"],
+                "required_facts": list(route["required_facts"]),
             }
+            for route in routes
         ]
     }
 
@@ -794,17 +1343,31 @@ def _build_updated_registry(
     updated = registry.copy()
     provenance = ir.provenance.to_json()
 
-    # 層1: 新しい決定表のメタ情報(dmn_model を追加。D8)
+    # 層1: 新しい決定表のメタ情報(dmn_model は D8、output_columns は D12、
+    # entry_points は D16)
     used_by: dict[str, list[str]] = {}
     for table in ir.new_decision_tables:
+        output_columns: list[str] = []
+        for row in table.rule_rows:
+            for name in row.outputs:
+                if name not in output_columns:
+                    output_columns.append(name)
+        # entry_points は最終判定(= この IR の起点)だけに入れる。中間判定は空
+        is_entry = table.decision_id == ir.target.entry_decision_id
         updated.decision_tables.append(
             {
                 "decision_table_id": table.decision_table_id,
                 "decision_id": table.decision_id,
                 "decision_name": table.decision_name,
                 "dmn_model": ir.target.dmn_model,
+                "entry_points": (
+                    [{"actor": ir.actor, "action": ir.action.normalized}]
+                    if is_entry
+                    else []
+                ),
                 "hit_policy": "FIRST",
                 "input_columns": list(table.input_columns),
+                "output_columns": output_columns,
                 "depends_on_decisions": list(table.depends_on_decisions),
                 "depends_on_inputs": list(table.depends_on_inputs),
                 "knowledge_sources": list(table.knowledge_sources),
@@ -814,6 +1377,34 @@ def _build_updated_registry(
         for col in table.input_columns:
             if not _is_dot_reference(col):
                 used_by.setdefault(col, []).append(table.decision_table_id)
+
+    # 層1: 既存の表に足した列を input_columns に反映し、既存の行を「-」で埋める(D19)
+    for change in ir.level_determination.intermediate:
+        if change.action != "add_column" or not change.new_input_columns:
+            continue
+        entry = updated.find_decision_table(decision_table_id=change.table_id)
+        if entry is None:
+            continue  # 実在確認は C9条件4 の責務
+        columns = list(entry.get("input_columns", []))
+        for column in change.new_input_columns:
+            if column not in columns:
+                columns.append(column)
+            used_by.setdefault(column, []).append(change.table_id)
+        entry["input_columns"] = columns
+        for row in updated.rows_of(change.table_id):
+            conditions = dict(row.get("conditions", {}))
+            for column in change.new_input_columns:
+                conditions.setdefault(column, "-")
+            row["conditions"] = conditions
+        history = list(entry.get("history", []))
+        history.append(
+            {
+                "change": "column_addition",
+                "added_columns": list(change.new_input_columns),
+                "provenance": provenance,
+            }
+        )
+        entry["history"] = history
 
     # 層2: 新規決定表の行と、既存表への追加行の両方
     for row in ir.rule_row_additions:
@@ -839,14 +1430,15 @@ def _build_updated_registry(
         if entry is None:
             continue  # 実在確認は C6 の責務
         values = list(entry.get("possible_values", []))
-        added = [v for v in additions if v not in values]
-        entry["possible_values"] = values + added
+        added = [a for a in additions if a.value not in values]
+        entry["possible_values"] = values + [a.value for a in added]
         if added:
             history = list(entry.get("history", []))
             history.append(
                 {
                     "change": "value_addition",
-                    "added_values": added,
+                    # 値ごとに承認者を残す(D14)。あとから承認した場合の追跡に使う
+                    "added_values": [a.to_json() for a in added],
                     "provenance": provenance,
                 }
             )
@@ -873,37 +1465,60 @@ def _build_updated_registry(
     return updated
 
 
-def generate_wiring_bundle(ir: ClauseIR, *, registry: Registry) -> WiringBundle:
+def generate_wiring_bundle(
+    ir: ClauseIR, *, registry: Registry, dmn_dir: str | Path = DMN_DIR_DEFAULT
+) -> WiringBundle:
     """IRと登録簿を入力として4点セットを1回の呼び出しで生成する。
 
-    クロス検証に失敗すると `SchemaWiringError` で停止する(設計書5章 C1〜C10)。
+    クロス検証に失敗すると `SchemaWiringError` で停止する(設計書5章 C1〜C11)。
+
+    `dmn_dir` は既存の DMN ファイルの置き場所(D15)。既存の表に行・列を足す IR の
+    ときだけ読み込む。新しい表を作るだけの IR(ゴールデンパス)では使わない。
     """
-    # --- 生成前の検証(IRと登録簿だけで判定できるもの) ---
+    # --- 生成前の検証(IRと登録簿だけで判定できるもの。設計書5章) ---
     _check_c3_compound_fact(ir)
     _check_c9_level_determination(ir, registry)
     _check_c4_sources_match_primitive(ir, registry)
     _check_c6_referenced_facts_exist(ir, registry)
     _check_c10_dot_references(ir, registry)
+    _check_c11_dot_reference_values(ir, registry)
     _check_c2_new_facts_used(ir)
+    _check_d17_same_dmn_model(ir, registry)
 
-    # --- required_facts の導出(設計書4.1) ---
-    required_facts = derive_required_facts(ir, registry)
+    # --- 作り直すルートと required_facts の導出(設計書4.1・D16) ---
+    routes = derive_routes(ir, registry)
+    # バインディング設定は全ルートの和集合(設計書4.3)。順序は起点のルートから
+    # 現れた順にして決定的にする
+    required_facts: list[str] = []
+    for route in routes:
+        for variable in route["required_facts"]:
+            if variable not in required_facts:
+                required_facts.append(variable)
     fact_defs = _collect_fact_defs(ir, registry, required_facts)
+    # C6の網羅は IR 自身のルート(routes[0])を基準にする。D16 で作り直す既存の最終
+    # 判定の required_facts まで含めると、この条文が使っていない fact の宣言を
+    # 要求してしまうため(D21「IR が使う既存 fact」)。**要報告事項**。
+    _check_c6_referenced_facts_complete(ir, routes[0]["required_facts"])
+    # C1 はバインディング設定に出す fact 全部(和集合)を見る
     _check_c1_facts_available(required_facts, ir, registry)
 
     # --- 4点セットの生成 ---
     _check_c5_cell_values(ir, registry, fact_defs)
 
     dmn_model = ir.target.dmn_model
-    dmn_xml = render_dmn_xml(
-        ir,
-        registry,
-        definitions_id=f"{dmn_model}_definitions",
-        definitions_name=dmn_model,
-        namespace=f"{DMN_NAMESPACE_BASE}/{dmn_model}",
-    )
+    if _needs_existing_dmn(ir, registry):
+        # 既存モデルへの行の挿入・列の追加(D15・D19)
+        dmn_xml = patch_existing_dmn(ir, registry, dmn_dir=dmn_dir)
+    else:
+        dmn_xml = render_dmn_xml(
+            ir,
+            registry,
+            definitions_id=f"{dmn_model}_definitions",
+            definitions_name=dmn_model,
+            namespace=f"{DMN_NAMESPACE_BASE}/{dmn_model}",
+        )
     bindings = _build_bindings(ir, required_facts, fact_defs)
-    routing_table = _build_routing_table(ir, required_facts)
+    routing_table = _build_routing_table(routes)
     updated = _build_updated_registry(ir, registry, fact_defs)
 
     # --- 生成後の検証(成果物を突合するもの) ---
@@ -916,3 +1531,12 @@ def generate_wiring_bundle(ir: ClauseIR, *, registry: Registry) -> WiringBundle:
         routing_table=routing_table,
         registry=updated.to_json(),
     )
+
+
+def _needs_existing_dmn(ir: ClauseIR, registry: Registry) -> bool:
+    """既存の DMN ファイルを読み込む必要があるか(D15)。
+
+    IR が既存の表に行・列を足しているなら読み込む。新しい表を作るだけなら、
+    既存ファイルは不要で、完結した1つの DMN を生成する。
+    """
+    return bool(_changed_existing_tables(ir, registry))

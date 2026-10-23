@@ -2,7 +2,7 @@
 
 第15回 HANDOFF タスク5の受け入れ条件:
 
-- クロス検証 C1〜C10 をすべて通過する
+- クロス検証 C1〜C11 をすべて通過する
 - DMN 評価シナリオが 4/4 一致する
 - `review_gates` で `new_action_unapproved` と `new_fact_unapproved` の2つが立つ
 
@@ -60,7 +60,7 @@ def test_clause_id_is_the_golden_path_clause():
 
 
 def test_cross_validation_passes(golden_bundle):
-    """C1〜C10 を通過して4点セットが揃う(例外が出ないこと自体が検証)。"""
+    """C1〜C11 を通過して4点セットが揃う(例外が出ないこと自体が検証)。"""
     _, bundle = golden_bundle
     assert bundle.dmn_xml.startswith("<?xml")
     assert bundle.bindings["facts"]
@@ -186,3 +186,96 @@ def test_dmn_namespace_unchanged_from_v1(golden_bundle):
     """namespace は v1 と同じ値のままにする(Kogito 実機確認の変数を増やさない)。"""
     _, bundle = golden_bundle
     assert 'namespace="http://gijinka.example.com/dmn/privileged_operation"' in bundle.dmn_xml
+
+
+# --------------------------------------------------------------------------
+# v1.2 の変更(第17回 HANDOFF タスク5)
+# --------------------------------------------------------------------------
+
+
+def test_compound_fact_option_is_new_table_row(golden_bundle):
+    """D18: 新しく作る表の行として表すので new_table_row。
+
+    v1.1 までは選択肢が無く existing_table_row_addition を名乗っていた(誤ラベル)。
+    """
+    ir, _ = golden_bundle
+    assert ir.compound_fact_application.option_taken == "new_table_row"
+
+
+def test_knowledge_sources_drop_the_unsupported_registry(golden_bundle):
+    """D22: 根拠の無い ks_privileged_account_registry を消す。
+
+    これを参照していた exact_match の registered 引数が D3 で消えたため、
+    条文にも出典付き context にも根拠が無くなった(設計書1.4)。
+    """
+    ir, bundle = golden_bundle
+    assert ir.new_decision_tables[0].knowledge_sources == ["ks_action_request"]
+    assert "ks_privileged_account_registry" not in bundle.dmn_xml
+    layer1 = bundle.registry["decision_tables"]
+    entry = next(e for e in layer1 if e["decision_table_id"] == "dt_privileged_operation")
+    assert entry["knowledge_sources"] == ["ks_action_request"]
+
+
+def test_registry_layer1_has_output_columns_and_entry_points(golden_bundle):
+    """D12・D16: 層1に output_columns と entry_points が入る。"""
+    _, bundle = golden_bundle
+    entry = next(
+        e
+        for e in bundle.registry["decision_tables"]
+        if e["decision_table_id"] == "dt_privileged_operation"
+    )
+    assert entry["output_columns"] == ["decision", "reason_code"]
+    # 最終判定(この IR の起点)なので、呼び出し口が入る
+    assert entry["entry_points"] == [{"actor": "あおい", "action": "特権操作"}]
+
+
+def test_new_primitive_gate_is_not_raised(golden_bundle):
+    """D20: covered=True なので new_primitive_required は立たない。"""
+    ir, _ = golden_bundle
+    assert ir.level_determination.atomic_fact.covered is True
+    assert ir.review_gates.new_primitive_required is False
+
+
+def test_facts_are_unapproved_by_default(golden_bundle):
+    """D14: 既定では各 FactDef の approved_by は None で、ゲートが立つ。"""
+    ir, bundle = golden_bundle
+    assert [f.approved_by for f in ir.facts.new_facts] == [None, None, None]
+    assert ir.facts.unapproved_fact_names() == [
+        "operator_role",
+        "target_environment",
+        "requested_privilege",
+    ]
+    assert all(f["approved_by"] is None for f in bundle.bindings["facts"])
+
+
+def test_gates_drop_after_approval(tmp_path):
+    """D14: action と fact に承認者を入れると、2つのゲートが下りる。
+
+    v1.1 の `new_fact_unapproved` は「新語彙あり」で立っていたため、新しい fact を
+    持つ条文では承認しても下がらなかった。
+    """
+    flagged, _ = check_vocab_flag(CLAUSE_TEXT)
+    axis = lambda label: AxisResult(  # noqa: E731
+        label=label,
+        confidence=1.0,
+        rationale="(oracle)",
+        evidence_quote=CLAUSE_TEXT,
+        quote_verified=True,
+        vocab_flagged=flagged,
+    )
+    ir = build_golden_path_ir(
+        axis("ハード制約"),
+        axis("宣言的"),
+        clause_text=CLAUSE_TEXT,
+        action_approved_by="Kazuhiro",
+        facts_approved_by="Kazuhiro",
+        registered_at="2026-10-23T00:00:00+00:00",
+    )
+    assert ir.review_gates.gate_names() == []
+    assert ir.review_gates.should_review is False
+
+    # 承認しても4点セットの生成とクロス検証は通る
+    bundle = generate_wiring_bundle(ir, registry=Registry.empty())
+    assert bundle.registry["review"]["gates"] == []
+    assert bundle.registry["review"]["should_review"] is False
+    assert all(f["approved_by"] == "Kazuhiro" for f in bundle.bindings["facts"])

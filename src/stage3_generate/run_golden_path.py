@@ -160,7 +160,7 @@ def run(
         print(f"    - gate: {reason}")
     print()
 
-    # --- 4点セット生成(クロス検証 C1〜C10 を含む) ---
+    # --- 4点セット生成(クロス検証 C1〜C11 を含む) ---
     registry = Registry.load(registry_path)
     print(f"[登録簿] {registry_path}")
     print(f"  層1={len(registry.decision_tables)}件 層2={len(registry.rule_rows)}件 "
@@ -169,7 +169,7 @@ def run(
 
     bundle = generate_wiring_bundle(ir, registry=registry)
     paths = bundle.write_all(out_dir, "privileged_operation")
-    print("[4点セット生成] クロス検証 C1〜C10 通過")
+    print("[4点セット生成] クロス検証 C1〜C11 通過")
     for key, path in paths.items():
         print(f"  {key}: {path}")
     print(f"  required_facts: {bundle.routing_table['routes'][0]['required_facts']}")

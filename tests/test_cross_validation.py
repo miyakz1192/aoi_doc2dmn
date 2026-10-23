@@ -1,4 +1,4 @@
-"""クロス検証 C1〜C10 の失敗テスト。
+"""クロス検証 C1〜C11 の失敗テスト。
 
 設計書5章「各検証には、わざと違反させた IR で SchemaWiringError になることを確かめる
 失敗テストを付け、リポジトリにコミットする」に対応する。v1 では C1〜C3 の失敗テストが
@@ -14,15 +14,25 @@ import dataclasses
 
 import pytest
 
+from tests.conftest import make_provenance
+
 from src.stage3_generate.ir_schema import (
     AtomicFactLayer,
+    DecisionTarget,
+    FactDef,
     FinalLayer,
     IntermediateChange,
     LevelDetermination,
     RuleRowDraft,
     SourceRef,
+    ValueAddition,
 )
-from src.stage3_generate.wiring_generator import SchemaWiringError, generate_wiring_bundle
+from src.stage3_generate.wiring_generator import (
+    SchemaWiringError,
+    _check_c1_facts_available,
+    _check_c2_new_facts_used,
+    generate_wiring_bundle,
+)
 
 
 # --------------------------------------------------------------------------
@@ -31,7 +41,7 @@ from src.stage3_generate.wiring_generator import SchemaWiringError, generate_wir
 
 
 def test_fixtures_pass_all_checks(simple_ir, empty_registry, intermediate_ir, seeded_registry):
-    """壊す前の2つのフィクスチャが C1〜C10 をすべて通ること。"""
+    """壊す前の2つのフィクスチャが C1〜C11 をすべて通ること。"""
     simple = generate_wiring_bundle(simple_ir, registry=empty_registry)
     assert simple.routing_table["routes"][0]["required_facts"] == ["role", "environment"]
 
@@ -49,12 +59,27 @@ def test_fixtures_pass_all_checks(simple_ir, empty_registry, intermediate_ir, se
 
 
 def test_c1_missing_fact_definition(simple_ir, empty_registry):
-    """required_facts の fact 定義が new_facts にも層3にも無ければ落ちる。"""
+    """required_facts の fact 定義が new_facts にも層3にも無ければ落ちる。
+
+    v1.2 で C6 が「IR が使う既存 fact を漏れなく列挙する」(D21)まで見るように
+    なったため、この違反は通しで流すと必ず C6 が先に捕まえる(宣言が無ければ
+    C6の網羅、宣言があれば C6の実在)。C1 は多重の歯止めとして残っているので、
+    検証関数を直接呼んで確かめる。**要報告事項**。
+    """
     simple_ir.facts.new_facts = [
         f for f in simple_ir.facts.new_facts if f.variable != "environment"
     ]
-    with pytest.raises(SchemaWiringError, match="C1検証失敗"):
+    simple_ir.facts.referenced_facts = ["environment"]
+
+    # 通しで流すと C6 が先に止める
+    with pytest.raises(SchemaWiringError, match="C6検証失敗"):
         generate_wiring_bundle(simple_ir, registry=empty_registry)
+
+    # C1 自体も同じ違反で止まる
+    with pytest.raises(SchemaWiringError, match="C1検証失敗"):
+        _check_c1_facts_available(
+            ["role", "environment"], simple_ir, empty_registry
+        )
 
 
 # --------------------------------------------------------------------------
@@ -71,10 +96,12 @@ def test_c2_unused_new_fact(simple_ir, empty_registry):
         generate_wiring_bundle(simple_ir, registry=empty_registry)
 
 
-def test_c2_allows_fact_used_only_by_row_addition(simple_ir, seeded_registry):
+def test_c2_allows_fact_used_only_by_row_addition(simple_ir):
     """到達しない既存表への行追加で使う fact は C2 で弾かれない。
 
     C2 の基準を required_facts にすると誤って落ちる。基準は all_fact_keys()。
+    C2 だけを確かめたいので、検証関数を直接呼ぶ(この IR を通しで流すと、
+    既存モデルの DMN ファイルが要るため後続の工程で止まる)。
     """
     from tests.conftest import passthrough_fact
 
@@ -96,9 +123,9 @@ def test_c2_allows_fact_used_only_by_row_addition(simple_ir, seeded_registry):
             new_output_values=["中"],
         )
     ]
-    bundle = generate_wiring_bundle(simple_ir, registry=seeded_registry)
-    # extra_flag は required_facts(エントリ判定から到達する事実)には入らない
-    assert "extra_flag" not in bundle.routing_table["routes"][0]["required_facts"]
+    # 例外が出ないこと自体が検証(extra_flag は required_facts には入らないが、
+    # all_fact_keys() には入るので C2 は通る)
+    _check_c2_new_facts_used(simple_ir)
 
 
 # --------------------------------------------------------------------------
@@ -179,7 +206,9 @@ def test_c5_value_additions_are_allowed(simple_ir, seeded_registry):
         f for f in simple_ir.facts.new_facts if f.variable != "role"
     ]
     simple_ir.facts.referenced_facts = ["birth_match"]
-    simple_ir.facts.value_additions = {"birth_match": ["開発担当"]}
+    simple_ir.facts.value_additions = {
+        "birth_match": [ValueAddition(value="開発担当", approved_by="pytest")]
+    }
     for table in simple_ir.new_decision_tables:
         table.input_columns = ["birth_match", "environment"]
         table.depends_on_inputs = ["birth_match", "environment"]
@@ -403,3 +432,224 @@ def test_required_facts_unknown_entry_decision(simple_ir, empty_registry):
     simple_ir.target.entry_decision_id = "decision_missing"
     with pytest.raises(SchemaWiringError):
         generate_wiring_bundle(simple_ir, registry=empty_registry)
+
+
+# --------------------------------------------------------------------------
+# v1.2 で追加・拡張した検証の失敗テスト(第17回 HANDOFF タスク4)
+# --------------------------------------------------------------------------
+
+
+def test_c4_identifiability_classifier_rejected_in_new_facts(
+    simple_ir, empty_registry
+):
+    """D23: identifiability_classifier を新しい条文の new_facts で使うと落ちる。
+
+    あおいの情報分類判定の初期登録分(provenance.origin=bootstrap)だけで使える
+    境界事例なので、新規の条文では複合fact禁止原則に従わせる。
+    """
+    simple_ir.facts.new_facts[0] = FactDef(
+        variable="role",
+        primitive="identifiability_classifier",
+        possible_values=["開発担当"],
+        sources={
+            "data_category": SourceRef(from_="action_request", path="a"),
+            "care_setting": SourceRef(from_="action_request", path="b"),
+        },
+    )
+    with pytest.raises(SchemaWiringError, match="C4検証失敗.*identifiability_classifier"):
+        generate_wiring_bundle(simple_ir, registry=empty_registry)
+
+
+def test_c6_missing_referenced_fact_declaration(simple_ir, seeded_registry):
+    """D21: 使っている既存 fact が referenced_facts に無ければ落ちる(網羅)。"""
+    simple_ir.facts.new_facts = [
+        f for f in simple_ir.facts.new_facts if f.variable != "role"
+    ]
+    for table in simple_ir.new_decision_tables:
+        table.input_columns = ["birth_match", "environment"]
+        table.depends_on_inputs = ["birth_match", "environment"]
+        for row in table.rule_rows:
+            row.conditions = {
+                "birth_match": "一致" if row.position == 1 else "-",
+                "environment": row.conditions["environment"],
+            }
+    # birth_match は層3に実在するが、referenced_facts に宣言していない
+    simple_ir.facts.referenced_facts = []
+    with pytest.raises(SchemaWiringError, match="C6検証失敗\\(網羅\\)"):
+        generate_wiring_bundle(simple_ir, registry=seeded_registry)
+
+
+def test_c7_entry_decision_missing_from_existing_dmn(
+    simple_ir, seeded_registry, tmp_path
+):
+    """D15: add_rows で、挿入後の DMN に起点の判定が無ければ落ちる。
+
+    層1には起点の判定があるが、DMN ファイルには無い状態を作る。C9条件2・C5 を
+    通したうえで C7 まで到達させるため、既存の中間判定への行追加の形にする。
+    """
+    # 層1に「DMN には無い最終判定」を足す
+    seeded_registry.decision_tables.append(
+        {
+            "decision_table_id": "dt_ghost",
+            "decision_id": "decision_ghost",
+            "decision_name": "幽霊判定",
+            "dmn_model": "aoi_transmission",
+            "entry_points": [],
+            "hit_policy": "FIRST",
+            "input_columns": ["birth_match"],
+            "output_columns": ["decision"],
+            "depends_on_decisions": [],
+            "depends_on_inputs": ["birth_match"],
+            "knowledge_sources": [],
+            "provenance": make_provenance("既存規程 第0条").to_json(),
+        }
+    )
+    # dt_ghost だけを持つ DMN ファイル(幽霊判定は入っていない)を用意する
+    dmn_dir = tmp_path / "dmn"
+    dmn_dir.mkdir()
+    (dmn_dir / "aoi_transmission.dmn").write_text(
+        '<?xml version="1.0" encoding="UTF-8" ?>\n'
+        '<definitions xmlns="https://www.omg.org/spec/DMN/20240513/MODEL/"'
+        ' id="aoi_transmission_definitions" name="aoi_transmission"'
+        ' namespace="http://gijinka.example.com/dmn/aoi_transmission">\n'
+        '  <decision id="decision_other" name="別の判定">\n'
+        '    <decisionTable id="dt_ghost" hitPolicy="FIRST">\n'
+        '      <input id="in_birth_match"><inputExpression id="ie1" typeRef="string">'
+        "<text>birth_match</text></inputExpression></input>\n"
+        '      <output id="out_decision" label="decision" name="decision"'
+        ' typeRef="string" />\n'
+        "    </decisionTable>\n"
+        "  </decision>\n"
+        "</definitions>\n",
+        encoding="utf-8",
+    )
+
+    simple_ir.target = DecisionTarget(
+        dmn_model="aoi_transmission", entry_decision_id="decision_ghost"
+    )
+    simple_ir.facts.new_facts = []
+    simple_ir.facts.referenced_facts = ["birth_match"]
+    simple_ir.new_decision_tables = []
+    simple_ir.rule_row_additions = [
+        RuleRowDraft(
+            row_id="id_ghost_1",
+            decision_table_id="dt_ghost",
+            position=1,
+            conditions={"birth_match": "一致"},
+            outputs={"decision": "許可"},
+        )
+    ]
+    simple_ir.level_determination = LevelDetermination(
+        atomic_fact=AtomicFactLayer(covered=True),
+        intermediate=[],
+        final=FinalLayer(
+            compared_table_id="dt_ghost", relation="exact_match", action="add_rows"
+        ),
+    )
+    with pytest.raises(SchemaWiringError, match="C7検証失敗"):
+        generate_wiring_bundle(simple_ir, registry=seeded_registry, dmn_dir=dmn_dir)
+
+
+def test_c9_condition6_add_column_without_new_input_columns(
+    simple_ir, seeded_registry
+):
+    """D19: add_column で new_input_columns が空なら落ちる(整合条件6)。"""
+    simple_ir.level_determination.intermediate = [
+        IntermediateChange(
+            table_id="dt_identity",
+            relation="intersecting_non_subset",
+            action="add_column",
+            new_input_columns=[],
+        )
+    ]
+    with pytest.raises(SchemaWiringError, match="C9検証失敗\\(条件6\\).*new_input_columns"):
+        generate_wiring_bundle(simple_ir, registry=seeded_registry)
+
+
+def test_c9_condition6_added_column_not_used_by_any_row(simple_ir, seeded_registry):
+    """D19: 足した列が、追加する行の条件に現れなければ落ちる(整合条件6)。"""
+    simple_ir.rule_row_additions = [
+        RuleRowDraft(
+            row_id="id_identity_9",
+            decision_table_id="dt_identity",
+            position=2,
+            conditions={"birth_match": "一致"},
+            outputs={"identity_level": "中"},
+        )
+    ]
+    simple_ir.level_determination.intermediate = [
+        IntermediateChange(
+            table_id="dt_identity",
+            relation="intersecting_non_subset",
+            action="add_column",
+            new_input_columns=["address_match"],
+        )
+    ]
+    with pytest.raises(SchemaWiringError, match="C9検証失敗\\(条件6\\).*address_match"):
+        generate_wiring_bundle(simple_ir, registry=seeded_registry)
+
+
+def test_c10_missing_output_columns_in_layer1(intermediate_ir, seeded_registry):
+    """D12: 層1に output_columns が無いと C10 が検証できず落ちる。
+
+    v1.1 は層2の行から出力名を集めていたため、この状態でも通っていた。
+    """
+    del seeded_registry.decision_tables[0]["output_columns"]
+    with pytest.raises(SchemaWiringError, match="C10検証失敗.*output_columns"):
+        generate_wiring_bundle(intermediate_ir, registry=seeded_registry)
+
+
+def test_c11_dot_reference_value_not_produced(intermediate_ir, seeded_registry):
+    """D13: ドット参照の列の値が、参照先の判定の出力値に無ければ落ちる。
+
+    `seeded_registry` の本人確認判定が出すのは identity_level="高" だけなので、
+    "中" を参照する行は実行時に一度もヒットしない。
+    """
+    intermediate_ir.new_decision_tables[0].rule_rows[0].conditions = {
+        "本人確認判定.identity_level": '"中"'
+    }
+    with pytest.raises(SchemaWiringError, match="C11検証失敗"):
+        generate_wiring_bundle(intermediate_ir, registry=seeded_registry)
+
+
+def test_c11_accepts_value_added_by_this_ir(intermediate_ir, seeded_registry, tmp_path):
+    """中間判定へ行を足して出力値を増やすなら、その値を参照してよい(C11)。"""
+    intermediate_ir.new_decision_tables[0].rule_rows[0].conditions = {
+        "本人確認判定.identity_level": '"中"'
+    }
+    intermediate_ir.rule_row_additions = [
+        RuleRowDraft(
+            row_id="id_identity_2",
+            decision_table_id="dt_identity",
+            position=2,
+            conditions={"birth_match": "一致", "phone_match": "不一致"},
+            outputs={"identity_level": "中"},
+        )
+    ]
+    intermediate_ir.level_determination.intermediate = [
+        IntermediateChange(
+            table_id="dt_identity",
+            relation="exact_match",
+            action="add_row",
+            new_output_values=["中"],
+        )
+    ]
+    # C11 はここを通る。dmn_dir を空のディレクトリにして後続で止まることを確認し、
+    # 止まる理由が C11 ではないことを明示する(永続台帳の DMN に依存させない)
+    with pytest.raises(SchemaWiringError) as excinfo:
+        generate_wiring_bundle(
+            intermediate_ir, registry=seeded_registry, dmn_dir=tmp_path
+        )
+    assert "C11検証失敗" not in str(excinfo.value)
+    assert "DMN ファイル" in str(excinfo.value)
+
+
+def test_d17_rejects_dot_reference_to_another_dmn_model(
+    intermediate_ir, seeded_registry
+):
+    """D17: 別の DMN モデルの判定をドット参照していたら落ちる。"""
+    intermediate_ir.target = DecisionTarget(
+        dmn_model="verbal_disclosure", entry_decision_id="decision_verbal"
+    )
+    with pytest.raises(SchemaWiringError, match="D17違反"):
+        generate_wiring_bundle(intermediate_ir, registry=seeded_registry)

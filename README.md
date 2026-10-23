@@ -21,7 +21,8 @@ aoi_doc2dmn/
 │   ├── stage3_generate/  # ③a 内容生成(IR→4点セット)
 │   │   ├── ir_schema.py        # ClauseIR v2 / FactDef / ReviewGates
 │   │   ├── registry.py         # Scope/Decision登録簿(層1・2・3)の読み書き
-│   │   ├── wiring_generator.py # 4点セット同時生成+クロス検証C1〜C10
+│   │   ├── wiring_generator.py # 4点セット同時生成+クロス検証C1〜C11
+│   │   ├── bootstrap_aoi.py    # あおいの送信可否判定DMNを登録簿へ初期登録
 │   │   ├── golden_path.py      # ゴールデンパス条文のIR構築
 │   │   ├── dmn_engine.py       # 軽量DMN検証エンジン(reference/から移植)
 │   │   └── run_golden_path.py  # 一気通貫実行スクリプト
@@ -37,8 +38,10 @@ aoi_doc2dmn/
 │   ├── candidates/              # テストデータ拡張時の候補・レビュー記録
 │   └── schema.md                # オラクルのスキーマ定義・カバレッジ表・①関連判定の基準
 ├── registry/
-│   └── registry.json     # 永続化した登録簿（③の入力。既存の決定表とfact台帳）
-├── tests/                # pytest（クロス検証C1〜C10の失敗テスト・ゴールデンパス固定）
+│   ├── registry.json     # 永続化した登録簿（③の入力。既存の決定表とfact台帳）
+│   └── dmn/              # 既存のDMNモデル（<dmn_model>.dmn。行・列の追加先）
+├── tests/                # pytest（クロス検証C1〜C11の失敗テスト・ゴールデンパス固定・
+│                         #         受け入れ経路（レベル2/行追加/列追加）のテスト）
 ├── docs/design/          # ③aの設計書（IR v2設計書・9e66776時点のAsIs仕様書）
 ├── out/                  # ③の4点セット生成物（gitignore対象。再生成可能）
 └── reference/
@@ -68,9 +71,16 @@ aoi_doc2dmn/
   パイプライン）への移行フェーズに入った。詳細は`testdata/schema.md`「軸1・軸2分類の精度改善
   フェーズの区切り」節、「gold label判定の方針」節を参照
 - `src/stage3_generate/`: ③a（宣言的×ハード制約）の**後半**（IR → 4点セット）は
-  IR v2（`docs/design/aoi_doc2dmn_IRv2_design.md`）で実装済み。fact の定義がIRに入り
-  （`facts.new_facts`）、4点すべてをIRと登録簿から生成する。クロス検証はC1〜C10で、
+  IR v2（`docs/design/aoi_doc2dmn_IRv2_design.md` v1.2）で実装済み。fact の定義がIRに入り
+  （`facts.new_facts`）、4点すべてをIRと登録簿から生成する。クロス検証はC1〜C11で、
   それぞれの失敗テストが`tests/`にある
+- v1.2 で**受け入れ経路**を実装した。新しい表を作るだけ（レベル1）でなく、既存のDMN
+  モデルへの行の挿入（レベル2・中間判定への行追加）と列の追加ができる。既存の表に
+  手を入れた場合は、その表を使うすべての最終判定のルーティング表とバインディング設定を
+  作り直す（D16）
+- `registry/registry.json`には、あおいの送信可否判定（本人確認判定・情報分類判定・
+  送信可否判定）を初期登録済み（`provenance.origin = bootstrap`）。層1が3件・層2が18件・
+  層3が7件。元のDMNは`registry/dmn/aoi_transmission.dmn`
 - ③aの**前段**（条文 → IR）は未実装。現状は`golden_path.py`がゴールデンパス1件のIRを
   手で組み立てている。これが③の本丸であり次の作業対象
 
@@ -115,12 +125,23 @@ pipのシステム直接インストールができないため、プロジェ�
 .venv/bin/python3 -m src.stage3_generate.run_golden_path --use-oracle # Ollama不要。配線部分のみ検証
 ```
 
-条文 → ②2軸分類 → ③a IR構築 → 4点セット生成（クロス検証C1〜C10）→ 生成DMNの評価、までを
+条文 → ②2軸分類 → ③a IR構築 → 4点セット生成（クロス検証C1〜C11）→ 生成DMNの評価、までを
 一気通貫で実行する。`out/golden_path/`にDMN XML・バインディング設定・ルーティング表・
 登録簿が出力される。
 
 入力となる登録簿は`registry/registry.json`（`--registry`で差し替え可能）。更新後の登録簿は
 `out/`に書き出すだけで、永続台帳への反映（promotion）は人間レビューを経た別操作とする。
+
+### あおいの送信可否判定の初期登録（再実行可能）
+
+```bash
+.venv/bin/python3 -m src.stage3_generate.bootstrap_aoi
+```
+
+`reference/`以下の既存DMNを`registry/dmn/aoi_transmission.dmn`に置き、そこから層1・層2・
+層3を機械的に起こして`registry/registry.json`に保存する。同じ入力なら何度実行しても同じ
+結果になる。元のDMNの不足・矛盾（参照されないinputData、出力されない値を参照している行など）
+も一覧で表示する。`reference/`はリポジトリに入っていないため、別途配置が必要。
 
 ### テスト
 
@@ -128,8 +149,14 @@ pipのシステム直接インストールができないため、プロジェ�
 .venv/bin/python3 -m pytest tests/ -v
 ```
 
-クロス検証C1〜C10の失敗テスト（わざと違反させたIRで`SchemaWiringError`になること）と、
-ゴールデンパスがC1〜C10を通過しDMN評価4/4になることを固定している。Ollamaは不要。
+Ollamaは不要。3つのファイルに分かれている。
+
+- `test_cross_validation.py`：クロス検証C1〜C11の失敗テスト（わざと違反させたIRで
+  `SchemaWiringError`になること）
+- `test_golden_path.py`：ゴールデンパスがC1〜C11を通過しDMN評価4/4になること、承認者を
+  入れるとレビューゲートが下りること
+- `test_acceptance_paths.py`：初期登録したあおいの登録簿を使い、レベル2・中間判定への
+  行追加・列の追加が通ること（挿入後のDMNの評価シナリオ込み。既定の行に落ちるケースを含む）
 
 空欄（`［　］`）の扱い方針は`testdata/schema.md`「空欄の扱い方針」節を、
 ①関連判定の基準（解釈A/B）は同ファイル「①関連判定の基準」節を参照。

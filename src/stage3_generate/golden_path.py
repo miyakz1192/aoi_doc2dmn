@@ -72,18 +72,23 @@ DECISION_ID = "decision_privileged_operation"
 DECISION_NAME = "特権操作可否判定"
 DECISION_TABLE_ID = "dt_privileged_operation"
 
-KS_ACCOUNT_REGISTRY = "ks_privileged_account_registry"
+# D22: knowledge_sources には、条文または出典付きの context に根拠があるものだけを
+# 書く。v1 にあった ks_privileged_account_registry は、これを参照していた
+# exact_match の registered 引数が D3 で消えたため根拠が無くなり、削除した。
 KS_ACTION_REQUEST = "ks_action_request"
 
 INPUT_COLUMNS = ["operator_role", "target_environment", "requested_privilege"]
 
 
-def _new_facts() -> list[FactDef]:
+def _new_facts(approved_by: str | None = None) -> list[FactDef]:
     """この条文で新しく定義する fact(設計書3.8)。
 
     3つとも「区分の値をそのまま渡す」用途なので primitive は passthrough、
     sources の引数名は `value` 1つ(設計書3.5)。possible_values は条文に
     出てくる値だけに限る(D4)。
+
+    `approved_by` は新しい fact の語彙を承認した人(D14)。既定は None で、
+    `new_fact_unapproved` ゲートが立つ。承認後は名前を入れるとゲートが下りる。
     """
     return [
         FactDef(
@@ -93,6 +98,7 @@ def _new_facts() -> list[FactDef]:
             sources={
                 "value": SourceRef(from_="action_request", path="operator.role"),
             },
+            approved_by=approved_by,
         ),
         FactDef(
             variable="target_environment",
@@ -101,6 +107,7 @@ def _new_facts() -> list[FactDef]:
             sources={
                 "value": SourceRef(from_="action_request", path="target.environment"),
             },
+            approved_by=approved_by,
         ),
         FactDef(
             variable="requested_privilege",
@@ -109,6 +116,7 @@ def _new_facts() -> list[FactDef]:
             sources={
                 "value": SourceRef(from_="action_request", path="requested_privilege"),
             },
+            approved_by=approved_by,
         ),
     ]
 
@@ -119,6 +127,7 @@ def build_golden_path_ir(
     *,
     clause_text: str,
     action_approved_by: str | None = None,
+    facts_approved_by: str | None = None,
     registered_by: str = "claude_code",
     registered_at: str | None = None,
 ) -> ClauseIR:
@@ -126,6 +135,10 @@ def build_golden_path_ir(
 
     axis1_result / axis2_result は②の分類器の実出力を渡す
     (ハードコードせず、実際の判定結果をIRに反映させる)。
+
+    `action_approved_by` / `facts_approved_by` に名前を入れると、それぞれ
+    `new_action_unapproved` / `new_fact_unapproved` のゲートが下りる(D14)。
+    既定はどちらも None で、2つのゲートが立った状態になる。
     """
     action = ActionRef(
         surface="特権/管理者権限で操作を行う",
@@ -135,7 +148,7 @@ def build_golden_path_ir(
         approved_by=action_approved_by,
     )
 
-    facts = FactUsage(new_facts=_new_facts())
+    facts = FactUsage(new_facts=_new_facts(facts_approved_by))
 
     rule_rows = [
         RuleRowDraft(
@@ -176,7 +189,7 @@ def build_golden_path_ir(
         depends_on_inputs=list(INPUT_COLUMNS),
         input_columns=list(INPUT_COLUMNS),
         rule_rows=rule_rows,
-        knowledge_sources=[KS_ACCOUNT_REGISTRY, KS_ACTION_REQUEST],
+        knowledge_sources=[KS_ACTION_REQUEST],
     )
 
     level_determination = LevelDetermination(
@@ -190,13 +203,13 @@ def build_golden_path_ir(
     )
 
     compound_fact = CompoundFactApplication(
-        option_taken="existing_table_row_addition",
+        # D18: 新しく作る表の行として表すので new_table_row。v1.1 までは選択肢が
+        # 無く existing_table_row_addition を充てていた(誤ラベル)。
+        option_taken="new_table_row",
         rationale=(
             "「開発担当者 かつ 本番環境 かつ 特権権限」という複合条件は、"
-            "一致プリミティブ側でANDを組まず、決定表の1行(id_r_priv_1)の"
+            "一致プリミティブ側でANDを組まず、新しく作る決定表の1行(id_r_priv_1)の"
             "3列の条件として表現する(複合fact禁止原則)。"
-            "なお option_taken の選択肢に「新規表の行として表す」が無いため"
-            "existing_table_row_addition を充てている(設計書へ報告済みの論点)。"
         ),
     )
 
@@ -207,7 +220,11 @@ def build_golden_path_ir(
         registered_at=registered_at or datetime.now(timezone.utc).isoformat(),
     )
 
-    review_gates = build_review_gates(axis1_result, axis2_result, action, facts)
+    # D20: level_determination を渡すと new_primitive_required も判定する。
+    # この条文は covered=True なので立たない。
+    review_gates = build_review_gates(
+        axis1_result, axis2_result, action, facts, level_determination
+    )
 
     return ClauseIR(
         clause_ref=CLAUSE_REF,

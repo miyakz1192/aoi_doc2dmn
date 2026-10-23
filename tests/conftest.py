@@ -1,15 +1,20 @@
 """テスト共通のフィクスチャ。
 
-クロス検証 C1〜C10 の失敗テストには2種類の IR が必要になる。
+クロス検証 C1〜C11 の失敗テストには2種類の IR が必要になる。
 
-1. **ゴールデンパス相当の単純な IR**(`simple_ir`): 新規決定表1枚、fact 3件、
+1. **ゴールデンパス相当の単純な IR**(`simple_ir`): 新規決定表1枚、fact 2件、
    登録簿は空。C1〜C5・C7・C9条件1・C9条件5 を破るのに使う
 2. **中間判定を使う IR**(`intermediate_ir` と `seeded_registry`): 既存の中間判定を
    参照する最終判定。ゴールデンパスには登録簿のエントリ・ドット参照・`value_additions` が
-   無いため、C6・C9条件3・C9条件4・C10 はこちらでしか破れない
+   無いため、C6・C9条件3・C9条件4・C10・C11 はこちらでしか破れない
 
-2 の登録簿はテスト内だけで組み立てる。あおいの送信可否判定を永続登録簿へ初期登録することは
-第15回 HANDOFF の範囲外なので、`registry/registry.json` には一切書き込まない。
+2 の登録簿はテスト内だけで組み立てる(永続台帳 `registry/registry.json` には書き込まない)。
+D17(中間判定を参照する最終判定は同じ DMN モデルに入れる)に合わせて、`seeded_registry` と
+`intermediate_ir` は同じ `dmn_model` を使う。
+
+**あおいの初期登録した登録簿を使うテスト**(レベル2・中間判定への行追加・add_column)は
+`tests/test_acceptance_paths.py` にあり、`registry/registry.json` と
+`registry/dmn/aoi_transmission.dmn` を読み込む。
 """
 from __future__ import annotations
 
@@ -35,6 +40,7 @@ from src.stage3_generate.ir_schema import (  # noqa: E402
     Provenance,
     RuleRowDraft,
     SourceRef,
+    ValueAddition,
     build_review_gates,
 )
 from src.stage3_generate.registry import Registry  # noqa: E402
@@ -104,11 +110,11 @@ def _assemble(
         rule_row_additions=row_additions,
         new_decision_tables=new_tables,
         compound_fact_application=CompoundFactApplication(
-            option_taken="existing_table_row_addition",
+            option_taken="new_table_row",
             rationale="テスト",
         ),
         provenance=make_provenance(clause_ref),
-        review_gates=build_review_gates(axis1, axis2, action, facts),
+        review_gates=build_review_gates(axis1, axis2, action, facts, level),
     )
 
 
@@ -167,8 +173,11 @@ def simple_ir() -> ClauseIR:
 def seeded_registry() -> Registry:
     """中間判定(本人確認判定)を1枚持つ登録簿。
 
-    層1に決定表、層2にその行(出力名を C10 が層2から集めるため必須)、層3に
-    その決定表が使う fact 2件を置く。
+    層1に決定表(`output_columns`・`entry_points` 込み)、層2にその行、層3にその
+    決定表が使う fact 2件を置く。C10 は層1の `output_columns` を、C11 は層2の行の
+    出力値を見る(D12・D13)。
+
+    `entry_points` が空なので、この決定表は中間判定である(設計書4.5 層1)。
     """
     provenance = make_provenance("既存規程 第0条").to_json()
     return Registry(
@@ -178,8 +187,10 @@ def seeded_registry() -> Registry:
                 "decision_id": "decision_identity",
                 "decision_name": "本人確認判定",
                 "dmn_model": "aoi_transmission",
+                "entry_points": [],
                 "hit_policy": "FIRST",
                 "input_columns": ["birth_match", "phone_match"],
+                "output_columns": ["identity_level"],
                 "depends_on_decisions": [],
                 "depends_on_inputs": ["birth_match", "phone_match"],
                 "knowledge_sources": [],
@@ -222,6 +233,8 @@ def intermediate_ir() -> ClauseIR:
 
     `seeded_registry` と組み合わせて使う。required_facts は依存をたどって
     {birth_match, phone_match} になる(入力列はドット参照1列だけ)。
+
+    D17 により、参照先(本人確認判定)と同じ `dmn_model` に入れる。
     """
     table = NewDecisionTableDraft(
         decision_table_id="dt_verbal",
@@ -250,7 +263,7 @@ def intermediate_ir() -> ClauseIR:
     return _assemble(
         clause_ref="情報管理規程 第14条",
         target=DecisionTarget(
-            dmn_model="verbal_disclosure", entry_decision_id="decision_verbal"
+            dmn_model="aoi_transmission", entry_decision_id="decision_verbal"
         ),
         facts=FactUsage(referenced_facts=["birth_match", "phone_match"]),
         level=LevelDetermination(
@@ -264,4 +277,12 @@ def intermediate_ir() -> ClauseIR:
         ),
         new_tables=[table],
         row_additions=[],
+    )
+
+
+@pytest.fixture
+def value_addition():
+    """`ValueAddition` を作る小さなヘルパー(承認済みの既定)。"""
+    return lambda value, approved_by="pytest": ValueAddition(
+        value=value, approved_by=approved_by
     )

@@ -1,5 +1,654 @@
 {
-  "decision_tables": [],
-  "rule_rows": [],
-  "fact_registry": []
+  "decision_tables": [
+    {
+      "decision_table_id": "dt_identity",
+      "decision_id": "decision_identity",
+      "decision_name": "本人確認判定",
+      "dmn_model": "aoi_transmission",
+      "entry_points": [],
+      "hit_policy": "FIRST",
+      "input_columns": [
+        "name_match",
+        "birth_match",
+        "phone_match"
+      ],
+      "output_columns": [
+        "identity_result",
+        "identity_level"
+      ],
+      "depends_on_decisions": [],
+      "depends_on_inputs": [
+        "name_match",
+        "birth_match",
+        "phone_match"
+      ],
+      "knowledge_sources": [
+        "ks_patient_master",
+        "ks_action_request"
+      ],
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00"
+      }
+    },
+    {
+      "decision_table_id": "dt_classification",
+      "decision_id": "decision_classification",
+      "decision_name": "情報分類判定",
+      "dmn_model": "aoi_transmission",
+      "entry_points": [],
+      "hit_policy": "FIRST",
+      "input_columns": [
+        "has_medical",
+        "has_pii",
+        "identifiable"
+      ],
+      "output_columns": [
+        "info_class",
+        "sensitivity"
+      ],
+      "depends_on_decisions": [],
+      "depends_on_inputs": [
+        "has_medical",
+        "has_pii",
+        "identifiable"
+      ],
+      "knowledge_sources": [
+        "ks_action_request",
+        "ks_info_ontology"
+      ],
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00"
+      }
+    },
+    {
+      "decision_table_id": "dt_transmission",
+      "decision_id": "decision_transmission",
+      "decision_name": "送信可否判定",
+      "dmn_model": "aoi_transmission",
+      "entry_points": [
+        {
+          "actor": "あおい",
+          "action": "外部送信"
+        }
+      ],
+      "hit_policy": "FIRST",
+      "input_columns": [
+        "情報分類判定.sensitivity",
+        "本人確認判定.identity_level",
+        "contact_consent"
+      ],
+      "output_columns": [
+        "decision",
+        "reason_code"
+      ],
+      "depends_on_decisions": [
+        "decision_identity",
+        "decision_classification"
+      ],
+      "depends_on_inputs": [
+        "contact_consent"
+      ],
+      "knowledge_sources": [
+        "ks_patient_master"
+      ],
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00",
+        "note": "entry_points の出典: reference/gijinka-extraction-pipeline/docs/diagrams/sequence_diagram_explained.md:278 (existing_routes)"
+      }
+    }
+  ],
+  "rule_rows": [
+    {
+      "row_id": "id_r1",
+      "decision_table_id": "dt_identity",
+      "position": 1,
+      "conditions": {
+        "name_match": "\"一致\"",
+        "birth_match": "\"一致\"",
+        "phone_match": "\"一致\""
+      },
+      "outputs": {
+        "identity_result": "\"済\"",
+        "identity_level": "\"高\""
+      },
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00"
+      },
+      "history": []
+    },
+    {
+      "row_id": "id_r2",
+      "decision_table_id": "dt_identity",
+      "position": 2,
+      "conditions": {
+        "name_match": "\"一致\"",
+        "birth_match": "\"一致\"",
+        "phone_match": "\"未提供\""
+      },
+      "outputs": {
+        "identity_result": "\"済\"",
+        "identity_level": "\"中\""
+      },
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00"
+      },
+      "history": []
+    },
+    {
+      "row_id": "id_r3",
+      "decision_table_id": "dt_identity",
+      "position": 3,
+      "conditions": {
+        "name_match": "\"一致\"",
+        "birth_match": "\"未提供\"",
+        "phone_match": "\"一致\""
+      },
+      "outputs": {
+        "identity_result": "\"済\"",
+        "identity_level": "\"中\""
+      },
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00"
+      },
+      "history": []
+    },
+    {
+      "row_id": "id_r4",
+      "decision_table_id": "dt_identity",
+      "position": 4,
+      "conditions": {
+        "name_match": "\"一致\"",
+        "birth_match": "\"不一致\"",
+        "phone_match": "-"
+      },
+      "outputs": {
+        "identity_result": "\"未\"",
+        "identity_level": "\"不一致検出\""
+      },
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00"
+      },
+      "history": []
+    },
+    {
+      "row_id": "id_r5",
+      "decision_table_id": "dt_identity",
+      "position": 5,
+      "conditions": {
+        "name_match": "\"不一致\"",
+        "birth_match": "-",
+        "phone_match": "-"
+      },
+      "outputs": {
+        "identity_result": "\"未\"",
+        "identity_level": "\"不一致検出\""
+      },
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00"
+      },
+      "history": []
+    },
+    {
+      "row_id": "id_r6",
+      "decision_table_id": "dt_identity",
+      "position": 6,
+      "conditions": {
+        "name_match": "-",
+        "birth_match": "-",
+        "phone_match": "-"
+      },
+      "outputs": {
+        "identity_result": "\"未\"",
+        "identity_level": "\"情報不足\""
+      },
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00"
+      },
+      "history": []
+    },
+    {
+      "row_id": "cl_r1",
+      "decision_table_id": "dt_classification",
+      "position": 1,
+      "conditions": {
+        "has_medical": "\"含む\"",
+        "has_pii": "-",
+        "identifiable": "-"
+      },
+      "outputs": {
+        "info_class": "\"要配慮個人情報\"",
+        "sensitivity": "\"最高\""
+      },
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00"
+      },
+      "history": []
+    },
+    {
+      "row_id": "cl_r2",
+      "decision_table_id": "dt_classification",
+      "position": 2,
+      "conditions": {
+        "has_medical": "\"含まない\"",
+        "has_pii": "\"含む\"",
+        "identifiable": "\"可能\""
+      },
+      "outputs": {
+        "info_class": "\"個人情報\"",
+        "sensitivity": "\"高\""
+      },
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00"
+      },
+      "history": []
+    },
+    {
+      "row_id": "cl_r3",
+      "decision_table_id": "dt_classification",
+      "position": 3,
+      "conditions": {
+        "has_medical": "\"含まない\"",
+        "has_pii": "\"含まない\"",
+        "identifiable": "\"可能\""
+      },
+      "outputs": {
+        "info_class": "\"個人情報\"",
+        "sensitivity": "\"高\""
+      },
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00"
+      },
+      "history": []
+    },
+    {
+      "row_id": "cl_r4",
+      "decision_table_id": "dt_classification",
+      "position": 4,
+      "conditions": {
+        "has_medical": "\"含まない\"",
+        "has_pii": "\"含まない\"",
+        "identifiable": "\"不可能_院内\""
+      },
+      "outputs": {
+        "info_class": "\"院内共有情報\"",
+        "sensitivity": "\"中\""
+      },
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00"
+      },
+      "history": []
+    },
+    {
+      "row_id": "cl_r5",
+      "decision_table_id": "dt_classification",
+      "position": 5,
+      "conditions": {
+        "has_medical": "\"含まない\"",
+        "has_pii": "\"含まない\"",
+        "identifiable": "\"不可能_公開\""
+      },
+      "outputs": {
+        "info_class": "\"公開可能情報\"",
+        "sensitivity": "\"低\""
+      },
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00"
+      },
+      "history": []
+    },
+    {
+      "row_id": "tr_r1",
+      "decision_table_id": "dt_transmission",
+      "position": 1,
+      "conditions": {
+        "情報分類判定.sensitivity": "-",
+        "本人確認判定.identity_level": "-",
+        "contact_consent": "\"不同意\""
+      },
+      "outputs": {
+        "decision": "\"禁止\"",
+        "reason_code": "\"連絡未同意\""
+      },
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00"
+      },
+      "history": []
+    },
+    {
+      "row_id": "tr_r2",
+      "decision_table_id": "dt_transmission",
+      "position": 2,
+      "conditions": {
+        "情報分類判定.sensitivity": "\"最高\"",
+        "本人確認判定.identity_level": "\"高\"",
+        "contact_consent": "\"同意\""
+      },
+      "outputs": {
+        "decision": "\"条件付き許可\"",
+        "reason_code": "\"要エスカレーション\""
+      },
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00"
+      },
+      "history": []
+    },
+    {
+      "row_id": "tr_r3",
+      "decision_table_id": "dt_transmission",
+      "position": 3,
+      "conditions": {
+        "情報分類判定.sensitivity": "\"最高\"",
+        "本人確認判定.identity_level": "\"中\",\"未\",\"不一致検出\",\"情報不足\"",
+        "contact_consent": "\"同意\""
+      },
+      "outputs": {
+        "decision": "\"禁止\"",
+        "reason_code": "\"確認レベル不足\""
+      },
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00"
+      },
+      "history": []
+    },
+    {
+      "row_id": "tr_r4",
+      "decision_table_id": "dt_transmission",
+      "position": 4,
+      "conditions": {
+        "情報分類判定.sensitivity": "\"高\"",
+        "本人確認判定.identity_level": "\"高\",\"中\"",
+        "contact_consent": "\"同意\""
+      },
+      "outputs": {
+        "decision": "\"許可\"",
+        "reason_code": "\"本人確認充足\""
+      },
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00"
+      },
+      "history": []
+    },
+    {
+      "row_id": "tr_r5",
+      "decision_table_id": "dt_transmission",
+      "position": 5,
+      "conditions": {
+        "情報分類判定.sensitivity": "\"高\"",
+        "本人確認判定.identity_level": "\"未\",\"不一致検出\",\"情報不足\"",
+        "contact_consent": "\"同意\""
+      },
+      "outputs": {
+        "decision": "\"禁止\"",
+        "reason_code": "\"本人未確認\""
+      },
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00"
+      },
+      "history": []
+    },
+    {
+      "row_id": "tr_r6",
+      "decision_table_id": "dt_transmission",
+      "position": 6,
+      "conditions": {
+        "情報分類判定.sensitivity": "\"中\"",
+        "本人確認判定.identity_level": "-",
+        "contact_consent": "-"
+      },
+      "outputs": {
+        "decision": "\"禁止\"",
+        "reason_code": "\"外部送信対象外\""
+      },
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00"
+      },
+      "history": []
+    },
+    {
+      "row_id": "tr_r7",
+      "decision_table_id": "dt_transmission",
+      "position": 7,
+      "conditions": {
+        "情報分類判定.sensitivity": "\"低\"",
+        "本人確認判定.identity_level": "-",
+        "contact_consent": "-"
+      },
+      "outputs": {
+        "decision": "\"許可\"",
+        "reason_code": "\"公開情報\""
+      },
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00"
+      },
+      "history": []
+    }
+  ],
+  "fact_registry": [
+    {
+      "variable": "name_match",
+      "primitive": "fuzzy_match_name",
+      "possible_values": [
+        "一致",
+        "不一致"
+      ],
+      "sources": {},
+      "comparison_kind": null,
+      "approved_by": "bootstrap",
+      "defined_by": "あおいの既存DMN(条文由来ではない)",
+      "used_by": [
+        "dt_identity"
+      ],
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00",
+        "note": "sources は元の DMN XML に情報が無いため未設定。一致プリミティブの実装時に、出典付きで付与する必要がある"
+      },
+      "history": []
+    },
+    {
+      "variable": "birth_match",
+      "primitive": "date_match",
+      "possible_values": [
+        "一致",
+        "未提供",
+        "不一致"
+      ],
+      "sources": {},
+      "comparison_kind": null,
+      "approved_by": "bootstrap",
+      "defined_by": "あおいの既存DMN(条文由来ではない)",
+      "used_by": [
+        "dt_identity"
+      ],
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00",
+        "note": "sources は元の DMN XML に情報が無いため未設定。一致プリミティブの実装時に、出典付きで付与する必要がある"
+      },
+      "history": []
+    },
+    {
+      "variable": "phone_match",
+      "primitive": "exact_match",
+      "possible_values": [
+        "一致",
+        "未提供"
+      ],
+      "sources": {},
+      "comparison_kind": null,
+      "approved_by": "bootstrap",
+      "defined_by": "あおいの既存DMN(条文由来ではない)",
+      "used_by": [
+        "dt_identity"
+      ],
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00",
+        "note": "sources は元の DMN XML に情報が無いため未設定。一致プリミティブの実装時に、出典付きで付与する必要がある"
+      },
+      "history": []
+    },
+    {
+      "variable": "has_medical",
+      "primitive": "ontology_class_match",
+      "possible_values": [
+        "含む",
+        "含まない"
+      ],
+      "sources": {},
+      "comparison_kind": null,
+      "approved_by": "bootstrap",
+      "defined_by": "あおいの既存DMN(条文由来ではない)",
+      "used_by": [
+        "dt_classification"
+      ],
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00",
+        "note": "sources は元の DMN XML に情報が無いため未設定。一致プリミティブの実装時に、出典付きで付与する必要がある"
+      },
+      "history": []
+    },
+    {
+      "variable": "has_pii",
+      "primitive": "ontology_class_match",
+      "possible_values": [
+        "含む",
+        "含まない"
+      ],
+      "sources": {},
+      "comparison_kind": null,
+      "approved_by": "bootstrap",
+      "defined_by": "あおいの既存DMN(条文由来ではない)",
+      "used_by": [
+        "dt_classification"
+      ],
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00",
+        "note": "sources は元の DMN XML に情報が無いため未設定。一致プリミティブの実装時に、出典付きで付与する必要がある"
+      },
+      "history": []
+    },
+    {
+      "variable": "identifiable",
+      "primitive": "identifiability_classifier",
+      "possible_values": [
+        "可能",
+        "不可能_院内",
+        "不可能_公開"
+      ],
+      "sources": {},
+      "comparison_kind": null,
+      "approved_by": "bootstrap",
+      "defined_by": "あおいの既存DMN(条文由来ではない)",
+      "used_by": [
+        "dt_classification"
+      ],
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00",
+        "note": "sources は元の DMN XML に情報が無いため未設定。一致プリミティブの実装時に、出典付きで付与する必要がある"
+      },
+      "history": []
+    },
+    {
+      "variable": "contact_consent",
+      "primitive": "passthrough",
+      "possible_values": [
+        "不同意",
+        "同意"
+      ],
+      "sources": {},
+      "comparison_kind": null,
+      "approved_by": "bootstrap",
+      "defined_by": "あおいの既存DMN(条文由来ではない)",
+      "used_by": [
+        "dt_transmission"
+      ],
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00",
+        "note": "sources は元の DMN XML に情報が無いため未設定。一致プリミティブの実装時に、出典付きで付与する必要がある"
+      },
+      "history": []
+    }
+  ]
 }

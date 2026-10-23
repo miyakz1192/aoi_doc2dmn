@@ -1,0 +1,551 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20240513/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20230324/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:feel="https://www.omg.org/spec/DMN/20240513/FEEL/" xmlns:kie="https://kie.org/dmn/extensions/1.0" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="aoi_transmission_definitions" name="あおい_送信可否判定" namespace="http://gijinka.example.com/dmn/aoi">
+  <decision id="decision_identity" name="本人確認判定">
+    <variable id="var_decision_identity" name="本人確認判定" typeRef="Any" />
+    <informationRequirement id="_3A92E2CB-671B-4BB3-BFFC-0B454B3DF8FF">
+      <requiredInput href="#id_name_match" />
+    </informationRequirement>
+    <informationRequirement id="_C31E4E16-1F38-49F5-B9B4-1E7CEB43213E">
+      <requiredInput href="#id_birth_match" />
+    </informationRequirement>
+    <informationRequirement id="_3B7A2C10-9E4D-4A6F-8C3B-1F2E5D6A7B80">
+      <requiredInput href="#id_phone_match" />
+    </informationRequirement>
+    <authorityRequirement id="_A1000000-0000-0000-0000-000000000001">
+      <requiredAuthority href="#ks_patient_master" />
+    </authorityRequirement>
+    <authorityRequirement id="_A1000000-0000-0000-0000-000000000002">
+      <requiredAuthority href="#ks_action_request" />
+    </authorityRequirement>
+    <decisionTable id="dt_identity" hitPolicy="FIRST">
+      <input id="in_name" label="氏名">
+        <inputExpression typeRef="string" id="_F7386FC5-5FA3-4527-9708-701E690F52F1">
+          <text>name_match</text>
+        </inputExpression>
+      </input>
+      <input id="in_birth" label="生年月日">
+        <inputExpression typeRef="string" id="_0071E783-EAFA-40F9-BA11-7A6D9C1E42D6">
+          <text>birth_match</text>
+        </inputExpression>
+      </input>
+      <input id="in_phone" label="電話番号/診察券番号">
+        <inputExpression typeRef="string" id="_330726CC-E135-43AF-A176-6BFECE14C713">
+          <text>phone_match</text>
+        </inputExpression>
+      </input>
+      <output id="out_identity_result" label="本人確認結果" name="identity_result" typeRef="string" />
+      <output id="out_identity_level" label="確認レベル" name="identity_level" typeRef="string" />
+      <rule id="id_r1">
+        <inputEntry id="_DB2D3F7B-548A-4CC7-8069-1E4518315AA7">
+          <text>&quot;一致&quot;</text>
+        </inputEntry>
+        <inputEntry id="_2CA5AA3C-11E0-459A-9424-534F1FEB0F2D">
+          <text>&quot;一致&quot;</text>
+        </inputEntry>
+        <inputEntry id="_EB794FD0-8DDE-437F-A2BB-6D4C739F1432">
+          <text>&quot;一致&quot;</text>
+        </inputEntry>
+        <outputEntry id="_31FA7707-DF12-4BAC-BAF9-D3CEF37FF6BF">
+          <text>&quot;済&quot;</text>
+        </outputEntry>
+        <outputEntry id="_6CD298A6-4AA3-42FF-95E0-337D385E7A7B">
+          <text>&quot;高&quot;</text>
+        </outputEntry>
+      </rule>
+      <rule id="id_r2">
+        <inputEntry id="_4291D454-B203-495C-854F-449BBDE24EF3">
+          <text>&quot;一致&quot;</text>
+        </inputEntry>
+        <inputEntry id="_B6E787E6-574D-46F1-B1E3-25DD16BB8E51">
+          <text>&quot;一致&quot;</text>
+        </inputEntry>
+        <inputEntry id="_2696564D-407D-453D-BE81-EB20D0B639A8">
+          <text>&quot;未提供&quot;</text>
+        </inputEntry>
+        <outputEntry id="_03F0ED8A-EB4B-4E08-A675-E98CC2481D21">
+          <text>&quot;済&quot;</text>
+        </outputEntry>
+        <outputEntry id="_3ABAACB7-37D5-4E30-BF73-BD07B59FCB6B">
+          <text>&quot;中&quot;</text>
+        </outputEntry>
+      </rule>
+      <rule id="id_r3">
+        <inputEntry id="_174634C6-49EC-49F2-B1BA-5934F2F963D6">
+          <text>&quot;一致&quot;</text>
+        </inputEntry>
+        <inputEntry id="_52933648-AF5C-4DF7-A680-73F10ED7A87A">
+          <text>&quot;未提供&quot;</text>
+        </inputEntry>
+        <inputEntry id="_32FACB7F-496F-49D7-A98C-CA95B9452A40">
+          <text>&quot;一致&quot;</text>
+        </inputEntry>
+        <outputEntry id="_66F1F064-EC53-487E-AD89-4639C42CC125">
+          <text>&quot;済&quot;</text>
+        </outputEntry>
+        <outputEntry id="_8816A7C7-98C4-4FF9-9094-D2B1531D4DD7">
+          <text>&quot;中&quot;</text>
+        </outputEntry>
+      </rule>
+      <rule id="id_r4">
+        <inputEntry id="_774175C2-1B7E-4B72-BC5D-632D27265B2A">
+          <text>&quot;一致&quot;</text>
+        </inputEntry>
+        <inputEntry id="_BEBED9C9-8321-44FD-AF29-D92B5B6022EA">
+          <text>&quot;不一致&quot;</text>
+        </inputEntry>
+        <inputEntry id="_04D5ECB0-31A3-4DDB-B366-F60D58105654">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="_0063F917-0701-4849-8296-B0DF6552B9D9">
+          <text>&quot;未&quot;</text>
+        </outputEntry>
+        <outputEntry id="_BC5AA94B-1E3B-4CE4-B9D7-C404D4514183">
+          <text>&quot;不一致検出&quot;</text>
+        </outputEntry>
+      </rule>
+      <rule id="id_r5">
+        <inputEntry id="_F723B112-4544-41AB-9FEA-8B0EF937E5F5">
+          <text>&quot;不一致&quot;</text>
+        </inputEntry>
+        <inputEntry id="_761DBF33-26E5-462A-AAEE-40C5B42B2C9A">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="_C557F4B8-BDF3-412B-B49D-451754CF0F9E">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="_5164DD3A-6BE0-47DB-A9A3-90A03EB345FC">
+          <text>&quot;未&quot;</text>
+        </outputEntry>
+        <outputEntry id="_E60EC34A-07F3-4059-8FDC-79787A0FD194">
+          <text>&quot;不一致検出&quot;</text>
+        </outputEntry>
+      </rule>
+      <rule id="id_r6">
+        <inputEntry id="_39E8444F-5E12-44A2-A337-08ACB69CB41E">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="_4A08733A-E2E8-4136-AA43-737528E8F53E">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="_E506010F-3510-44EA-AC08-A9A451422AB5">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="_A3C6A8D8-FB0B-4002-871F-165A1297FB4A">
+          <text>&quot;未&quot;</text>
+        </outputEntry>
+        <outputEntry id="_C3C13C6E-8C37-485E-B671-8BBBAF85DB06">
+          <text>&quot;情報不足&quot;</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <decision id="decision_classification" name="情報分類判定">
+    <variable id="var_decision_classification" name="情報分類判定" typeRef="Any" />
+    <informationRequirement id="_DF89BD98-3CA6-45B0-979E-4F60230FA9AC">
+      <requiredInput href="#id_has_medical" />
+    </informationRequirement>
+    <informationRequirement id="_E73559E5-D506-4D84-AFAE-9875B46C9BE8">
+      <requiredInput href="#id_has_pii" />
+    </informationRequirement>
+    <informationRequirement id="_3B7A2C10-9E4D-4A6F-8C3B-1F2E5D6A7B81">
+      <requiredInput href="#id_identifiable" />
+    </informationRequirement>
+    <authorityRequirement id="_A1000000-0000-0000-0000-000000000003">
+      <requiredAuthority href="#ks_action_request" />
+    </authorityRequirement>
+    <authorityRequirement id="_A1000000-0000-0000-0000-000000000004">
+      <requiredAuthority href="#ks_info_ontology" />
+    </authorityRequirement>
+    <decisionTable id="dt_classification" hitPolicy="FIRST">
+      <input id="in_medical" label="病歴・診療内容を含む">
+        <inputExpression typeRef="string" id="_6AC72AF2-A367-43FA-A2A2-6FFC8C8EAEC4">
+          <text>has_medical</text>
+        </inputExpression>
+      </input>
+      <input id="in_pii" label="個人識別情報を含む">
+        <inputExpression typeRef="string" id="_C5EBE8F7-F9D9-4744-B815-35D05B61867A">
+          <text>has_pii</text>
+        </inputExpression>
+      </input>
+      <input id="in_identifiable" label="患者個人を特定可能">
+        <inputExpression typeRef="string" id="_96925122-AC87-4D21-ADED-5C5615AE2D84">
+          <text>identifiable</text>
+        </inputExpression>
+      </input>
+      <output id="out_class" label="情報分類" name="info_class" typeRef="string" />
+      <output id="out_sensitivity" label="機微度レベル" name="sensitivity" typeRef="string" />
+      <rule id="cl_r1">
+        <inputEntry id="_A04ADF28-C70E-4C2F-8D97-0F31772ED16E">
+          <text>&quot;含む&quot;</text>
+        </inputEntry>
+        <inputEntry id="_FD887748-2AC7-4A68-81FF-E8D6CDB91689">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="_FA362942-0CDF-49F3-9BF7-7F26B9AC8328">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="_CBA3AB2F-A5B4-49EB-AE54-CEB3CD23DE73">
+          <text>&quot;要配慮個人情報&quot;</text>
+        </outputEntry>
+        <outputEntry id="_8ECFF5B7-B3E7-494E-8895-AEDD80592E73">
+          <text>&quot;最高&quot;</text>
+        </outputEntry>
+      </rule>
+      <rule id="cl_r2">
+        <inputEntry id="_1025F6EA-FDDE-4D9D-AA18-A5A85453E57E">
+          <text>&quot;含まない&quot;</text>
+        </inputEntry>
+        <inputEntry id="_B32946A3-87DC-4D50-9B1D-75664490F9FC">
+          <text>&quot;含む&quot;</text>
+        </inputEntry>
+        <inputEntry id="_31930D35-9636-4DEB-960D-1960EDBA4B47">
+          <text>&quot;可能&quot;</text>
+        </inputEntry>
+        <outputEntry id="_A82A59C1-3707-4FAB-B940-A5D1411988B1">
+          <text>&quot;個人情報&quot;</text>
+        </outputEntry>
+        <outputEntry id="_A81957CB-C83A-4D18-9EFD-D3B17192F7D4">
+          <text>&quot;高&quot;</text>
+        </outputEntry>
+      </rule>
+      <rule id="cl_r3">
+        <inputEntry id="_F339609E-A84F-43E6-8DF4-C2CBB61FD101">
+          <text>&quot;含まない&quot;</text>
+        </inputEntry>
+        <inputEntry id="_C23633A7-D446-4A5E-B716-74A7D26F24A7">
+          <text>&quot;含まない&quot;</text>
+        </inputEntry>
+        <inputEntry id="_93BDF678-F338-4E48-857B-64869867F091">
+          <text>&quot;可能&quot;</text>
+        </inputEntry>
+        <outputEntry id="_628B64BD-7A71-4EC6-B13C-8E5AD8559F28">
+          <text>&quot;個人情報&quot;</text>
+        </outputEntry>
+        <outputEntry id="_4A2D8CF4-B802-46BA-8825-E9A70F91F10B">
+          <text>&quot;高&quot;</text>
+        </outputEntry>
+      </rule>
+      <rule id="cl_r4">
+        <inputEntry id="_6039E9C1-947F-43DB-9717-8FCD46AAE9FF">
+          <text>&quot;含まない&quot;</text>
+        </inputEntry>
+        <inputEntry id="_978E354D-A6D1-45D4-AFAC-7F0186DB22CB">
+          <text>&quot;含まない&quot;</text>
+        </inputEntry>
+        <inputEntry id="_911BF734-4E13-4632-8632-12203B214865">
+          <text>&quot;不可能_院内&quot;</text>
+        </inputEntry>
+        <outputEntry id="_E3BAF86B-B39B-46D8-9BC7-4BE6FE622B6C">
+          <text>&quot;院内共有情報&quot;</text>
+        </outputEntry>
+        <outputEntry id="_3DD9EF84-DE11-4044-A7CD-F70E591EFA19">
+          <text>&quot;中&quot;</text>
+        </outputEntry>
+      </rule>
+      <rule id="cl_r5">
+        <inputEntry id="_D6426E54-D25E-4B6C-BEC8-17A0F5C27482">
+          <text>&quot;含まない&quot;</text>
+        </inputEntry>
+        <inputEntry id="_FF3E51A5-C85E-41E5-A13D-661B3A825132">
+          <text>&quot;含まない&quot;</text>
+        </inputEntry>
+        <inputEntry id="_0611E066-5D41-4B3E-80D0-DF1D467C1249">
+          <text>&quot;不可能_公開&quot;</text>
+        </inputEntry>
+        <outputEntry id="_5517B911-FBD3-4018-9F1D-0B9214CEAE3F">
+          <text>&quot;公開可能情報&quot;</text>
+        </outputEntry>
+        <outputEntry id="_440DCF35-791A-47F6-B4E3-56B45EEFA9D0">
+          <text>&quot;低&quot;</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <decision id="decision_transmission" name="送信可否判定">
+    <variable id="var_decision_transmission" name="送信可否判定" typeRef="Any" />
+    <informationRequirement id="_2A358997-F685-4D60-952A-1B41A1BA60C6">
+      <requiredDecision href="#decision_identity" />
+    </informationRequirement>
+    <informationRequirement id="_E1726AD2-00D2-49A7-A194-878206C28996">
+      <requiredDecision href="#decision_classification" />
+    </informationRequirement>
+    <informationRequirement id="_1645EDCC-ABDB-4CD2-A67B-1706A96D02E5">
+      <requiredInput href="#id_contact_consent" />
+    </informationRequirement>
+    <authorityRequirement id="_A1000000-0000-0000-0000-000000000005">
+      <requiredAuthority href="#ks_patient_master" />
+    </authorityRequirement>
+    <decisionTable id="dt_transmission" hitPolicy="FIRST">
+      <input id="in_sensitivity" label="機微度レベル">
+        <inputExpression typeRef="string" id="_FB172CE7-8F63-4BF0-997C-BBA7C250F03B">
+          <text>情報分類判定.sensitivity</text>
+        </inputExpression>
+      </input>
+      <input id="in_identity_level" label="確認レベル">
+        <inputExpression typeRef="string" id="_A3EFC844-5BEB-42D5-8965-1CB3C4160408">
+          <text>本人確認判定.identity_level</text>
+        </inputExpression>
+      </input>
+      <input id="in_consent" label="連絡同意">
+        <inputExpression typeRef="string" id="_EC237795-57A5-42C4-BC0F-79B28AFE77A7">
+          <text>contact_consent</text>
+        </inputExpression>
+      </input>
+      <output id="out_decision" label="Decision" name="decision" typeRef="string" />
+      <output id="out_reason" label="理由コード" name="reason_code" typeRef="string" />
+      <rule id="tr_r1">
+        <inputEntry id="_4227BCA6-8B3D-4FFB-BF16-F52AEEE892E7">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="_2866A82B-50C3-4D21-8B04-93744AB653BE">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="_57E1BB24-1E98-4384-988D-89DCBD304F4B">
+          <text>&quot;不同意&quot;</text>
+        </inputEntry>
+        <outputEntry id="_198A519D-7914-41E6-9517-0DD8FD6CAAB0">
+          <text>&quot;禁止&quot;</text>
+        </outputEntry>
+        <outputEntry id="_03AC255F-43F1-404E-8C65-891ED94C1C08">
+          <text>&quot;連絡未同意&quot;</text>
+        </outputEntry>
+      </rule>
+      <rule id="tr_r2">
+        <inputEntry id="_FBB51EE9-0708-4414-813C-506E00D2FA2E">
+          <text>&quot;最高&quot;</text>
+        </inputEntry>
+        <inputEntry id="_2B4F1828-0E48-4633-96F3-D25258DF862A">
+          <text>&quot;高&quot;</text>
+        </inputEntry>
+        <inputEntry id="_FDF41189-7E47-4AF4-89D7-8E787EA51B48">
+          <text>&quot;同意&quot;</text>
+        </inputEntry>
+        <outputEntry id="_02BB5C57-218F-4C77-A030-25FD7AE19D53">
+          <text>&quot;条件付き許可&quot;</text>
+        </outputEntry>
+        <outputEntry id="_B972BCEA-2791-40CD-ACA1-3C8ABC4B1CFE">
+          <text>&quot;要エスカレーション&quot;</text>
+        </outputEntry>
+      </rule>
+      <rule id="tr_r3">
+        <inputEntry id="_883A0B79-CCAC-403A-AB60-8C442DF0C795">
+          <text>&quot;最高&quot;</text>
+        </inputEntry>
+        <inputEntry id="_6C360AE0-7ED2-45AE-A478-10620653249D">
+          <text>&quot;中&quot;,&quot;未&quot;,&quot;不一致検出&quot;,&quot;情報不足&quot;</text>
+        </inputEntry>
+        <inputEntry id="_043C0526-0085-4A13-9B54-1FA7BF787475">
+          <text>&quot;同意&quot;</text>
+        </inputEntry>
+        <outputEntry id="_424B6A43-8604-4FB7-AE49-09E56DC708CE">
+          <text>&quot;禁止&quot;</text>
+        </outputEntry>
+        <outputEntry id="_590BBB3C-B899-4459-8EB4-F064FE3EAD13">
+          <text>&quot;確認レベル不足&quot;</text>
+        </outputEntry>
+      </rule>
+      <rule id="tr_r4">
+        <inputEntry id="_6C1D5259-DCE1-47A3-9D5A-584E51134163">
+          <text>&quot;高&quot;</text>
+        </inputEntry>
+        <inputEntry id="_0E1CF4B3-0843-4399-87A2-ECD8CCA11825">
+          <text>&quot;高&quot;,&quot;中&quot;</text>
+        </inputEntry>
+        <inputEntry id="_16325099-3739-4666-B95D-256F8A01CD2E">
+          <text>&quot;同意&quot;</text>
+        </inputEntry>
+        <outputEntry id="_B058BB54-08E5-4FF4-B22E-6964838EAE7A">
+          <text>&quot;許可&quot;</text>
+        </outputEntry>
+        <outputEntry id="_95806E07-0A01-427F-B494-16A30E2FB750">
+          <text>&quot;本人確認充足&quot;</text>
+        </outputEntry>
+      </rule>
+      <rule id="tr_r5">
+        <inputEntry id="_624DC792-E02F-44AF-A325-5C5FBB6438B1">
+          <text>&quot;高&quot;</text>
+        </inputEntry>
+        <inputEntry id="_E8FF3386-9294-42C5-89E9-E87EA5E5011B">
+          <text>&quot;未&quot;,&quot;不一致検出&quot;,&quot;情報不足&quot;</text>
+        </inputEntry>
+        <inputEntry id="_7317C3CB-8807-43E5-8DD9-4EC155C30410">
+          <text>&quot;同意&quot;</text>
+        </inputEntry>
+        <outputEntry id="_A5E380B2-CFC2-45A5-8962-2E652FB0B7AA">
+          <text>&quot;禁止&quot;</text>
+        </outputEntry>
+        <outputEntry id="_56BA09AC-7F9A-467C-A3C8-D607CDED782E">
+          <text>&quot;本人未確認&quot;</text>
+        </outputEntry>
+      </rule>
+      <rule id="tr_r6">
+        <inputEntry id="_B18666DE-1A98-424C-B5CB-AB55B64227B0">
+          <text>&quot;中&quot;</text>
+        </inputEntry>
+        <inputEntry id="_A84D0FEE-DE98-4215-A6A5-957E34FEE50B">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="_20ED02FC-9B63-4139-9E23-857DE82EEF96">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="_FEA34AE6-B7BD-427B-9137-96AD8917733E">
+          <text>&quot;禁止&quot;</text>
+        </outputEntry>
+        <outputEntry id="_B696712B-475F-42B2-A8A9-AA5A3EF842BB">
+          <text>&quot;外部送信対象外&quot;</text>
+        </outputEntry>
+      </rule>
+      <rule id="tr_r7">
+        <inputEntry id="_8E97F7C4-5C7C-481D-B0BB-B24C77CF5683">
+          <text>&quot;低&quot;</text>
+        </inputEntry>
+        <inputEntry id="_4A75CBFE-A1B7-49FD-A888-0CE4F2F52C36">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="_0C4567A8-A7FC-49D8-B0FD-9834A8C7B8A1">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="_2AA3D9DC-9371-4312-9A15-D593DBB369D9">
+          <text>&quot;許可&quot;</text>
+        </outputEntry>
+        <outputEntry id="_800F60BC-067F-4878-A08A-E5AA44FA1DE2">
+          <text>&quot;公開情報&quot;</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <inputData id="id_name_match" name="name_match">
+    <variable id="var_name_match" name="name_match" typeRef="string" />
+  </inputData>
+  <inputData id="id_birth_match" name="birth_match">
+    <variable id="var_birth_match" name="birth_match" typeRef="string" />
+  </inputData>
+  <inputData id="id_phone_match" name="phone_match">
+    <variable id="var_phone_match" name="phone_match" typeRef="string" />
+  </inputData>
+  <inputData id="id_has_medical" name="has_medical">
+    <variable id="var_has_medical" name="has_medical" typeRef="string" />
+  </inputData>
+  <inputData id="id_has_pii" name="has_pii">
+    <variable id="var_has_pii" name="has_pii" typeRef="string" />
+  </inputData>
+  <inputData id="id_identifiable" name="identifiable">
+    <variable id="var_identifiable" name="identifiable" typeRef="string" />
+  </inputData>
+  <inputData id="id_contact_consent" name="contact_consent">
+    <variable id="var_contact_consent" name="contact_consent" typeRef="string" />
+  </inputData>
+  <knowledgeSource id="ks_patient_master" name="患者マスタ" />
+  <knowledgeSource id="ks_action_request" name="行動要求" />
+  <knowledgeSource id="ks_info_ontology" name="情報分類オントロジー" />
+  <inputData name="added by me" id="_F5C2B769-67AA-46E7-8F18-05CB2B52DB0D">
+    <variable name="added by me" id="_7D45483B-B52C-41B4-93E4-6FA353EC058B" />
+  </inputData>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="_0DC667EE-54C1-4294-8C87-00B8BC29CFAF" name="" useAlternativeInputDataShape="false">
+      <di:extension>
+        <kie:ComponentsWidthsExtension>
+          <kie:ComponentWidths />
+        </kie:ComponentsWidthsExtension>
+      </di:extension>
+      <dmndi:DMNShape id="_DE6A6F7B-B956-46C5-B7EC-0D4D50809B75" dmnElementRef="decision_transmission">
+        <dc:Bounds x="410" y="40" width="180" height="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="_B81431A1-FC82-4358-85AD-F1469ACD7B3B" dmnElementRef="decision_identity">
+        <dc:Bounds x="120" y="260" width="180" height="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="_FE3B00D3-AB06-4011-BFCD-6AA64FA309CB" dmnElementRef="decision_classification">
+        <dc:Bounds x="680" y="260" width="180" height="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="_S0000001" dmnElementRef="id_name_match">
+        <dc:Bounds x="40" y="480" width="120" height="60" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="_S0000002" dmnElementRef="id_birth_match">
+        <dc:Bounds x="180" y="480" width="120" height="60" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="_S0000003" dmnElementRef="id_phone_match">
+        <dc:Bounds x="320" y="480" width="140" height="60" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="_S0000004" dmnElementRef="id_contact_consent">
+        <dc:Bounds x="500" y="480" width="150" height="60" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="_S0000005" dmnElementRef="id_has_medical">
+        <dc:Bounds x="690" y="480" width="140" height="60" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="_S0000006" dmnElementRef="id_has_pii">
+        <dc:Bounds x="850" y="480" width="120" height="60" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="_S0000007" dmnElementRef="id_identifiable">
+        <dc:Bounds x="990" y="480" width="140" height="60" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="_S0000008" dmnElementRef="ks_patient_master">
+        <dc:Bounds x="150" y="650" width="140" height="60" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="_S0000009" dmnElementRef="ks_action_request">
+        <dc:Bounds x="400" y="650" width="140" height="60" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="_S0000010" dmnElementRef="ks_info_ontology">
+        <dc:Bounds x="750" y="650" width="180" height="60" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="_136F496D-0BCD-4844-90F4-0409FBA55E90" dmnElementRef="_F5C2B769-67AA-46E7-8F18-05CB2B52DB0D" isCollapsed="false" isListedInputData="false">
+        <dc:Bounds x="320" y="770" width="160" height="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="_E0000001" dmnElementRef="_3A92E2CB-671B-4BB3-BFFC-0B454B3DF8FF">
+        <di:waypoint x="100" y="510" />
+        <di:waypoint x="210" y="300" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="_E0000002" dmnElementRef="_C31E4E16-1F38-49F5-B9B4-1E7CEB43213E">
+        <di:waypoint x="240" y="510" />
+        <di:waypoint x="210" y="300" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="_E0000003" dmnElementRef="_3B7A2C10-9E4D-4A6F-8C3B-1F2E5D6A7B80">
+        <di:waypoint x="390" y="510" />
+        <di:waypoint x="210" y="300" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="_E0000004" dmnElementRef="_DF89BD98-3CA6-45B0-979E-4F60230FA9AC">
+        <di:waypoint x="760" y="510" />
+        <di:waypoint x="770" y="300" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="_E0000005" dmnElementRef="_E73559E5-D506-4D84-AFAE-9875B46C9BE8">
+        <di:waypoint x="910" y="510" />
+        <di:waypoint x="770" y="300" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="_E0000006" dmnElementRef="_3B7A2C10-9E4D-4A6F-8C3B-1F2E5D6A7B81">
+        <di:waypoint x="1060" y="510" />
+        <di:waypoint x="770" y="300" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="_096E39C3-B2A7-477C-854F-C835C351DD62" dmnElementRef="_2A358997-F685-4D60-952A-1B41A1BA60C6">
+        <di:waypoint x="210" y="260" />
+        <di:waypoint x="450" y="120" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="_4AA5789D-CB50-405B-BDFB-EEB0048F6307" dmnElementRef="_E1726AD2-00D2-49A7-A194-878206C28996">
+        <di:waypoint x="770" y="260" />
+        <di:waypoint x="550" y="120" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="_83E04BB1-F283-4FFE-A6FD-40C3D251217B" dmnElementRef="_1645EDCC-ABDB-4CD2-A67B-1706A96D02E5">
+        <di:waypoint x="575" y="510" />
+        <di:waypoint x="500" y="120" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="_E0000010" dmnElementRef="_A1000000-0000-0000-0000-000000000001">
+        <di:waypoint x="220" y="650" />
+        <di:waypoint x="210" y="340" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="_E0000011" dmnElementRef="_A1000000-0000-0000-0000-000000000002">
+        <di:waypoint x="470" y="650" />
+        <di:waypoint x="230" y="340" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="_E0000012" dmnElementRef="_A1000000-0000-0000-0000-000000000003">
+        <di:waypoint x="470" y="650" />
+        <di:waypoint x="750" y="340" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="_E0000013" dmnElementRef="_A1000000-0000-0000-0000-000000000004">
+        <di:waypoint x="840" y="650" />
+        <di:waypoint x="770" y="340" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="_E0000014" dmnElementRef="_A1000000-0000-0000-0000-000000000005">
+        <di:waypoint x="220" y="650" />
+        <di:waypoint x="440" y="120" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>
