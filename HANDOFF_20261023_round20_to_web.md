@@ -228,7 +228,7 @@ HANDOFF の指示どおり、この2件は削除していない（あおいの�
 
 | 項目 | 値 |
 | --- | --- |
-| コミット | `COMMIT_HASH_PLACEHOLDER` |
+| コミット | `e6e3ee6` |
 | テスト | **131件すべて成功**（`reference/` がある環境。無い環境では37件が skip） |
 | 内訳 | `test_cross_validation.py` 44件 / `test_golden_path.py` 20件 / `test_acceptance_paths.py` 26件 / `test_bootstrap_fixes.py` 41件 |
 | ゴールデンパス | C1〜C11 通過、DMN 評価 **4/4 一致**、ゲートは `new_action_unapproved`・`new_fact_unapproved` の2つ（承認後は0） |
@@ -268,7 +268,7 @@ HANDOFF の指示どおり、この2件は削除していない（あおいの�
 ```
 aoi_doc2dmnで、第19回（IR v2 設計書 v1.3）の実装が完了しました。
 HANDOFF_20261023_round20_to_web.md を読んで、結果を把握してください。
-コミット COMMIT_HASH_PLACEHOLDER を push 済みです。正解IRの作成に進めるかを相談したいです。
+コミット e6e3ee6 を push 済みです。正解IRの作成に進めるかを相談したいです。
 ```
 
 ---
