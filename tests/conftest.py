@@ -135,8 +135,6 @@ def simple_ir() -> ClauseIR:
         decision_table_id="dt_simple",
         decision_id="decision_simple",
         decision_name="単純判定",
-        depends_on_decisions=[],
-        depends_on_inputs=["role", "environment"],
         input_columns=["role", "environment"],
         rule_rows=[
             RuleRowDraft(
@@ -250,8 +248,6 @@ def intermediate_ir() -> ClauseIR:
         decision_table_id="dt_verbal",
         decision_id="decision_verbal",
         decision_name="口頭伝達可否判定",
-        depends_on_decisions=["decision_identity"],
-        depends_on_inputs=[],
         input_columns=["本人確認判定.identity_level"],
         rule_rows=[
             RuleRowDraft(

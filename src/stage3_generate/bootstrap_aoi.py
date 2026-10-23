@@ -39,6 +39,11 @@ C11 に当たる。
 
     .venv/bin/python3 -m src.stage3_generate.bootstrap_aoi
 
+元の DMN は `tests/fixtures/aoi_transmission_baseline.dmn` にコミットしてある(D42)。
+あおいの既存実装側(`reference/`)はリポジトリに入っていないため、そのままでは初期登録も
+そのテストも動かせなかった。コピーが古くなっていないかは
+`tests/test_bootstrap_fixes.py` が `reference/` のある環境でだけ照合する。
+
 同じ入力なら何度実行しても同じ結果になる(`REGISTERED_AT` を固定しているため)。
 """
 from __future__ import annotations
@@ -63,8 +68,12 @@ from .wiring_generator import (
 DMN_NS = "https://www.omg.org/spec/DMN/20240513/MODEL/"
 _NS = {"d": DMN_NS, "dmndi": DMNDI_NS}
 
-# 初期登録の元にする DMN(リポジトリには入っていない。reference/ は .gitignore 対象)。
-SOURCE_DMN_DEFAULT = (
+# 初期登録の元にする DMN。元は `reference/` にあるが、`reference/` はリポジトリに
+# 入っていない(.gitignore 対象)ため、同じ内容を `tests/fixtures/` にコミットして
+# こちらを既定の入力にする(D42)。これで、初期登録とそのテストがリポジトリだけで動く。
+SOURCE_DMN_DEFAULT = "tests/fixtures/aoi_transmission_baseline.dmn"
+# 元ファイル(あおいの既存実装側)。コピーが古くなっていないかの照合にだけ使う。
+UPSTREAM_DMN = (
     "reference/gijinka-extraction-pipeline/dmn/aoi_transmission_baseline.dmn"
 )
 DMN_MODEL = "aoi_transmission"
@@ -650,7 +659,7 @@ def bootstrap(
     if not source.exists():
         raise FileNotFoundError(
             f"初期登録の元にする DMN が見つかりません: {source}\n"
-            "reference/ はリポジトリに入っていないため、別途配置が必要です。"
+            f"既定の入力は {SOURCE_DMN_DEFAULT}(D42 でコミットした元の DMN)です。"
         )
     result = build_registry(source, fixes=fixes)
     target = dmn_path(DMN_MODEL, dmn_dir)

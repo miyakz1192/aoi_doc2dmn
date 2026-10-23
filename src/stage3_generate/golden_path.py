@@ -185,8 +185,8 @@ def build_golden_path_ir(
         decision_table_id=DECISION_TABLE_ID,
         decision_id=DECISION_ID,
         decision_name=DECISION_NAME,
-        depends_on_decisions=[],
-        depends_on_inputs=list(INPUT_COLUMNS),
+        # D38: depends_on_decisions・depends_on_inputs は input_columns から導出する
+        # ので手で書かない
         input_columns=list(INPUT_COLUMNS),
         rule_rows=rule_rows,
         knowledge_sources=[KS_ACTION_REQUEST],

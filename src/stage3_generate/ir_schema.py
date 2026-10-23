@@ -43,6 +43,20 @@ v1(コミット 9e66776)との差分は同書 付録A。
   した。`option_taken` は決定表ごとに `ClauseIR.option_taken` で導出する。
   1つの IR が新しい表の行と既存の表の行を両方作ることがあるため
 
+## v1.4 で変わった点(設計書2章 D36・D37・D38)
+
+- **D37**: `IntermediateChange.new_output_values` を
+  `dict[str, list[ValueAddition]]`(出力名 -> 値と承認者)にした。中間判定の出力値を
+  増やすと、それを参照するすべての最終判定の結果に影響しうるので、fact の値の追加
+  (D14)と同じく人の承認を要る形にする。承認者のいない値があれば
+  `new_fact_unapproved` が立つ
+- **D36**: `new_output_values` には、その表が**まだ出していない**値だけを書く
+  (C9条件3が双方向の一致を確かめる)。片方向だと、行が新しい値を黙って出しても
+  止まらず、その値は参照する最終判定のどの行にも当たらない
+- **D38**: `NewDecisionTableDraft` の `depends_on_decisions`・`depends_on_inputs` は
+  手で書かず `input_columns` から導出する。どちらも機械的に決まるので、手で書かせると
+  正解 IR と前段の出力の比較で揺れ、食い違っても検査されない
+
 ## 引き継ぐ原則(設計書1.4)
 
 - 4点セットの同時生成、複合 fact 禁止、FIRST と行の順序、来歴の表し方、Action 正規化
@@ -302,10 +316,14 @@ class IntermediateChange:
     table_id: str
     relation: ColumnSetRelationKind
     action: IntermediateAction
-    # 中間判定に足す出力値。出力名 -> 足す値(D29)。中間判定は出力を複数持つため、
-    # 値の一覧だけではどの出力列の値かが分からない(例: 本人確認判定の「未」は
-    # identity_result の値で、identity_level には来ない)。
-    new_output_values: dict[str, list[str]] = field(default_factory=dict)
+    # 中間判定に足す出力値。出力名 -> 足す値と承認者(D29・D37)。中間判定は出力を
+    # 複数持つため、値の一覧だけではどの出力列の値かが分からない(例: 本人確認判定の
+    # 「未」は identity_result の値で、identity_level には来ない)。
+    #
+    # **その表がまだ出していない値だけを書く**(D36)。既に出している値を書くと
+    # C9条件3 が「余り」で止める。承認者のいない値があると
+    # `new_fact_unapproved` ゲートが立つ(D37)。
+    new_output_values: dict[str, list[ValueAddition]] = field(default_factory=dict)
     # action が add_column のとき足す入力列(D19)。足した列は層1の input_columns に
     # 加わり、既存の全行はその列が「-」で埋まる。
     new_input_columns: list[str] = field(default_factory=list)
@@ -332,6 +350,20 @@ class LevelDetermination:
     atomic_fact: AtomicFactLayer
     intermediate: list[IntermediateChange]
     final: FinalLayer
+
+    def unapproved_output_values(self) -> list[str]:
+        """承認者のいない新しい出力値を列挙する(D37。宣言順)。
+
+        中間判定の出力値を増やすと、それを参照するすべての最終判定の結果が変わり
+        うるので、fact の値の追加(D14)と同じく人の承認を要る扱いにする。
+        """
+        out: list[str] = []
+        for change in self.intermediate:
+            for name, additions in change.new_output_values.items():
+                for addition in additions:
+                    if addition.approved_by is None:
+                        out.append(f"{change.table_id}.{name}={addition.value}")
+        return out
 
     @property
     def outcome(self) -> LevelOutcome:
@@ -370,13 +402,37 @@ class NewDecisionTableDraft:
     decision_table_id: str
     decision_id: str
     decision_name: str
-    depends_on_decisions: list[str]
-    depends_on_inputs: list[str]
     input_columns: list[str]
     rule_rows: list[RuleRowDraft]
     # 来歴専用(計算には使わない)。DMN標準ではauthorityRequirementはinputDataに
     # 付けられないため、decision側に紐づける。
     knowledge_sources: list[str] = field(default_factory=list)
+
+    @property
+    def depends_on_inputs(self) -> list[str]:
+        """この判定が使う入力事実の名前(D38。`input_columns` から導出)。
+
+        ドットを含まない列がそのまま inputData の名前になる。手で書かせると
+        `input_columns` と食い違っても検査されないため、導出にする。
+        """
+        return [c for c in self.input_columns if "." not in c]
+
+    @property
+    def depends_on_decision_names(self) -> list[str]:
+        """この判定が使う他の判定の**名前**(D38。`input_columns` のドット参照から)。
+
+        登録簿の層1が持つ `depends_on_decisions` は決定の**ID**なので、名前から ID へ
+        の解決が要る。解決には IR と登録簿の両方が必要で、この型だけでは閉じない
+        ため、ID への変換は配線ジェネレータ側で行う。
+        """
+        out: list[str] = []
+        for column in self.input_columns:
+            if "." not in column:
+                continue
+            name = column.split(".", 1)[0]
+            if name not in out:
+                out.append(name)
+        return out
 
 
 @dataclass
@@ -430,7 +486,8 @@ class ReviewGates:
     vocab_flagged: bool = False
     # Action正規化で新規語彙が検出された場合に立てる。
     new_action_unapproved: bool = False
-    # 承認者のいない新しい fact・既存 fact への新しい値がある場合に立てる(D10・D14)。
+    # 承認者のいない新しい fact・既存 fact への新しい値・中間判定の新しい出力値が
+    # ある場合に立てる(D10・D14・D37)。
     new_fact_unapproved: bool = False
     # 新しい一致プリミティブが必要な場合(atomic_fact.covered=False)に立てる(D20)。
     # 新規プリミティブの追加は③aの範囲外なので、必ず人間レビューに回す。
@@ -473,7 +530,7 @@ class ReviewGates:
         if self.new_action_unapproved:
             out.append("新規Actionが未承認")
         if self.new_fact_unapproved:
-            out.append("新規fact・既存factへの新規値が未承認")
+            out.append("新規fact・既存factへの新規値・中間判定の新規出力値が未承認")
         if self.new_primitive_required:
             out.append("新しい一致プリミティブが必要(③aの範囲外)")
         return out
@@ -533,9 +590,13 @@ class ClauseIR:
         (v1.2 までは IR に1つだけ手で書いていたため、どちらかが隠れていた)。
 
         「他の判定から参照されている」は、この IR の中の別の表が
-        `判定名.出力名` でこの表の判定名を参照しているか、`depends_on_decisions` に
-        この表の決定IDを挙げているかで判定する。新しく作る表を既存の判定が参照して
-        いることはない(登録簿は過去の条文の結果であり、今回の表を知らない)。
+        `判定名.出力名` でこの表の判定名を参照しているかで判定する(D38 で
+        `depends_on_decisions` が導出になったので、入力列だけを見る)。新しく作る表を
+        既存の判定が参照していることはない(登録簿は過去の条文の結果であり、今回の表を
+        知らない)。
+
+        導出は「その IR を作った時点の判断の記録」である(D41)。後の条文がこの表を
+        参照しても、この IR の導出結果は変わらない。
         """
         out: dict[str, CompoundFactOption] = {}
         for table in self.new_decision_tables:
@@ -543,14 +604,7 @@ class ClauseIR:
             for other in self.new_decision_tables:
                 if other.decision_table_id == table.decision_table_id:
                     continue
-                if table.decision_id in other.depends_on_decisions:
-                    referenced = True
-                    break
-                if any(
-                    column.split(".", 1)[0] == table.decision_name
-                    for column in other.input_columns
-                    if "." in column
-                ):
+                if table.decision_name in other.depends_on_decision_names:
                     referenced = True
                     break
             out[table.decision_table_id] = (
@@ -582,9 +636,14 @@ def build_review_gates(
         quote_unverified=(not axis1.quote_verified) or (not axis2.quote_verified),
         vocab_flagged=axis1.vocab_flagged or axis2.vocab_flagged,
         new_action_unapproved=action.is_new and action.approved_by is None,
-        # D14: 「新語彙あり」ではなく「承認者がいない新語彙あり」で立てる。
-        # これにより、承認者を入れればゲートが下りる。
-        new_fact_unapproved=bool(facts.unapproved_fact_names()),
+        # D14・D37: 「新語彙あり」ではなく「承認者がいない新語彙あり」で立てる。
+        # これにより、承認者を入れればゲートが下りる。中間判定の新しい出力値
+        # (D37)も、fact の値と同じく承認の対象にする。
+        new_fact_unapproved=bool(facts.unapproved_fact_names())
+        or bool(
+            level_determination is not None
+            and level_determination.unapproved_output_values()
+        ),
         new_primitive_required=(
             level_determination is not None
             and not level_determination.atomic_fact.covered

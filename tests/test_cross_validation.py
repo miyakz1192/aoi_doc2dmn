@@ -18,6 +18,7 @@ from tests.conftest import make_provenance
 
 from src.stage3_generate.ir_schema import (
     AtomicFactLayer,
+    build_review_gates,
     DecisionTarget,
     FactDef,
     FinalLayer,
@@ -136,7 +137,7 @@ def test_c2_allows_fact_used_only_by_row_addition(simple_ir):
             table_id="dt_identity",
             relation="proper_subset",
             action="add_row",
-            new_output_values={"identity_level": ["中"]},
+            new_output_values={"identity_level": [ValueAddition(value="中")]},
         )
     ]
     # 例外が出ないこと自体が検証(extra_flag は required_facts には入らないが、
@@ -226,8 +227,8 @@ def test_c5_value_additions_are_allowed(simple_ir, seeded_registry):
         "birth_match": [ValueAddition(value="開発担当", approved_by="pytest")]
     }
     for table in simple_ir.new_decision_tables:
+        # D38: depends_on_inputs は input_columns からの導出なので代入しない
         table.input_columns = ["birth_match", "environment"]
-        table.depends_on_inputs = ["birth_match", "environment"]
         for row in table.rule_rows:
             row.conditions = {
                 "birth_match": row.conditions.pop("role"),
@@ -370,7 +371,11 @@ def test_c9_cond3_add_row_without_matching_output_value(simple_ir, seeded_regist
             table_id="dt_identity",
             relation="proper_subset",
             action="add_row",
-            new_output_values={"identity_level": ["中(氏名なし・2要素一致)"]},
+            new_output_values={
+                "identity_level": [
+                    ValueAddition(value="中(氏名なし・2要素一致)", approved_by="pytest")
+                ]
+            },
         )
     ]
     with pytest.raises(SchemaWiringError, match="C9検証失敗\\(条件3\\)"):
@@ -494,8 +499,8 @@ def test_c6_missing_referenced_fact_declaration(simple_ir, seeded_registry):
         f for f in simple_ir.facts.new_facts if f.variable != "role"
     ]
     for table in simple_ir.new_decision_tables:
+        # D38: depends_on_inputs は input_columns からの導出なので代入しない
         table.input_columns = ["birth_match", "environment"]
-        table.depends_on_inputs = ["birth_match", "environment"]
         for row in table.rule_rows:
             row.conditions = {
                 "birth_match": "一致" if row.position == 1 else "-",
@@ -661,7 +666,9 @@ def test_c11_accepts_value_added_by_this_ir(intermediate_ir, seeded_registry, tm
             table_id="dt_identity",
             relation="exact_match",
             action="add_row",
-            new_output_values={"identity_level": ["中"]},
+            new_output_values={
+                "identity_level": [ValueAddition(value="中", approved_by="pytest")]
+            },
         )
     ]
     # C11 はここを通る。dmn_dir を空のディレクトリにして後続で止まることを確認し、
@@ -712,7 +719,9 @@ def test_c9_cond3_output_name_not_in_output_columns(simple_ir, seeded_registry):
             relation="proper_subset",
             action="add_row",
             # 本人確認判定の output_columns は identity_level だけ
-            new_output_values={"identity_result": ["済"]},
+            new_output_values={
+                "identity_result": [ValueAddition(value="済", approved_by="pytest")]
+            },
         )
     ]
     with pytest.raises(
@@ -797,6 +806,11 @@ def _make_no_change_ir(simple_ir, seeded_registry) -> None:
                 table_id="dt_identity",
                 relation="proper_subset",
                 action="add_row",
+                # seeded_registry の本人確認判定は「高」しか出していないので、
+                # 足す行の「中」は新しい出力値になる(D36)
+                new_output_values={
+                    "identity_level": [ValueAddition(value="中", approved_by="pytest")]
+                },
             )
         ],
         final=FinalLayer(compared_table_id=None, relation=None, action="no_change"),
@@ -834,7 +848,12 @@ def test_c11_value_added_to_another_output_is_rejected(
             table_id="dt_identity",
             relation="exact_match",
             action="add_row",
-            new_output_values={"identity_result": ["未"]},
+            # 行は identity_result「未」と identity_level「中」の2つの新しい値を
+            # 出すので、D36 により両方を宣言する(宣言しないと C9条件3 で止まる)
+            new_output_values={
+                "identity_result": [ValueAddition(value="未", approved_by="pytest")],
+                "identity_level": [ValueAddition(value="中", approved_by="pytest")],
+            },
         )
     ]
     with pytest.raises(SchemaWiringError, match="C11検証失敗"):
@@ -924,3 +943,135 @@ def test_required_facts_include_a_column_added_to_a_dot_referenced_table(
         "phone_match",
         "address_match",
     ]
+
+
+# --------------------------------------------------------------------------
+# v1.4 で変えた・足した検証の失敗テスト(第21回 HANDOFF タスクA3)
+# --------------------------------------------------------------------------
+
+
+def test_c9_cond3_undeclared_new_output_value(simple_ir, seeded_registry):
+    """条件3(D36): 行が新しい出力値を出しているのに new_output_values に書いていない。
+
+    **v1.4 の主な確認点。** v1.3 までは片方向（宣言した値が行にある）しか見ていなかった
+    ため、この形は止まらなかった。黙って増えた出力値は、それを参照する最終判定の
+    どの行にも当たらず、既定の行（U2 では許可）に落ちる。
+    """
+    simple_ir.facts.new_facts = []
+    simple_ir.facts.referenced_facts = ["birth_match"]
+    simple_ir.rule_row_additions = [
+        RuleRowDraft(
+            row_id="id_identity_2",
+            decision_table_id="dt_identity",
+            position=2,
+            conditions={"birth_match": "一致"},
+            # seeded_registry の本人確認判定が出しているのは「高」だけ
+            outputs={"identity_level": "中"},
+        )
+    ]
+    simple_ir.level_determination.intermediate = [
+        IntermediateChange(
+            table_id="dt_identity",
+            relation="proper_subset",
+            action="add_row",
+            new_output_values={},
+        )
+    ]
+    with pytest.raises(SchemaWiringError, match="C9検証失敗\\(条件3\\).*書いていない値"):
+        generate_wiring_bundle(simple_ir, registry=seeded_registry)
+
+
+def test_c9_cond3_declares_a_value_the_table_already_produces(
+    simple_ir, seeded_registry
+):
+    """条件3(D36): その表が既に出している値を new_output_values に書いた（余る側）。
+
+    「まだ出していない値だけを書く」と決めたので、既にある値を書いたら止める。
+    これで「既にある値を書くか」の揺れがなくなる。
+    """
+    simple_ir.facts.new_facts = []
+    simple_ir.facts.referenced_facts = ["birth_match"]
+    simple_ir.rule_row_additions = [
+        RuleRowDraft(
+            row_id="id_identity_2",
+            decision_table_id="dt_identity",
+            position=2,
+            conditions={"birth_match": "一致"},
+            outputs={"identity_level": "高"},  # 既にある値
+        )
+    ]
+    simple_ir.level_determination.intermediate = [
+        IntermediateChange(
+            table_id="dt_identity",
+            relation="proper_subset",
+            action="add_row",
+            new_output_values={
+                "identity_level": [ValueAddition(value="高", approved_by="pytest")]
+            },
+        )
+    ]
+    with pytest.raises(SchemaWiringError, match="C9検証失敗\\(条件3\\).*既に出している"):
+        generate_wiring_bundle(simple_ir, registry=seeded_registry)
+
+
+def test_d37_new_output_value_needs_an_approver(simple_ir, seeded_registry):
+    """D37: 承認者のいない新しい出力値で new_fact_unapproved が立ち、入れると下りる。
+
+    中間判定の出力値を増やすと、それを参照するすべての最終判定の結果が変わりうる
+    ので、fact の値の追加（D14）と同じく人の承認を要る扱いにする。
+    """
+    _make_no_change_ir(simple_ir, seeded_registry)
+    change = simple_ir.level_determination.intermediate[0]
+
+    # 承認者を外すとゲートが立つ（new_facts は空なので、立つ理由は出力値だけ）
+    change.new_output_values["identity_level"] = [ValueAddition(value="中")]
+    assert simple_ir.facts.unapproved_fact_names() == []
+    assert simple_ir.level_determination.unapproved_output_values() == [
+        "dt_identity.identity_level=中"
+    ]
+    gates = build_review_gates(
+        simple_ir.axis1_result,
+        simple_ir.axis2_result,
+        simple_ir.action,
+        simple_ir.facts,
+        simple_ir.level_determination,
+    )
+    assert gates.gate_names() == ["new_fact_unapproved"]
+    assert gates.should_review is True
+
+    # 承認者を入れると下りる
+    change.new_output_values["identity_level"] = [
+        ValueAddition(value="中", approved_by="Kazuhiro")
+    ]
+    gates = build_review_gates(
+        simple_ir.axis1_result,
+        simple_ir.axis2_result,
+        simple_ir.action,
+        simple_ir.facts,
+        simple_ir.level_determination,
+    )
+    assert gates.gate_names() == []
+    assert simple_ir.level_determination.unapproved_output_values() == []
+
+
+def test_d38_layer1_depends_on_is_derived_from_input_columns(
+    intermediate_ir, seeded_registry, tmp_path
+):
+    """D38: 層1の depends_on は input_columns からの導出値になる。
+
+    IR は手で持たない。層1の `depends_on_decisions` は決定の**ID**（D16 の逆たどりが
+    ID で照合する）、`depends_on_inputs` は inputData の**名前**（D35）である。
+    """
+    assert intermediate_ir.new_decision_tables[0].depends_on_inputs == []
+    assert intermediate_ir.new_decision_tables[0].depends_on_decision_names == [
+        "本人確認判定"
+    ]
+    bundle = generate_wiring_bundle(intermediate_ir, registry=seeded_registry)
+    entry = next(
+        e
+        for e in bundle.registry["decision_tables"]
+        if e["decision_table_id"] == "dt_verbal"
+    )
+    # 名前ではなく ID に解決されている
+    assert entry["depends_on_decisions"] == ["decision_identity"]
+    assert entry["depends_on_inputs"] == []

@@ -13,9 +13,11 @@
 | 初期登録を再実行すると同じ結果になる | HANDOFF タスク4 |
 | `reference/` の元ファイルは書き換えない | D34 |
 
-`reference/` はリポジトリに入っていない(.gitignore 対象)ため、元の DMN を使う
-テストは、無ければ飛ばす。修正の履歴はコミット済みの `registry/registry.json` から
-確かめるので、こちらは `reference/` が無くても動く。
+元の DMN は `tests/fixtures/aoi_transmission_baseline.dmn` にコミットしてある(D42)。
+v1.3 までは `reference/`(.gitignore 対象)を読んでいたため、`reference/` のない環境では
+このファイルのテストの大半が飛ばされていた。**今は skip が無い。** あおいの既存実装側の
+ファイルとの照合だけは、`reference/` がある環境でのみ行う
+(`test_fixture_matches_the_upstream_file_when_available`)。
 """
 from __future__ import annotations
 
@@ -31,6 +33,7 @@ from src.stage3_generate.bootstrap_aoi import (  # noqa: E402
     DMN_MODEL,
     FIX_APPROVER,
     SOURCE_DMN_DEFAULT,
+    UPSTREAM_DMN,
     build_registry,
 )
 from src.stage3_generate.dmn_engine import DmnModel  # noqa: E402
@@ -40,7 +43,10 @@ from src.stage3_generate.wiring_generator import SchemaWiringError  # noqa: E402
 REPO_ROOT = Path(__file__).resolve().parents[1]
 REGISTRY_PATH = REPO_ROOT / "registry" / "registry.json"
 FIXED_DMN = REPO_ROOT / "registry" / "dmn" / f"{DMN_MODEL}.dmn"
+# D42: 元の DMN はリポジトリにコミットしてある(tests/fixtures/)。
 SOURCE_DMN = REPO_ROOT / SOURCE_DMN_DEFAULT
+# あおいの既存実装側。コピーが古くなっていないかの照合にだけ使う(無い環境もある)。
+UPSTREAM_DMN_PATH = REPO_ROOT / UPSTREAM_DMN
 
 # 本人確認判定が出しうる確認レベルの全値と、その値になる入力(DMN から読み取れる)
 IDENTITY_SCENARIOS = {
@@ -73,9 +79,12 @@ CONSENTS = ["同意", "不同意"]
 
 @pytest.fixture
 def source_dmn() -> Path:
-    """初期登録の元にする DMN。無ければテストを飛ばす。"""
-    if not SOURCE_DMN.exists():
-        pytest.skip(f"元の DMN がありません({SOURCE_DMN})。reference/ は未コミット。")
+    """初期登録の元にする DMN(D42 でリポジトリにコミットしたもの)。
+
+    v1.3 までは `reference/` を読んでいたため、`reference/` のない環境では
+    修正前後の一致などの肝心のテストが飛ばされていた。
+    """
+    assert SOURCE_DMN.exists(), f"元の DMN がありません: {SOURCE_DMN}"
     return SOURCE_DMN
 
 
@@ -253,3 +262,17 @@ def test_layer1_uses_input_names_and_first_hit_policy(committed_registry):
         assert entry["depends_on_inputs"] == facts, entry["decision_table_id"]
         for name in entry["depends_on_inputs"]:
             assert committed_registry.find_fact(name) is not None, name
+
+
+def test_fixture_matches_the_upstream_file_when_available():
+    """D42: コミットしたコピーが、あおいの既存実装側のファイルと一致する。
+
+    `reference/` はリポジトリに入っていないので、照合できる環境でだけ行う。
+    skip にするとテスト件数が環境で変わるため、無い場合は何もせず終わる。
+    """
+    if not UPSTREAM_DMN_PATH.exists():
+        return  # reference/ が無い環境（claude.ai 側など）。照合はできないが skip にしない
+    assert SOURCE_DMN.read_bytes() == UPSTREAM_DMN_PATH.read_bytes(), (
+        "tests/fixtures/ のコピーが、あおいの既存実装側の DMN と食い違っています。"
+        "コピーを更新し、初期登録を流し直してください。"
+    )

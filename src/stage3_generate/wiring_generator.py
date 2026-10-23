@@ -47,6 +47,18 @@ DMN XML／バインディング設定JSON／ルーティング表JSON／Scope・
 - **D33**: 層3の `sources` が空の fact は、バインディング設定に `sources_undefined` を付ける
 - **D35**: 既存の表への行の挿入は、その表の `hit_policy` が FIRST のときだけ行う
 
+## v1.4 で変えた点(設計書2章 D36〜D39)
+
+- **D36**: C9条件3 を**双方向の一致**にした。「追加した行の出力値のうち、その表が
+  まだ出していない値」の集合と `new_output_values` を出力名ごとに比べ、足りなくても
+  余っても止める。片方向(宣言した値が行にある)だけだと、行が新しい出力値を黙って
+  出しても止まらず、その値は参照する最終判定のどの行にも当たらない(既定の行に落ちる)
+- **D37**: `new_output_values` の値が `ValueAddition`(値と承認者)になった
+- **D38**: 層1の `depends_on_decisions`・`depends_on_inputs` は、IR の
+  `input_columns` から導出した値を書く(IR は手で持たない)
+- **D39**: 既存の DMN モデルの namespace は変えない。`DMN_NAMESPACE_BASE` の規則は
+  新しく作るモデルにだけ使う(`patch_existing_dmn` は元の definitions をそのまま使う)
+
 ## クロス検証の実行順序(設計書5章)
 
 設計書5章は2段構えを定めている。
@@ -541,8 +553,9 @@ def _check_c9_level_determination(ir: ClauseIR, registry: Registry) -> None:
             )
 
     # 条件3: intermediate の action が add_row なら、rule_row_additions に table_id の表の
-    #        行がある。new_output_values の出力名はその表の output_columns にあり、
-    #        値は追加した行の**同じ出力名の列**に現れる(D29)
+    #        行がある。new_output_values の出力名はその表の output_columns にある。
+    #        さらに「追加した行の出力値のうち、その表がまだ出していない値」の集合と
+    #        new_output_values が出力名ごとに**一致する**(D29・D36)
     for change in lv.intermediate:
         if change.action != "add_row":
             continue
@@ -552,8 +565,6 @@ def _check_c9_level_determination(ir: ClauseIR, registry: Registry) -> None:
                 f"C9検証失敗(条件3): intermediate.action=add_row ですが、rule_row_additions に"
                 f"決定表 {change.table_id!r} の行がありません。"
             )
-        if not change.new_output_values:
-            continue
         columns = _output_columns_of_table(ir, registry, change.table_id)
         if columns is None:
             raise SchemaWiringError(
@@ -561,30 +572,56 @@ def _check_c9_level_determination(ir: ClauseIR, registry: Registry) -> None:
                 "層1の output_columns にも見つかりません(D12)。new_output_values の"
                 "出力名を確かめられません。"
             )
-        for name, values in change.new_output_values.items():
+        declared: dict[str, set[str]] = {}
+        for name, additions in change.new_output_values.items():
             if name not in columns:
                 raise SchemaWiringError(
                     f"C9検証失敗(条件3): new_output_values の出力名 {name!r} が、決定表 "
                     f"{change.table_id!r} の出力列 {columns} にありません(D29)。"
                     "出力名を取り違えると、どの列にも足されない値ができます。"
                 )
-            produced: set[str] = set()
-            for row in rows:
-                if name not in row.outputs:
-                    continue
-                produced.update(
-                    _cell_values(
-                        str(row.outputs[name]),
-                        where=f"決定表 {change.table_id} の行 {row.row_id} の出力 {name}",
-                    )
+            if additions:
+                declared[name] = {a.value for a in additions}
+        # その表が今出している値(層2の既存行。D28 の関数で揃える)
+        existing = _registry_output_values(registry, change.table_id, decision_name=change.table_id)
+        # 追加する行が出す値のうち、まだ出していないもの
+        added: dict[str, set[str]] = {}
+        for row in rows:
+            for name, cell in row.outputs.items():
+                values = _cell_values(
+                    str(cell),
+                    where=f"決定表 {change.table_id} の行 {row.row_id} の出力 {name}",
                 )
-            missing_values = [v for v in values if v not in produced]
-            if missing_values:
-                raise SchemaWiringError(
-                    f"C9検証失敗(条件3): new_output_values の {name!r} に足す値 "
-                    f"{missing_values} が、決定表 {change.table_id!r} へ追加する行の "
-                    f"{name!r} 列に現れません(その列の値: {sorted(produced)})。"
+                fresh = {v for v in values if v not in existing.get(name, set())}
+                if fresh:
+                    added.setdefault(name, set()).update(fresh)
+        if declared != added:
+            missing = {
+                name: sorted(values - declared.get(name, set()))
+                for name, values in added.items()
+                if values - declared.get(name, set())
+            }
+            extra = {
+                name: sorted(values - added.get(name, set()))
+                for name, values in declared.items()
+                if values - added.get(name, set())
+            }
+            detail = []
+            if missing:
+                detail.append(
+                    f"行が出しているのに new_output_values に書いていない値: {missing}"
                 )
+            if extra:
+                detail.append(
+                    f"new_output_values に書いたが、その表が既に出している(または行が"
+                    f"出していない)値: {extra}"
+                )
+            raise SchemaWiringError(
+                f"C9検証失敗(条件3): 決定表 {change.table_id!r} に足す行の新しい出力値と "
+                f"new_output_values が一致しません(D36)。" + "／".join(detail)
+                + "。new_output_values には、その表がまだ出していない値だけを書きます"
+                "(書き漏らすと、その値は参照する最終判定のどの行にも当たりません)。"
+            )
 
     # 条件4: intermediate の table_id と final の compared_table_id は層1に実在する
     for change in lv.intermediate:
@@ -677,6 +714,20 @@ def _check_c9_level_determination(ir: ClauseIR, registry: Registry) -> None:
                 f"entry_points {points} にありません。既存のルートに足す条文が、"
                 "別の行為を名乗らないようにするための検査です。"
             )
+
+
+def _registry_output_values(
+    registry: Registry, decision_table_id: str, *, decision_name: str
+) -> dict[str, set[str]]:
+    """層2の行から、その決定表が今出している出力値を集める(D28 の関数で揃える)。"""
+    values: dict[str, set[str]] = {}
+    for name, cells in registry.output_values_of(decision_table_id).items():
+        for cell in cells:
+            for value in _cell_values(
+                str(cell), where=f"判定 {decision_name} の出力 {name}"
+            ):
+                values.setdefault(name, set()).add(value)
+    return values
 
 
 def _check_c4_sources_match_primitive(ir: ClauseIR, registry: Registry) -> None:
@@ -915,9 +966,9 @@ def _produced_output_values(
         for change in ir.level_determination.intermediate:
             if change.table_id != table_id or not change.new_output_values:
                 continue
-            for name, added_values in change.new_output_values.items():
-                for value in added_values:
-                    add(name, value)
+            for name, additions in change.new_output_values.items():
+                for addition in additions:
+                    add(name, addition.value)
             sources.append("intermediate の new_output_values")
 
     return values, "／".join(dict.fromkeys(sources)) or "(出力値の情報なし)"
@@ -1600,6 +1651,36 @@ def _build_routing_table(routes: list[dict]) -> dict:
     }
 
 
+def _resolve_decision_ids(
+    ir: ClauseIR, registry: Registry, decision_names: list[str]
+) -> list[str]:
+    """判定の名前を決定IDに解決する(D38。層1の `depends_on_decisions` 用)。
+
+    層1の `depends_on_decisions` は決定の**ID** で、D16 の逆たどりもこの ID で
+    照合する(初期登録も `requiredDecision/@href` から ID を入れている)。一方、
+    `input_columns` のドット参照の接頭辞は FEEL が見る判定の**名前**なので、
+    ここで名前 -> ID に変換する。解決できない名前は C10 が先に止めるが、念のため
+    名前のまま残さず停止する。
+    """
+    out: list[str] = []
+    by_name = _ir_tables_by_decision_name(ir)
+    for name in decision_names:
+        table = by_name.get(name)
+        if table is not None:
+            decision_id = table.decision_id  # type: ignore[attr-defined]
+        else:
+            entry = registry.find_decision_table(decision_name=name)
+            if entry is None:
+                raise SchemaWiringError(
+                    f"判定 {name!r} の decision_id を解決できません(IR にも登録簿の"
+                    "層1にもありません)。層1の depends_on_decisions を書けません。"
+                )
+            decision_id = entry.get("decision_id")
+        if decision_id not in out:
+            out.append(decision_id)
+    return out
+
+
 def _build_updated_registry(
     ir: ClauseIR, registry: Registry, fact_defs: dict[str, FactDef]
 ) -> Registry:
@@ -1632,7 +1713,11 @@ def _build_updated_registry(
                 "hit_policy": "FIRST",
                 "input_columns": list(table.input_columns),
                 "output_columns": output_columns,
-                "depends_on_decisions": list(table.depends_on_decisions),
+                # D38: どちらも input_columns から導出する。層1は決定の ID を持つ
+                # ので、ドット参照の判定名は ID に解決する
+                "depends_on_decisions": _resolve_decision_ids(
+                    ir, registry, table.depends_on_decision_names
+                ),
                 "depends_on_inputs": list(table.depends_on_inputs),
                 "knowledge_sources": list(table.knowledge_sources),
                 "provenance": provenance,

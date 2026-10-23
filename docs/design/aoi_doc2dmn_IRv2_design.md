@@ -1,7 +1,7 @@
 # aoi_doc2dmn ③a 中間表現（IR）v2 設計書（Markdown 版）
 
 > **この文書について**
-> - Word 版「aoi_doc2dmn_IRv2_設計書.docx」v1.3（2026-10-23）の Markdown 版。正本は Word 版で、図は文章と表で置き換えている。
+> - Word 版「aoi_doc2dmn_IRv2_設計書.docx」v1.4（2026-10-23）の Markdown 版。正本は Word 版で、図は文章と表で置き換えている。
 > - **③a の IR 設計の基準文書である。** 次の旧文書と食い違う点は、本書を優先する。
 >   - gijinka_dmn_generation_design_v1.docx：バインディング設定（fact の定義は IR に入れ、共有分は登録簿の層3に置く。区分の値は passthrough）、ルーティング表（dmn_model・decision_id・required_facts を持つ）、登録簿（層1に dmn_model、層3 fact 台帳を新設）
 >   - gijinka_extraction_pipeline_design_v1.docx：レベル1／2判定（3層とも同じ「列集合の関係」で表すのをやめ、層ごとの型にする。関係＝根拠と action＝結論を分ける）
@@ -10,11 +10,11 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| 版 | v1.3（ToBe 設計・レビュー待ち。v1.1 からの変更は付録B、v1.2 からの変更は付録C） |
+| 版 | v1.4（ToBe 設計・レビュー待ち。v1.1 からの変更は付録B、v1.2 からは付録C、v1.3 からは付録D） |
 | 作成日／改訂日 | 2026-10-16／2026-10-23 |
 | 作成 | Claude（Kazuhiro さんとの議論に基づく） |
 | 対象 | aoi_doc2dmn ③a（宣言的 × ハード制約） |
-| 基準とした実装 | v1：コミット 9e66776（AsIs）／v2 初回実装：コミット 10fc38b／v1.2 実装：コミット 71d3424 |
+| 基準とした実装 | v1：コミット 9e66776（AsIs）／v2 初回実装：コミット 10fc38b／v1.2 実装：コミット 71d3424／v1.3 実装：コミット e6e3ee6 |
 
 ## はじめに
 
@@ -27,7 +27,7 @@
 | 文書 | 内容 | 時点 |
 | --- | --- | --- |
 | AsIs 仕様書（Claude Docs）<br>https://claude.ai/code/artifact/11cc2737-119c-4776-8f64-d7085b0afbce | IR・配線ジェネレータ・4点セットの実装の記録と、そこで見つかった問題 | コミット 9e66776 |
-| 本書（IR v2 設計書） | IR の改訂内容、4点セットの導き方、クロス検証、正解 IR の作り方 | v1.1 までの内容はコミット 10fc38b、v1.2 の内容はコミット 71d3424 で実装済み。v1.3 の追加分はこれから |
+| 本書（IR v2 設計書） | IR の改訂内容、4点セットの導き方、クロス検証、正解 IR の作り方 | v1.1 までの内容はコミット 10fc38b、v1.2 の内容はコミット 71d3424、v1.3 の内容はコミット e6e3ee6 で実装済み。v1.4 の追加分はこれから |
 
 ### 対象範囲
 
@@ -158,6 +158,19 @@ IR v2 は、前段（条文 → IR）の出力であり、配線ジェネレー�
 | D34 | 初期登録の元の DMN に不足・矛盾があれば、reference/ の元ファイルは書き換えず、registry/ の側で修正する。修正は層1・層2の history に内容・理由・承認者を残す。修正後の登録簿に C5・C11 を適用し、違反があれば止める。あおいの送信可否判定では、tr_r3・tr_r5 の「未」と、参照されない inputData（added by me）を削除する（承認：Kazuhiro） | 「未」は identity_level に決して来ない値で、消しても評価結果は変わらない。残すと正解 IR で参照するたびに C11 に当たる | find_problems() が報告するだけで、矛盾を抱えたまま登録していた（第18回の懸念#8） |
 | D35 | 既存の表への行の挿入は、その表の hit_policy が FIRST の場合に限る。FIRST でなければ停止する。新規の表は常に FIRST で作り、IR に hit_policy の欄は持たせない。depends_on_inputs には inputData の名前（input_columns と同じ）を入れる | position による挿入は FIRST でしか意味を持たない。名前で揃えると input_columns・required_facts・バインディング設定と同じ語で引ける | 検査がなく、depends_on_inputs の値も規定がなかった（第18回の懸念#6・#7） |
 
+次の D36〜D43 は、v1.3 の実装（コミット e6e3ee6）の報告（第20回）を受けて、2026年10月23日に追加した。D43 は正解 IR の作成に入るための決定である。対応関係は付録Dにまとめる。
+
+| # | 決定 | 理由 | v1.3 からの変更 |
+| --- | --- | --- | --- |
+| D36 | new_output_values には、その表がまだ出していない出力値だけを書く。C9 条件3は双方向の一致とする：追加した行の出力値のうち、その表（層2の既存行）がまだ出していない値の集合が、new_output_values と出力名ごとに一致する | 片方向（宣言した値が行にある）だけだと、行が新しい値を黙って出しても止まらない。参照する最終判定の行に当たらず、既定の行（U2 では許可）に落ちる。既にある値を書くかどうかの揺れもなくなる | 宣言した値が行に現れることだけを確かめていた |
+| D37 | new_output_values を値ごとに承認者を持つ形（dict[str, list[ValueAddition]]）にする。承認者のいない出力値があれば new_fact_unapproved を立てる | 中間判定の出力値を増やすと、それを参照するすべての最終判定の結果に影響しうる。fact の値の追加（D14）より影響が大きいのに、承認の仕組みがなかった | 値の一覧だけで、承認者がなかった |
+| D38 | NewDecisionTableDraft の depends_on_decisions と depends_on_inputs は手で書かず、input_columns から導出する（ドット参照の判定名と、ドットを含まない列） | どちらも input_columns から機械的に決まる。手で書かせると、正解 IR と前段の出力の比較で揺れ、食い違っても検査されない（D31 と同じ考え方） | IR に手で書き、そのまま層1に写していた |
+| D39 | 既存の DMN モデルの namespace は変えない。http://gijinka.example.com/dmn/<dmn_model> の規則は、新しく作るモデルにだけ使う | namespace は実行エンジンや利用側がモデルを識別する名前で、後から変えると参照が切れる | 規定がなく、あおいのモデル（…/dmn/aoi）と規則が食い違って見えた |
+| D40 | 層1に history を持たせる。DMN モデル全体に関わる修正（参照されない inputData の削除など）は、そのモデルに属する層1のすべてのエントリに同じ記録を残す | どの決定表から見ても、registry/ の DMN が元と違う理由が分かるようにする。モデル単位の層は、モデルが複数になった時点で検討する | 4.5節の層1に history がなかった |
+| D41 | referenced_facts は条文の語ではなく、書いた行と表から決める（D25 の基準のまま）。option_taken の導出は、その IR を作った時点の判断の記録とし、後の条文が参照しても変えない | 条文が言及しても行の条件が「-」なら、判定には使っていない。option_taken はその条文が複合条件をどう表したかの記録である | 正解 IR を書く人への注記がなかった |
+| D42 | あおいの元の DMN（aoi_transmission_baseline.dmn）を tests/fixtures/ にコミットし、元の DMN を使うテストがリポジトリだけで動くようにする | reference/ はリポジトリに入っておらず、修正前後の一致などの肝心のテストが他の環境で確かめられない | 37件のテストが reference/ のない環境で飛ばされていた |
+| D43 | 正解 IR は、testdata/ir_gold/ に1条文1ファイルで置き、適用順を manifest.json に書く。評価は、初期登録した登録簿から始めて、manifest の順に IR を配線ジェネレータに通し、出力された登録簿を次の IR の入力にする（メモリ上だけで行い、registry/ には反映しない） | 既存の fact を再利用する条文やレベル2の条文は、先に定義された fact・表を前提にする。promotion（U8）を実装せずに、条文の間の依存を再現できる | 正解 IR の置き方と評価の手順が決まっていなかった |
+
 ## 3. IR v2 の型
 
 ### 3.1 全体構造
@@ -216,7 +229,7 @@ IR v2 は、前段（条文 → IR）の出力であり、配線ジェネレー�
 | IntermediateChange | table_id | str | 比べた既存の中間判定の決定表 |
 |   | relation | ColumnSetRelationKind | 列集合の関係（判断の根拠） |
 |   | action | reuse_value / add_row / add_column | 直し方。既存の値を使う／行を足す／列を足す |
-|   | new_output_values | dict[str, list[str]] | 中間判定に足す出力値。出力名 → 足す値（例：identity_level → [中（氏名なし・2要素一致）]）（D29） |
+|   | new_output_values | dict[str, list[ValueAddition]] | 中間判定に足す出力値。出力名 → 足す値と承認者の一覧（D29・D37）。その表がまだ出していない値だけを書く（D36）。例：identity_level → [中（氏名なし・2要素一致）] |
 |   | new_input_columns | list[str] | action が add_column のとき足す入力列（D19） |
 | FinalLayer | compared_table_id | str または None | 比べた既存の最終判定の決定表。比べる相手がない場合と no_change の場合は None |
 |   | relation | ColumnSetRelationKind または None | 列集合の関係（判断の根拠） |
@@ -230,7 +243,7 @@ ColumnSetRelationKind（exact_match / proper_subset / intersecting_non_subset）
 
 ### 3.4 変更しない型
 
-次の型は v1（コミット 9e66776）の形を引き継ぐ。ただし CompoundFactApplication は手で書く欄を印1つに減らし（D31）、knowledge_sources の書き方を決めた（D22）。本書だけで読めるよう、フィールドの定義を再掲する。
+次の型は v1（コミット 9e66776）の形を引き継ぐ。ただし CompoundFactApplication は手で書く欄を印1つに減らし（D31）、NewDecisionTableDraft の depends_on の2つを導出に変え（D38）、knowledge_sources の書き方を決めた（D22）。本書だけで読めるよう、フィールドの定義を再掲する。
 
 | 型 | フィールド | 型 | 意味 |
 | --- | --- | --- | --- |
@@ -250,8 +263,8 @@ ColumnSetRelationKind（exact_match / proper_subset / intersecting_non_subset）
 | NewDecisionTableDraft | decision_table_id | str | DMN の decisionTable 要素の ID |
 |   | decision_id | str | DMN の decision 要素の ID |
 |   | decision_name | str | 判定の名前（DMN の decision 名） |
-|   | depends_on_decisions | list[str] | この判定が使う他の判定（中間判定）の ID |
-|   | depends_on_inputs | list[str] | この判定が使う入力事実 |
+|   | depends_on_decisions（導出） | list[str] | この判定が使う他の判定（中間判定）。input_columns のドット参照から導出し、手で書かない（D38） |
+|   | depends_on_inputs（導出） | list[str] | この判定が使う入力事実の名前。input_columns のうちドットを含まない列から導出し、手で書かない（D38） |
 |   | input_columns | list[str] | 決定表の入力列。「判定名.出力名」の形は他の判定の出力を指す |
 |   | rule_rows | list[RuleRowDraft] | 決定表の行の一覧 |
 |   | knowledge_sources | list[str] | 来歴として紐付ける知識源。計算には使わない。条文または出典付きの context に根拠があるものだけを書く（D22） |
@@ -276,7 +289,7 @@ ReviewGates には次の2つのゲートを足す（D10・D20）。should_review
 | quote_unverified | 軸1または軸2の quote_verified=False | v1 のまま |
 | vocab_flagged | 軸1または軸2の vocab_flagged=True | v1 のまま |
 | new_action_unapproved | ActionRef.is_new=True かつ approved_by=None | v1 のまま |
-| new_fact_unapproved【追加】 | approved_by が None の FactDef（new_facts）または ValueAddition（value_additions）が1つでもある（D14） | 語彙（fact・値）を増やす判断は人が行う |
+| new_fact_unapproved【追加】 | approved_by が None の FactDef（new_facts）、ValueAddition（value_additions）、または中間判定の出力値（new_output_values）が1つでもある（D14・D37） | 語彙（fact・値・中間判定の出力値）を増やす判断は人が行う |
 | new_primitive_required【追加】 | atomic_fact.covered = False（D20） | 新しいプリミティブが必要な条文は③a の範囲外 |
 
 ### 3.5 一致プリミティブの使い分け
@@ -338,7 +351,7 @@ class IntermediateChange:
     table_id: str
     relation: ColumnSetRelationKind
     action: Literal["reuse_value", "add_row", "add_column"]
-    new_output_values: dict[str, list[str]] = field(default_factory=dict)  # D29：出力名 → 値
+    new_output_values: dict[str, list[ValueAddition]] = field(default_factory=dict)  # D29・D37
     new_input_columns: list[str] = field(default_factory=list)  # D19
 
 @dataclass
@@ -374,7 +387,7 @@ IR の各欄は互いに矛盾してはならない。次の8条件は配線ジ�
 
 1. final.action が new_table なら、new_decision_tables に target.entry_decision_id の決定表がある
 1. final.action が add_rows なら、compared_table_id は target.entry_decision_id の決定表であり、rule_row_additions にその表の行がある
-1. intermediate の action が add_row なら、rule_row_additions に table_id の表の行がある。new_output_values の出力名はその表の output_columns にあり、値はその行の同じ出力名の列に現れる（D29）
+1. intermediate の action が add_row なら、rule_row_additions に table_id の表の行がある。new_output_values の出力名はその表の output_columns にある。さらに、追加した行の出力値のうちその表がまだ出していない値の集合が、new_output_values と出力名ごとに一致する（足りなくても余っても不可。D29・D36）
 1. intermediate の table_id と final の compared_table_id は、登録簿の層1に実在する
 1. atomic_fact.covered が False なら、new_primitives が空でない（新しいプリミティブの追加は③a の範囲外なので、new_primitive_required ゲートで人間レビューに回す）
 1. intermediate の action が add_column なら、new_input_columns が空でなく、追加した列が rule_row_additions のその表の行の条件に現れる（D19）
@@ -488,7 +501,7 @@ IR が既存の表に行・列・出力値を足した場合、作り直すル�
 | 出力する項目 | IR v2 のどこから |
 | --- | --- |
 | definitions の id・name | target.dmn_model（name も dmn_model にする。判定名は decision の name に入る） |
-| definitions の namespace | http://gijinka.example.com/dmn/<dmn_model> |
+| definitions の namespace | 新しく作るモデルは http://gijinka.example.com/dmn/<dmn_model>。既存のモデルは元の namespace を変えない（D39） |
 | decision・decisionTable・rule | new_decision_tables（新規の表）。rule_row_additions は既存モデルへの行追加として出力する |
 | inputData | new_decision_tables の input_columns のうちドットを含まない列 |
 | knowledgeSource・authorityRequirement | new_decision_tables の knowledge_sources |
@@ -523,7 +536,7 @@ IR が既存の表に行・列・出力値を足した場合、作り直すル�
 
 | 層 | 内容 | v1 からの変更 |
 | --- | --- | --- |
-| 層1（decision_tables） | 決定表ごとのメタ情報。decision_table_id・decision_id・decision_name・dmn_model・entry_points（最終判定を呼ぶ actor・action の組。中間判定は空）・hit_policy・input_columns・output_columns・depends_on_decisions・depends_on_inputs・knowledge_sources・provenance。decision_table_id・decision_id・decision_name のどれでも引ける | dmn_model（D8）、output_columns（D12）、entry_points（D16）を追加 |
+| 層1（decision_tables） | 決定表ごとのメタ情報。decision_table_id・decision_id・decision_name・dmn_model・entry_points（最終判定を呼ぶ actor・action の組。中間判定は空）・hit_policy・input_columns・output_columns・depends_on_decisions・depends_on_inputs・knowledge_sources・provenance・history。decision_table_id・decision_id・decision_name のどれでも引ける。depends_on の2つは input_columns から導出した値を入れる（D38） | dmn_model（D8）、output_columns（D12）、entry_points（D16）、history（D40）を追加 |
 | 層2（rule_rows） | ルール行1本ずつの台帳。row_id・position・conditions・decision・reason_code・provenance・history。conditions・outputs のセルは DMN の FEEL 表記のまま持つ（D28） | セルの表記を規定（D28） |
 | 層3（fact_registry） | fact 台帳。FactDef の各フィールド（approved_by を含む）に加え、defined_by（最初に定義した条文）・used_by（使っている決定表）・provenance・history | 新設（D2） |
 | review | 条文単位のレビュー状態。human_review_status・should_review・gate_reasons | gate_reasons に加え、ゲート名の一覧（gates）も持たせる |
@@ -562,7 +575,7 @@ v1 の gate_reasons は日本語の説明文だけで、集計に向かなかっ
 | C6 | 参照 fact の実在と網羅 | facts.referenced_facts と value_additions のキーが層3に実在する。D25 の手順で求めた「IR が使う既存 fact」と referenced_facts が一致する（D21・D25） | 追加（v1.2 で網羅を追加、v1.3 で基準を変更） |
 | C7 | 判定先の実在 | target.entry_decision_id が DMN XML（add_rows の場合は挿入後の既存モデル）と層1に実在する（D15） | 追加（v1.2 で add_rows に対応） |
 | C8 | 集める事実の一致 | ルーティング表の required_facts とバインディング設定の fact の集合が一致する | 追加 |
-| C9 | レベル判定の整合 | 3.7節の8条件を満たす | 追加（v1.2 で条件6、v1.3 で条件7・8を追加） |
+| C9 | レベル判定の整合 | 3.7節の8条件を満たす | 追加（v1.2 で条件6、v1.3 で条件7・8を追加、v1.4 で条件3を双方向に） |
 | C10 | ドット参照の解決 | 「判定名.出力名」の判定が実在し、その出力名を持つ。出力名は IR の新規表の行、または層1の output_columns で確かめる（D12） | 追加 |
 | C11 | ドット参照の値 | 「判定名.出力名」の列の条件値（「-」以外）が、参照先の判定の出力値にある。出力値は層2の行・IR の rule_row_additions・intermediate の new_output_values（同じ出力名の分だけ）から集める（D13・D29）。値は D28 の関数で揃えて比べる | v1.2 で追加 |
 
@@ -591,10 +604,25 @@ v1 の gate_reasons は日本語の説明文だけで、集計に向かなかっ
 ### 6.2 作り方
 
 1. IR に入れる情報は、条文本文と、出典付きで明示的に付与した context に限る（1.4節）
-1. 1件ずつ JSON で作り、testdata/ir_gold/ に置く
-1. 配線ジェネレータに通し、C1〜C11 をすべて通過することを確かめる
+1. 1件ずつ JSON で作り、testdata/ir_gold/ に置く。適用順を manifest.json に書く（D43）
+1. 初期登録した登録簿から始め、manifest の順に配線ジェネレータに通す。各 IR が C1〜C11 をすべて通過することを確かめる。出力された登録簿は次の IR の入力にし、registry/ には反映しない（D43）
 1. DMN 評価のシナリオ（入力の事実と期待する判定）を付け、自作エンジンで期待通りになることを確かめる。シナリオには、possible_values にない値が既定の行（ワイルドカード）に落ちる場合を少なくとも1件含め、その期待値を明記する（7章 U2 の挙動を見えるようにするため）
 1. Kazuhiro さんがレビューし、承認したものを正解とする
+書き方の注意を2つ挙げる。referenced_facts は条文の語ではなく、書いた行と表から決める。条文が「電話番号が一致しなくても」と言及していても、行の条件が「-」なら入れない（D41）。new_output_values には、その表がまだ出していない値だけを書く（D36）。
+
+#### 正解 IR のファイル
+
+| キー | 内容 |
+| --- | --- |
+| gold_id | 正解 IR の ID（ファイル名と同じ） |
+| source | 条文の出典（文書名・条番号）と、testdata の clause_ref |
+| context | IR に入れた context と、その出典。なければ空 |
+| ir | ClauseIR の JSON。軸1・軸2は testdata の正解ラベルを使う |
+| evidence | 根拠の対応表。new_facts の各値、決定表の各行、action.surface について、根拠になる条文の語句（逐語）を書く。レビューで 1.4節の原則を確かめるため |
+| scenarios | DMN 評価のシナリオ。入力の事実・期待する判定・種類（追加した行に当たる／既定の行に落ちる など） |
+| review | status（draft／approved／rejected）、reviewed_by、notes。approved になったものだけを正解として使う |
+
+型で表しきれない条文が見つかった場合は、無理に表さず、どこが表せないかを記録して報告する。正解 IR を作る作業は、IR v2 の型の検証も兼ねている（6章冒頭）。
 
 ### 6.3 前段での使い方
 
@@ -772,4 +800,33 @@ v1.3 は、v1.2 の実装（コミット 71d3424）の報告（第18回 HANDOFF�
 | 6 | hit_policy が FIRST 固定で IR に欄がない | IR に欄は持たせない。挿入先が FIRST でなければ停止する（D35） |
 | 7 | depends_on_inputs は id か名前か | 名前とする（D35） |
 | 8 | 送信可否判定の「未」 | registry/ の側で削除し、history に承認者（Kazuhiro）を残す。初期登録に C5・C11 を適用する（D34） |
+
+## 付録D　v1.3 から v1.4 への変更点
+
+v1.4 は、v1.3 の実装（コミット e6e3ee6）の報告（第20回 HANDOFF）を受けて改訂した。報告の1節にあった設計書からの逸脱5件と、7節にあった懸念8件を、次のように扱った。あわせて、正解 IR の置き方と評価の手順を決めた（D43、6.2節）。
+
+### D.1 逸脱5件の扱い
+
+| # | 逸脱 | 扱い |
+| --- | --- | --- |
+| 1 | モデル全体の修正の history を、層1の3件すべてに残した | 採用（D40） |
+| 2 | 層1に history を新設した | 採用し、4.5節に書く（D40） |
+| 3 | DMN を再直列化した（&quot; → "、未使用の xmlns:feel の欠落） | 採用。feel: の接頭辞は元のファイルでも使われておらず、XML として等価 |
+| 4 | inputData と一緒に DMNDI の図形も削除した | 採用。残すと存在しない要素を指す参照になる |
+| 5 | 登録簿への C5・C11 を配線ジェネレータ側に置いた | 採用。比べ方を1か所に集める D28 と同じ考え方 |
+
+### D.2 懸念8件の扱い
+
+| # | 懸念 | 扱い |
+| --- | --- | --- |
+| 1 | new_output_values に既にある値を書くかの規則がない | まだ出していない値だけを書き、C9 条件3を双方向の一致にする（D36）。新しい出力値も承認の対象にする（D37） |
+| 2 | 条文の語と referenced_facts がずれる | D25 の基準を保ち、6.2節に注記する（D41） |
+| 3 | option_taken の導出が時点で変わる | IR を作った時点の判断の記録とする（D41） |
+| 4 | depends_on_inputs の書き方が未定義 | depends_on の2つを導出にし、IR から外す（D38） |
+| 5 | 層3の sources が空 | U11 のまま |
+| 6 | あおいのモデルの namespace がモデル名と合わない | 既存モデルの namespace は変えない（D39） |
+| 7 | 再直列化で元の DMN との差分が大きく見える | 現状どおり |
+| 8 | C8 の失敗テストが作れない | 現状どおり（5章） |
+
+このほか、元の DMN を使うテストが reference/ のない環境で飛ばされる点を、D42 で扱った。
 

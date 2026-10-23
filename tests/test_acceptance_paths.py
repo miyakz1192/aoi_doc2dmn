@@ -182,8 +182,6 @@ def intermediate_row_ir() -> ClauseIR:
         decision_table_id=VERBAL_TABLE_ID,
         decision_id=VERBAL_DECISION_ID,
         decision_name="テスト口頭伝達可否判定",
-        depends_on_decisions=[DECISION_IDENTITY],
-        depends_on_inputs=[],
         input_columns=["本人確認判定.identity_level"],
         rule_rows=[
             RuleRowDraft(
@@ -236,9 +234,9 @@ def intermediate_row_ir() -> ClauseIR:
                     table_id=DT_IDENTITY,
                     relation="exact_match",
                     action="add_row",
-                    # D29: 出力名ごとに足す値を書く。identity_result の「済」は
-                    # 既にある値なので、足すのは identity_level の「中」だけ
-                    new_output_values={"identity_level": ["中"]},
+                    # D36: 本人確認判定は「済」も「中」も既に出している
+                    # (id_r2・id_r3)ので、足す出力値は無い
+                    new_output_values={},
                 )
             ],
             final=FinalLayer(
@@ -555,8 +553,6 @@ def add_column_ir() -> ClauseIR:
         decision_table_id=ADDR_TABLE_ID,
         decision_id=ADDR_DECISION_ID,
         decision_name="テスト住所確認可否判定",
-        depends_on_decisions=[DECISION_IDENTITY],
-        depends_on_inputs=[],
         input_columns=["本人確認判定.identity_level"],
         rule_rows=[
             RuleRowDraft(
@@ -913,3 +909,23 @@ def test_bindings_do_not_mark_facts_that_have_sources(add_column_ir, aoi_registr
     assert "sources_undefined" not in bound["address_match"]
     # 初期登録分には印が付く
     assert bound["name_match"]["sources_undefined"] is True
+
+
+def test_existing_model_keeps_its_namespace(intermediate_row_ir, aoi_registry):
+    """D39: 既存の DMN モデルの namespace は変えない。
+
+    あおいのモデルの namespace は `…/dmn/aoi` で、新しく作るモデルに当てる規則
+    (`…/dmn/<dmn_model>` = `…/dmn/aoi_transmission`)とは食い違う。namespace は
+    実行エンジンや利用側がモデルを識別する名前なので、後から変えると参照が切れる。
+    新しい最終判定を同じモデルに足す場合も、元の namespace のままにする。
+    """
+    bundle = generate_wiring_bundle(
+        intermediate_row_ir, registry=aoi_registry, dmn_dir=DMN_DIR
+    )
+    assert 'namespace="http://gijinka.example.com/dmn/aoi"' in bundle.dmn_xml
+    assert (
+        'namespace="http://gijinka.example.com/dmn/aoi_transmission"'
+        not in bundle.dmn_xml
+    )
+    # 新しい判定は同じ definitions の中に入っている(D17)
+    assert f'id="{VERBAL_DECISION_ID}"' in bundle.dmn_xml
