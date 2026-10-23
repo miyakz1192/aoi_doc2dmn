@@ -46,22 +46,43 @@
         {
           "variable": "operator_role",
           "primitive": "passthrough",
-          "possible_values": ["システム開発担当"],
-          "sources": {"value": {"from": "action_request", "path": "operator.role"}},
+          "possible_values": [
+            "システム開発担当"
+          ],
+          "sources": {
+            "value": {
+              "from": "action_request",
+              "path": "operator.role"
+            }
+          },
           "approved_by": null
         },
         {
           "variable": "target_environment",
           "primitive": "passthrough",
-          "possible_values": ["本番環境"],
-          "sources": {"value": {"from": "action_request", "path": "target.environment"}},
+          "possible_values": [
+            "本番環境"
+          ],
+          "sources": {
+            "value": {
+              "from": "action_request",
+              "path": "target.environment"
+            }
+          },
           "approved_by": null
         },
         {
           "variable": "requested_privilege",
           "primitive": "passthrough",
-          "possible_values": ["特権"],
-          "sources": {"value": {"from": "action_request", "path": "requested_privilege"}},
+          "possible_values": [
+            "特権"
+          ],
+          "sources": {
+            "value": {
+              "from": "action_request",
+              "path": "requested_privilege"
+            }
+          },
           "approved_by": null
         }
       ],
@@ -69,9 +90,16 @@
       "value_additions": {}
     },
     "level_determination": {
-      "atomic_fact": {"covered": true, "new_primitives": []},
+      "atomic_fact": {
+        "covered": true,
+        "new_primitives": []
+      },
       "intermediate": [],
-      "final": {"compared_table_id": null, "relation": null, "action": "new_table"}
+      "final": {
+        "compared_table_id": null,
+        "relation": null,
+        "action": "new_table"
+      }
     },
     "rule_row_additions": [],
     "new_decision_tables": [
@@ -79,8 +107,14 @@
         "decision_table_id": "dt_privileged_operation",
         "decision_id": "decision_privileged_operation",
         "decision_name": "特権操作可否判定",
-        "input_columns": ["operator_role", "target_environment", "requested_privilege"],
-        "knowledge_sources": ["ks_action_request"],
+        "input_columns": [
+          "operator_role",
+          "target_environment",
+          "requested_privilege"
+        ],
+        "knowledge_sources": [
+          "ks_action_request"
+        ],
         "rule_rows": [
           {
             "row_id": "id_r_priv_1",
@@ -91,7 +125,10 @@
               "target_environment": "本番環境",
               "requested_privilege": "特権"
             },
-            "outputs": {"decision": "禁止", "reason_code": "dev_privileged_op_on_production"}
+            "outputs": {
+              "decision": "禁止",
+              "reason_code": "dev_privileged_op_on_production"
+            }
           },
           {
             "row_id": "id_r_priv_2",
@@ -102,7 +139,10 @@
               "target_environment": "-",
               "requested_privilege": "-"
             },
-            "outputs": {"decision": "許可", "reason_code": "not_prohibited_combination"}
+            "outputs": {
+              "decision": "許可",
+              "reason_code": "not_prohibited_combination"
+            }
           }
         ]
       }
@@ -123,41 +163,43 @@
     "action_surface": {
       "value": "特権/管理者権限で操作を行う",
       "quote": "特権/管理者権限で操作を行う",
-      "verbatim": true
+      "basis": "verbatim"
     },
     "possible_values": [
       {
         "fact": "operator_role",
         "value": "システム開発担当",
         "quote": "システム開発を担当する者",
-        "verbatim": false,
-        "note": "条文は「システム開発を担当する者」。値は「〜を担当する者」を体言に詰めた形で、逐語ではない。逐語にするなら possible_values と決定表のセルを「システム開発を担当する者」にする(要レビュー)"
+        "basis": "normalized",
+        "normalization": "体言化",
+        "note": "「〜を担当する者」を区分の値の形にした(D44 が許す正規化)。条文にない情報は足していない"
       },
       {
         "fact": "target_environment",
         "value": "本番環境",
         "quote": "本番環境",
-        "verbatim": true
+        "basis": "verbatim"
       },
       {
         "fact": "requested_privilege",
         "value": "特権",
         "quote": "特権/管理者権限",
-        "verbatim": true,
-        "note": "「特権/管理者権限」の前半をそのまま使う。「管理者権限」を別の値として足すかは要レビュー(条文は「/」で並べており、同一の権限区分を指すと読んだ)"
+        "basis": "normalized",
+        "normalization": "並列で共有された語の一方を採る",
+        "note": "条文は「特権/管理者権限」と並べている。同一の権限区分を指すと読み、前半を値にした。「管理者権限」を別の値として足すかは要レビュー"
       }
     ],
     "rule_rows": [
       {
         "row_id": "id_r_priv_1",
         "quote": "システム開発を担当する者が本番環境において特権/管理者権限で操作を行うことを禁止する。",
-        "verbatim": true
+        "basis": "verbatim"
       },
       {
         "row_id": "id_r_priv_2",
-        "quote": null,
-        "verbatim": false,
-        "note": "既定の行(ワイルドカード)。条文が禁止していない組み合わせを「許可」にするもので、条文に逐語の根拠はない。FIRST の最終行として全ての正解IRに置く"
+        "kind": "default_row",
+        "basis": "default_row",
+        "note": "禁止規定の裏(禁止の組み合わせに当たらないものは許可)。条文に逐語の根拠は要らない(D47)。知らない値はここに来ず、手前でエスカレーションになる(D46)"
       }
     ]
   },
@@ -170,48 +212,65 @@
         "target_environment": "本番環境",
         "requested_privilege": "特権"
       },
-      "expected": {"decision": "禁止", "reason_code": "dev_privileged_op_on_production"}
+      "expected": {
+        "decision": "禁止",
+        "reason_code": "dev_privileged_op_on_production"
+      }
     },
     {
-      "name": "開発担当者だが検証環境 → 許可",
-      "kind": "possible_values 外の値が既定の行に落ちる(U2)",
+      "name": "開発担当者が本番環境だが、権限が条文の挙げる区分でない → 許可",
+      "kind": "予約語「その他」が既定の行(ワイルドカード)に落ちる(D45)",
+      "facts": {
+        "operator_role": "システム開発担当",
+        "target_environment": "本番環境",
+        "requested_privilege": "その他"
+      },
+      "expected": {
+        "decision": "許可",
+        "reason_code": "not_prohibited_combination"
+      }
+    },
+    {
+      "name": "操作者の役割が条文の挙げる区分でない → 許可",
+      "kind": "予約語「その他」が既定の行(ワイルドカード)に落ちる(D45)",
+      "facts": {
+        "operator_role": "その他",
+        "target_environment": "本番環境",
+        "requested_privilege": "特権"
+      },
+      "expected": {
+        "decision": "許可",
+        "reason_code": "not_prohibited_combination"
+      }
+    },
+    {
+      "name": "環境が「検証環境」(possible_values に無い値) → 人の確認に回す",
+      "kind": "知らない値がエスカレーションになる(D46)",
       "facts": {
         "operator_role": "システム開発担当",
         "target_environment": "検証環境",
         "requested_privilege": "特権"
       },
-      "expected": {"decision": "許可", "reason_code": "not_prohibited_combination"}
-    },
-    {
-      "name": "開発担当者が本番環境だが一般権限 → 許可",
-      "kind": "possible_values 外の値が既定の行に落ちる(U2)",
-      "facts": {
-        "operator_role": "システム開発担当",
-        "target_environment": "本番環境",
-        "requested_privilege": "一般"
+      "expected": {
+        "decision": "escalate",
+        "reason_code": "unknown_fact_value"
       },
-      "expected": {"decision": "許可", "reason_code": "not_prohibited_combination"}
-    },
-    {
-      "name": "運用担当者が本番環境で特権操作 → 許可",
-      "kind": "possible_values 外の値が既定の行に落ちる(U2)",
-      "facts": {
-        "operator_role": "運用担当",
-        "target_environment": "本番環境",
-        "requested_privilege": "特権"
-      },
-      "expected": {"decision": "許可", "reason_code": "not_prohibited_combination"}
+      "note": "v1.4 までは既定の行(許可)に落ちていた(U2)。知っている値(その他)と知らない値を分けたので、安全側に倒れる"
     }
   ],
   "review": {
     "status": "draft",
     "reviewed_by": null,
-    "expected_gates": ["new_action_unapproved", "new_fact_unapproved"],
+    "expected_gates": [
+      "new_action_unapproved",
+      "new_fact_unapproved"
+    ],
     "notes": [
       "actor: 条文に行為者の語はない(「システム開発を担当する者」は判定の対象となる操作者で、fact の operator_role として表している)。actor は擬人化の前提であおいに当てた。v1 のゴールデンパスと同じ扱い",
-      "operator_role の値「システム開発担当」は逐語ではない(evidence 参照)。逐語にするか、この形を正解とするかの判断をお願いしたい",
+      "operator_role の値「システム開発担当」は、条文の「システム開発を担当する者」を体言化した正規化である(D44 で許される)。requested_privilege の「特権」は「特権/管理者権限」の前半を採ったもので、「管理者権限」を別の値として足すかは判断をお願いしたい",
       "action.parent「システム操作」は条文にない。Action 正規化の階層への位置づけは人が承認する前提(設計書1.4)なので、提案として置いている",
-      "v1.2・v1.3 の実装(golden_path.py)と同じ内容にしてある。差分が出た場合は実装側の退行を疑える"
+      "possible_values には予約語「その他」が自動で付く(D45)。条文の値に当たらない「知っている状態」はここに入り、既定の行(許可)に落ちる。知らない値は DMN の手前でエスカレーションになる(D46)",
+      "v1.2〜v1.4 の実装(golden_path.py)と同じ内容にしてある。差分が出た場合は実装側の退行を疑える"
     ]
   }
 }

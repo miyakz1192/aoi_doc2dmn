@@ -25,6 +25,7 @@ aoi_doc2dmn/
 │   │   ├── bootstrap_aoi.py    # あおいの送信可否判定DMNを登録簿へ初期登録
 │   │   ├── golden_path.py      # ゴールデンパス条文のIR構築
 │   │   ├── run_ir_gold.py      # 正解IRをmanifest順に通して確かめる
+│   │   ├── scenario_eval.py    # シナリオ評価の入口（知らない値はエスカレーション）
 │   │   ├── dmn_engine.py       # 軽量DMN検証エンジン(reference/から移植)
 │   │   └── run_golden_path.py  # 一気通貫実行スクリプト
 │   └── common/
@@ -75,7 +76,7 @@ aoi_doc2dmn/
   パイプライン）への移行フェーズに入った。詳細は`testdata/schema.md`「軸1・軸2分類の精度改善
   フェーズの区切り」節、「gold label判定の方針」節を参照
 - `src/stage3_generate/`: ③a（宣言的×ハード制約）の**後半**（IR → 4点セット）は
-  IR v2（`docs/design/aoi_doc2dmn_IRv2_design.md` v1.4）で実装済み。fact の定義がIRに入り
+  IR v2（`docs/design/aoi_doc2dmn_IRv2_design.md` v1.5）で実装済み。fact の定義がIRに入り
   （`facts.new_facts`）、4点すべてをIRと登録簿から生成する。クロス検証はC1〜C11で、
   それぞれの失敗テストが`tests/`にある
 - v1.2 で**受け入れ経路**を実装した。新しい表を作るだけ（レベル1）でなく、既存のDMN
@@ -92,6 +93,11 @@ aoi_doc2dmn/
 - v1.4 では、中間判定の新しい出力値を承認の対象にし（D37）、C9条件3を双方向の一致に
   した（D36）。`depends_on_decisions`／`depends_on_inputs`はIRから外し、`input_columns`
   からの導出にした（D38）
+- v1.5 で**既定の行の扱い（U2）を決めた**。`passthrough`のfactは予約語「その他」を
+  自動で持ち（D45）、`possible_values`にない値はDMNに渡さず人の確認に回す（D46。
+  バインディング設定の`on_unknown_value`と`scenario_eval.py`）。あわせて**C12**を
+  足した（D48）。中間判定に足した出力値を、それを参照する既存の判定が受け止められるか
+  を確かめる（C11の逆向き）
 - `testdata/ir_gold/`に**正解IRの下書き**が5件ある（`review.status = "draft"`）。
   `run_ir_gold.py`が`manifest.json`の順に配線ジェネレータへ通し、C1〜C11とDMN評価
   シナリオを確かめる（登録簿はメモリ上で持ち回り、`registry/`には反映しない。D43）。
@@ -172,7 +178,7 @@ pipのシステム直接インストールができないため、プロジェ�
 ```
 
 `testdata/ir_gold/manifest.json`の順に正解IRを配線ジェネレータへ通し、各件が
-C1〜C11を通過すること・DMN評価シナリオが一致することを確かめる。出力された登録簿を
+C1〜C12を通過すること・DMN評価シナリオが一致することを確かめる。出力された登録簿を
 次のIRの入力にするので、既存のfactや決定表を使う条文も確かめられる（D43）。
 `registry/`は書き換えない。
 
@@ -193,11 +199,11 @@ Ollamaは不要。5つのファイルに分かれている。
   既定の行に落ちるケースを含む）
 - `test_bootstrap_fixes.py`：初期登録したDMNの修正（D34）。修正を外すとC11で止まること、
   修正の前後で評価結果が変わらないこと
-- `test_ir_gold.py`：正解IRの下書きが全件C1〜C11を通りシナリオが一致すること、
-  evidenceに各値・各行の根拠があること、`registry/`を書き換えないこと
+- `test_ir_gold.py`：正解IRの下書きが全件C1〜C12を通りシナリオが一致すること、
+  evidenceの根拠が逐語か正規化であること、`registry/`を書き換えないこと
 
-元のDMNは`tests/fixtures/`にコミットしてあるため（D42）、`reference/`が無い環境でも
-全件が動く（skipは0件）。
+元のDMNと第14条の条文本文は`tests/fixtures/`にコミットしてあるため（D42）、
+`reference/`が無い環境でも全件が動く（skipは0件）。
 
 空欄（`［　］`）の扱い方針は`testdata/schema.md`「空欄の扱い方針」節を、
 ①関連判定の基準（解釈A/B）は同ファイル「①関連判定の基準」節を参照。

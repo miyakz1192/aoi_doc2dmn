@@ -58,7 +58,9 @@ from src.stage3_generate.ir_schema import (  # noqa: E402
     build_review_gates,
 )
 from src.stage3_generate.registry import Registry  # noqa: E402
+from src.stage3_generate.scenario_eval import evaluate_scenario  # noqa: E402
 from src.stage3_generate.wiring_generator import (  # noqa: E402
+    SchemaWiringError,
     existing_facts_used_by_ir,
     generate_wiring_bundle,
 )
@@ -159,8 +161,15 @@ def _rules_of(dmn_xml: str, decision_table_id: str) -> list[list[str]]:
 
 
 def _evaluate(bundle, tmp_path, decision_id: str, facts: dict) -> dict:
+    """バインディング設定の入口(D46)を通して評価する。
+
+    値が possible_values(「その他」を含む)に無ければ、DMN を呼ばずに
+    `decision = escalate` を返す。
+    """
     paths = bundle.write_all(tmp_path, DMN_MODEL)
-    return DmnModel(str(paths["dmn"])).evaluate(decision_id, facts)
+    return evaluate_scenario(
+        DmnModel(str(paths["dmn"])), decision_id, facts, bindings=bundle.bindings
+    )
 
 
 # --------------------------------------------------------------------------
@@ -764,7 +773,15 @@ def no_change_ir() -> ClauseIR:
         target=DecisionTarget(
             dmn_model=DMN_MODEL, entry_decision_id=DECISION_TRANSMISSION
         ),
-        facts=FactUsage(referenced_facts=["name_match", "birth_match"]),
+        facts=FactUsage(
+            referenced_facts=["name_match", "birth_match"],
+            # 条文が言う「電話番号が一致しない」場合の値。あおいの DMN は
+            # phone_match に「一致／未提供」しか持たないので足す(D14・D46 により、
+            # possible_values に無い値はシナリオでエスカレーションになる)
+            value_additions={
+                "phone_match": [ValueAddition(value="不一致", approved_by=APPROVER)]
+            },
+        ),
         level=LevelDetermination(
             atomic_fact=AtomicFactLayer(covered=True),
             intermediate=[
@@ -929,3 +946,199 @@ def test_existing_model_keeps_its_namespace(intermediate_row_ir, aoi_registry):
     )
     # 新しい判定は同じ definitions の中に入っている(D17)
     assert f'id="{VERBAL_DECISION_ID}"' in bundle.dmn_xml
+
+
+# --------------------------------------------------------------------------
+# 6. C12: 中間判定に足した出力値を既存の最終判定が受け止めるか(D48)
+# --------------------------------------------------------------------------
+
+VERBAL2_DECISION_ID = "test_decision_verbal2"
+VERBAL2_TABLE_ID = "test_dt_verbal2"
+NEW_LEVEL = "中(生年月日・連絡先一致)"
+
+
+def _c12_ir(extra_rows: list[RuleRowDraft]) -> ClauseIR:
+    """第22回の第14条と同じ形の IR(本人確認判定に新しい確認レベルを足す)。
+
+    `extra_rows` に送信可否判定への行を渡すと、足した値を受け止める形になる。
+    """
+    new_table = NewDecisionTableDraft(
+        decision_table_id=VERBAL2_TABLE_ID,
+        decision_id=VERBAL2_DECISION_ID,
+        decision_name="テスト口頭伝達可否判定2",
+        input_columns=["本人確認判定.identity_level"],
+        rule_rows=[
+            RuleRowDraft(
+                row_id="test_verbal2_r1",
+                decision_table_id=VERBAL2_TABLE_ID,
+                position=1,
+                conditions={"本人確認判定.identity_level": f'"高","{NEW_LEVEL}"'},
+                outputs={"decision": "許可", "reason_code": "test_ok"},
+            ),
+            RuleRowDraft(
+                row_id="test_verbal2_r2",
+                decision_table_id=VERBAL2_TABLE_ID,
+                position=2,
+                conditions={"本人確認判定.identity_level": "-"},
+                outputs={"decision": "禁止", "reason_code": "test_short"},
+            ),
+        ],
+    )
+    added_row = RuleRowDraft(
+        row_id="test_identity_r_two_elements",
+        decision_table_id=DT_IDENTITY,
+        position=4,
+        conditions={"name_match": "-", "birth_match": "一致", "phone_match": "一致"},
+        outputs={"identity_result": "済", "identity_level": NEW_LEVEL},
+    )
+    return _assemble_test_ir(
+        clause_ref="(テスト用) 架空規程 第905条",
+        action_normalized="テスト口頭伝達2",
+        action_is_new=True,
+        target=DecisionTarget(
+            dmn_model=DMN_MODEL, entry_decision_id=VERBAL2_DECISION_ID
+        ),
+        facts=FactUsage(referenced_facts=["birth_match", "phone_match"]),
+        level=LevelDetermination(
+            atomic_fact=AtomicFactLayer(covered=True),
+            intermediate=[
+                IntermediateChange(
+                    table_id=DT_IDENTITY,
+                    relation="proper_subset",
+                    action="add_row",
+                    new_output_values={
+                        "identity_level": [
+                            ValueAddition(value=NEW_LEVEL, approved_by=APPROVER)
+                        ]
+                    },
+                )
+            ],
+            final=FinalLayer(compared_table_id=None, relation=None, action="new_table"),
+        ),
+        new_tables=[new_table],
+        row_additions=[added_row] + extra_rows,
+    )
+
+
+def test_c12_stops_the_round22_article14_shape(aoi_registry):
+    """C12(D48): 第22回の第14条の形は止まる。
+
+    本人確認判定に「中(生年月日・連絡先一致)」を足すと、それを参照する送信可否判定に
+    受け止める行が無い。送信可否判定の tr_r1 は確認レベルの列が「-」だが、連絡同意が
+    「不同意」の行なので、同意の行動要求は受け止めない。第22回はこの形を正解IR に
+    していて、外部送信が実行時に失敗していた(実測)。正解IR からは外し、形だけを
+    ここに残す。
+    """
+    with pytest.raises(SchemaWiringError, match="C12検証失敗.*送信可否判定"):
+        generate_wiring_bundle(
+            _c12_ir([]), registry=aoi_registry, dmn_dir=DMN_DIR
+        )
+
+
+def test_c12_passes_when_the_consumer_gets_a_row_for_the_value(aoi_registry, tmp_path):
+    """C12(D48): 受け止める行を送信可否判定にも足せば通る。
+
+    足した確認レベルのときの扱いを、同じ IR が送信可否判定に1行足して決める形。
+    この行は条文に根拠が要るので、正解IR では採らなかった(D49)。
+    """
+    accepting_row = RuleRowDraft(
+        row_id="test_transmission_r_two_elements",
+        decision_table_id=DT_TRANSMISSION,
+        position=2,
+        conditions={
+            "情報分類判定.sensitivity": "-",
+            "本人確認判定.identity_level": f'"{NEW_LEVEL}"',
+            "contact_consent": "-",
+        },
+        outputs={"decision": "禁止", "reason_code": "test_two_elements_only"},
+    )
+    bundle = generate_wiring_bundle(
+        _c12_ir([accepting_row]), registry=aoi_registry, dmn_dir=DMN_DIR
+    )
+    # 足した行が送信可否判定に入り、口頭伝達の判定も作られている
+    assert len(_rules_of(bundle.dmn_xml, DT_TRANSMISSION)) == 8
+    assert f'id="{VERBAL2_DECISION_ID}"' in bundle.dmn_xml
+    # 層1の history に出力値の追加が残る(D50)
+    layer1 = {e["decision_table_id"]: e for e in bundle.registry["decision_tables"]}
+    added = [
+        h for h in layer1[DT_IDENTITY]["history"] if h["change"] == "output_value_addition"
+    ]
+    assert added == [
+        {
+            "change": "output_value_addition",
+            "output": "identity_level",
+            "value": NEW_LEVEL,
+            "approved_by": APPROVER,
+            "clause_ref": "(テスト用) 架空規程 第905条",
+            "provenance": added[0]["provenance"],
+        }
+    ]
+    # 外部送信も評価できる(第22回に実測した失敗が起きない)
+    facts = {
+        # 氏名の「未提供」は possible_values に無く(あおいの DMN が使っていない)、
+        # D46 でエスカレーションになるため「不一致」を使う
+        "name_match": "不一致",
+        "birth_match": "一致",
+        "phone_match": "一致",
+        "has_medical": "含まない",
+        "has_pii": "含む",
+        "identifiable": "可能",
+        "contact_consent": "同意",
+    }
+    result = _evaluate(bundle, tmp_path, DECISION_TRANSMISSION, facts)
+    assert result["decision"] == "禁止"
+    assert result["reason_code"] == "test_two_elements_only"
+
+
+# --------------------------------------------------------------------------
+# 7. 知らない値のエスカレーション(D46)と予約語「その他」(D45)
+# --------------------------------------------------------------------------
+
+
+def test_unknown_value_escalates_before_the_dmn(level2_ir, aoi_registry, tmp_path):
+    """D46: possible_values に無い値は、DMN を呼ばずにエスカレーションになる。"""
+    bundle = generate_wiring_bundle(level2_ir, registry=aoi_registry, dmn_dir=DMN_DIR)
+    facts = {
+        "name_match": "一致",
+        "birth_match": "一致",
+        "phone_match": "一致",
+        "has_medical": "含まない",
+        "has_pii": "含まない",
+        "identifiable": "不可能_公開",
+        "contact_consent": "未回答",  # possible_values(不同意・同意・保留・その他)に無い
+    }
+    result = _evaluate(bundle, tmp_path, DECISION_TRANSMISSION, facts)
+    assert result["decision"] == "escalate"
+    assert result["reason_code"] == "unknown_fact_value"
+    assert result["_unknown_facts"] == ["contact_consent"]
+
+
+def test_reserved_value_reaches_the_default_row(level2_ir, aoi_registry, tmp_path):
+    """D45: 「その他」は知っている値なので、既定の行まで評価が進む。
+
+    あおいの contact_consent は passthrough なので「その他」が自動で付く。
+    感度が「低」の行(tr_r7)に落ちて許可になる。
+    """
+    bound = {
+        f["variable"]: f["possible_values"]
+        for f in generate_wiring_bundle(
+            level2_ir, registry=aoi_registry, dmn_dir=DMN_DIR
+        ).bindings["facts"]
+    }
+    assert bound["contact_consent"] == ["不同意", "同意", "保留", "その他"]
+    # 比較型の fact には付かない
+    assert "その他" not in bound["birth_match"]
+
+    bundle = generate_wiring_bundle(level2_ir, registry=aoi_registry, dmn_dir=DMN_DIR)
+    facts = {
+        "name_match": "一致",
+        "birth_match": "一致",
+        "phone_match": "一致",
+        "has_medical": "含まない",
+        "has_pii": "含まない",
+        "identifiable": "不可能_公開",
+        "contact_consent": "その他",
+    }
+    result = _evaluate(bundle, tmp_path, DECISION_TRANSMISSION, facts)
+    assert result["decision"] == "許可"
+    assert result["reason_code"] == "公開情報"

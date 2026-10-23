@@ -15,9 +15,30 @@
 | `vocab_flagged` が②の安全網フラグの実際の結果と一致する | 同上 |
 | 立つゲートが `review.expected_gates` と一致する | ゲートは導出なので、手で書いた期待値と突き合わせる |
 | 承認者がすべて None である(ゲートが立つのが正しい状態) | 第21回 HANDOFF 3.4節 |
-| クロス検証 C1〜C11 を通過する | 設計書6.2 手順3 |
+| クロス検証 C1〜C12 を通過する | 設計書6.2 手順3 |
 | シナリオがすべて期待どおりになる | 設計書6.2 手順4 |
 | 既定の行(ワイルドカード)に落ちるシナリオが1件以上ある | 同上 |
+| 「その他」が既定の行に落ちるシナリオが1件以上ある(passthrough の fact を持つ場合) | 同上・D45 |
+| 知らない値がエスカレーションになるシナリオが1件以上ある | 同上・D46 |
+| evidence の根拠が「逐語」か「正規化」で、**根拠なしが無い** | D44・D47 |
+
+## 値の正規化と根拠の種類(D44・D47)
+
+evidence の各項目は `basis` を持つ。
+
+| basis | 意味 |
+| --- | --- |
+| `verbatim` | 条文の語句をそのまま使った |
+| `normalized` | 条文の語を正規化した(体言化・半角化・共有語の展開など)。`normalization` に種類を書く |
+| `default_row` | 既定の行(すべて「-」)。禁止規定の裏なので、条文に逐語の根拠は要らない(D47) |
+
+これ以外(`basis` が無い・知らない値)は「根拠なし」として数え、0件でなければ失敗とする。
+
+## シナリオの評価(D46)
+
+バインディング設定の入口(`scenario_eval.evaluate_scenario`)を通して評価する。fact の値が
+`possible_values`(「その他」を含む)に無ければ、DMN を呼ばずに `decision = escalate` に
+なる。正解IR のシナリオは、この挙動も期待値として持つ。
 
 ## DMN ファイルの持ち回り
 
@@ -39,8 +60,9 @@ from typing import Optional
 
 from ..stage2_classify.vocab_flags import check_vocab_flag
 from .dmn_engine import DmnModel
-from .ir_schema import ClauseIR, clause_ir_from_json
+from .ir_schema import OTHER_VALUE, ClauseIR, clause_ir_from_json, has_other_value
 from .registry import Registry, dmn_path
+from .scenario_eval import evaluate_scenario
 from .wiring_generator import (
     SchemaWiringError,
     existing_facts_used_by_ir,
@@ -52,7 +74,11 @@ REGISTRY_PATH_DEFAULT = "registry/registry.json"
 DMN_DIR_DEFAULT = "registry/dmn"
 
 REQUIRED_KEYS = ("gold_id", "source", "ir", "evidence", "scenarios", "review")
-WILDCARD_KINDS = ("既定の行", "ワイルドカード", "U2")
+# シナリオの種類(`kind` に含まれる語で判定する)
+WILDCARD_KINDS = ("既定の行", "ワイルドカード")
+OTHER_KINDS = (OTHER_VALUE,)
+ESCALATE_KINDS = ("エスカレーション", "escalate")
+BASIS_KINDS = ("verbatim", "normalized", "default_row")
 
 
 @dataclass
@@ -69,7 +95,8 @@ class GoldResult:
     routes: list[dict] = field(default_factory=list)
     scenarios_total: int = 0
     scenarios_ok: int = 0
-    non_verbatim: int = 0
+    # evidence の根拠の内訳(D44・D47)
+    evidence_basis: dict = field(default_factory=dict)
     problems: list[str] = field(default_factory=list)
 
 
@@ -78,8 +105,13 @@ def load_manifest(gold_dir: str | Path) -> list[dict]:
         return json.load(f)["order"]
 
 
-def _check_envelope(gold: dict, ir: ClauseIR) -> list[str]:
-    """正解IR のファイルそのものを確かめる(クロス検証に入る前)。"""
+def _check_envelope(gold: dict, ir: ClauseIR, *, passthrough: bool) -> list[str]:
+    """正解IR のファイルそのものを確かめる(クロス検証に入る前)。
+
+    `passthrough` は、この IR が passthrough の fact を使うか。使う場合だけ
+    「その他」のシナリオを要求する(比較型の fact しか使わない条文には「その他」が
+    存在しない。D45)。
+    """
     problems: list[str] = []
     for key in REQUIRED_KEYS:
         if key not in gold:
@@ -139,28 +171,51 @@ def _check_envelope(gold: dict, ir: ClauseIR) -> list[str]:
         )
 
     scenarios = gold.get("scenarios", [])
+    kinds = [s.get("kind", "") for s in scenarios]
     if not scenarios:
         problems.append("scenarios がありません")
-    elif not any(
-        any(k in s.get("kind", "") for k in WILDCARD_KINDS) for s in scenarios
-    ):
-        problems.append(
-            "既定の行(ワイルドカード)に落ちるシナリオがありません(設計書6.2 手順4)"
-        )
+    else:
+        if not any(any(k in kind for k in WILDCARD_KINDS) for kind in kinds):
+            problems.append(
+                "既定の行(ワイルドカード)に落ちるシナリオがありません(設計書6.2 手順4)"
+            )
+        if not any(any(k in kind for k in ESCALATE_KINDS) for kind in kinds):
+            problems.append(
+                "知らない値がエスカレーションになるシナリオがありません(D46)"
+            )
+        if passthrough and not any(
+            any(k in kind for k in OTHER_KINDS) for kind in kinds
+        ):
+            problems.append(
+                f"予約語「{OTHER_VALUE}」が既定の行に落ちるシナリオがありません(D45)"
+            )
     return problems
 
 
-def _count_non_verbatim(evidence: dict) -> int:
-    """evidence のうち、逐語で引けていない項目の数。"""
-    count = 0
-    for key in ("possible_values", "rule_rows", "new_output_values"):
-        for item in evidence.get(key, []) or []:
-            if item.get("verbatim") is False:
-                count += 1
+def _count_evidence_basis(evidence: dict) -> dict[str, int]:
+    """evidence の根拠を「逐語／正規化／既定の行／根拠なし」に分けて数える(D44・D47)。"""
+    counts = {"verbatim": 0, "normalized": 0, "default_row": 0, "none": 0}
+    items: list[dict] = []
+    for key in ("possible_values", "rule_rows", "new_output_values", "fact_mapping"):
+        items.extend(evidence.get(key, []) or [])
     action = evidence.get("action_surface")
-    if isinstance(action, dict) and action.get("verbatim") is False:
-        count += 1
-    return count
+    if isinstance(action, dict):
+        items.append(action)
+    for item in items:
+        basis = item.get("basis")
+        counts[basis if basis in BASIS_KINDS else "none"] += 1
+    return counts
+
+
+def _has_passthrough_fact(ir: ClauseIR, registry: Registry) -> bool:
+    """この IR が passthrough の fact を使うか(「その他」のシナリオを要るかの判定)。"""
+    if any(has_other_value(f.primitive) for f in ir.facts.new_facts):
+        return True
+    for variable in ir.facts.referenced_facts:
+        entry = registry.find_fact(variable)
+        if entry is not None and has_other_value(entry.get("primitive", "")):
+            return True
+    return False
 
 
 def run_one(
@@ -176,9 +231,17 @@ def run_one(
         option_taken=dict(ir.option_taken),
         new_facts=[f.variable for f in ir.facts.new_facts],
         referenced_facts=list(ir.facts.referenced_facts),
-        non_verbatim=_count_non_verbatim(gold.get("evidence", {})),
     )
-    result.problems.extend(_check_envelope(gold, ir))
+    result.evidence_basis = _count_evidence_basis(gold.get("evidence", {}))
+    if result.evidence_basis["none"]:
+        result.problems.append(
+            f"evidence に根拠の種類(basis)が無い項目が {result.evidence_basis['none']}件"
+            "あります(D44。逐語なら verbatim、正規化なら normalized、既定の行なら"
+            "default_row を書く)"
+        )
+    result.problems.extend(
+        _check_envelope(gold, ir, passthrough=_has_passthrough_fact(ir, registry))
+    )
 
     try:
         bundle = generate_wiring_bundle(ir, registry=registry, dmn_dir=dmn_dir)
@@ -206,7 +269,9 @@ def run_one(
     for scenario in scenarios:
         decision_id = scenario.get("decision_id") or ir.target.entry_decision_id
         try:
-            actual = model.evaluate(decision_id, scenario["facts"])
+            actual = evaluate_scenario(
+                model, decision_id, scenario["facts"], bindings=bundle.bindings
+            )
         except Exception as exc:  # noqa: BLE001 - 評価の失敗も報告に含める
             result.problems.append(f"シナリオ {scenario['name']!r} の評価が失敗: {exc}")
             continue
@@ -241,9 +306,12 @@ def _print_one(result: GoldResult) -> None:
             f"       route: {route['actor']} × {route['action']} -> "
             f"{route['decision_id']} required_facts={route['required_facts']}"
         )
+    basis = result.evidence_basis
     print(
         f"       シナリオ {result.scenarios_ok}/{result.scenarios_total} 一致"
-        f"／evidence の非逐語 {result.non_verbatim}件"
+        f"／evidence 逐語 {basis.get('verbatim', 0)}・正規化 "
+        f"{basis.get('normalized', 0)}・既定の行 {basis.get('default_row', 0)}・"
+        f"根拠なし {basis.get('none', 0)}"
     )
     for problem in result.problems:
         print(f"       * {problem}")

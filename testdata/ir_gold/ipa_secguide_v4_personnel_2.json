@@ -32,7 +32,7 @@
     "action": {
       "surface": "提供してはならない",
       "normalized": "情報提供",
-      "parent": "情報開示",
+      "parent": null,
       "is_new": true,
       "approved_by": null
     },
@@ -46,15 +46,30 @@
         {
           "variable": "provided_information",
           "primitive": "passthrough",
-          "possible_values": ["営業秘密として管理する情報", "複製物"],
-          "sources": {"value": {"from": "action_request", "path": "provided_information.category"}},
+          "possible_values": [
+            "営業秘密として管理する情報",
+            "複製物"
+          ],
+          "sources": {
+            "value": {
+              "from": "action_request",
+              "path": "provided_information.category"
+            }
+          },
           "approved_by": null
         },
         {
           "variable": "recipient_authorization",
           "primitive": "passthrough",
-          "possible_values": ["許可されていない"],
-          "sources": {"value": {"from": "action_request", "path": "recipient.authorization"}},
+          "possible_values": [
+            "許可なし"
+          ],
+          "sources": {
+            "value": {
+              "from": "action_request",
+              "path": "recipient.authorization"
+            }
+          },
           "approved_by": null
         }
       ],
@@ -62,9 +77,16 @@
       "value_additions": {}
     },
     "level_determination": {
-      "atomic_fact": {"covered": true, "new_primitives": []},
+      "atomic_fact": {
+        "covered": true,
+        "new_primitives": []
+      },
       "intermediate": [],
-      "final": {"compared_table_id": null, "relation": null, "action": "new_table"}
+      "final": {
+        "compared_table_id": null,
+        "relation": null,
+        "action": "new_table"
+      }
     },
     "rule_row_additions": [],
     "new_decision_tables": [
@@ -72,8 +94,13 @@
         "decision_table_id": "dt_trade_secret_provision",
         "decision_id": "decision_trade_secret_provision",
         "decision_name": "営業秘密提供可否判定",
-        "input_columns": ["provided_information", "recipient_authorization"],
-        "knowledge_sources": ["ks_action_request"],
+        "input_columns": [
+          "provided_information",
+          "recipient_authorization"
+        ],
+        "knowledge_sources": [
+          "ks_action_request"
+        ],
         "rule_rows": [
           {
             "row_id": "id_r_tsp_1",
@@ -81,9 +108,12 @@
             "position": 1,
             "conditions": {
               "provided_information": "\"営業秘密として管理する情報\",\"複製物\"",
-              "recipient_authorization": "許可されていない"
+              "recipient_authorization": "許可なし"
             },
-            "outputs": {"decision": "禁止", "reason_code": "trade_secret_to_unauthorized_recipient"}
+            "outputs": {
+              "decision": "禁止",
+              "reason_code": "trade_secret_to_unauthorized_recipient"
+            }
           },
           {
             "row_id": "id_r_tsp_2",
@@ -93,14 +123,17 @@
               "provided_information": "-",
               "recipient_authorization": "-"
             },
-            "outputs": {"decision": "許可", "reason_code": "not_prohibited_combination"}
+            "outputs": {
+              "decision": "許可",
+              "reason_code": "not_prohibited_combination"
+            }
           }
         ]
       }
     ],
     "compound_fact_application": {
       "rejected_in_primitive": false,
-      "rationale": "「営業秘密として管理する情報(又はその複製物) かつ 許可されていない相手」という複合条件は、一致プリミティブ側でANDを組まず、新しく作る決定表の1行(id_r_tsp_1)の2列の条件として表現する(複合fact禁止原則)。情報と複製物は同じ列の2値として並べる。"
+      "rationale": "「営業秘密として管理する情報(又はその複製物) かつ 許可のない相手」という複合条件は、一致プリミティブ側でANDを組まず、新しく作る決定表の1行(id_r_tsp_1)の2列の条件として表現する(複合fact禁止原則)。情報と複製物は同じ列の2値として並べる。"
     },
     "provenance": {
       "origin": "regulation_clause",
@@ -114,41 +147,45 @@
     "action_surface": {
       "value": "提供してはならない",
       "quote": "提供してはならない",
-      "verbatim": true
+      "basis": "verbatim"
     },
     "possible_values": [
       {
         "fact": "provided_information",
         "value": "営業秘密として管理する情報",
         "quote": "当社が営業秘密として管理する情報",
-        "verbatim": true,
-        "note": "「当社が」は主体の限定なので値から外した。何が営業秘密に当たるか(顧客名簿・設計図など)は条文にないので足していない"
+        "basis": "normalized",
+        "normalization": "主体の限定(「当社が」)を外す",
+        "note": "何が営業秘密に当たるか(顧客名簿・設計図など)は条文にないので足していない"
       },
       {
         "fact": "provided_information",
         "value": "複製物",
         "quote": "その複製物",
-        "verbatim": true
+        "basis": "normalized",
+        "normalization": "指示語(「その」)を外す"
       },
       {
         "fact": "recipient_authorization",
-        "value": "許可されていない",
+        "value": "許可なし",
         "quote": "許可されていない",
-        "verbatim": true
+        "basis": "normalized",
+        "normalization": "体言化",
+        "note": "第11条の usage_authorization と同じ書き方にそろえた。許可されている状態は条文にないので値を足さず、予約語「その他」で表す(D45)"
       }
     ],
     "rule_rows": [
       {
         "row_id": "id_r_tsp_1",
         "quote": "当社が営業秘密として管理する情報及びその複製物の一切を許可されていない組織、人に提供してはならない。",
-        "verbatim": true,
+        "basis": "verbatim",
         "note": "「一切を」は、情報と複製物のどちらでも禁止であることを表す。同じ列の2値を並べた1行で表している"
       },
       {
         "row_id": "id_r_tsp_2",
-        "quote": null,
-        "verbatim": false,
-        "note": "既定の行(ワイルドカード)。条文が禁止していない組み合わせを「許可」にするもので、条文に逐語の根拠はない"
+        "kind": "default_row",
+        "basis": "default_row",
+        "note": "禁止規定の裏(禁止の組み合わせに当たらないものは許可)。逐語の根拠は要らない(D47)"
       }
     ],
     "not_modeled": [
@@ -160,50 +197,80 @@
   },
   "scenarios": [
     {
-      "name": "営業秘密を許可されていない相手に提供 → 禁止",
+      "name": "営業秘密を許可のない相手に提供 → 禁止",
       "kind": "条文の禁止の行に当たる",
       "facts": {
         "provided_information": "営業秘密として管理する情報",
-        "recipient_authorization": "許可されていない"
+        "recipient_authorization": "許可なし"
       },
-      "expected": {"decision": "禁止", "reason_code": "trade_secret_to_unauthorized_recipient"}
+      "expected": {
+        "decision": "禁止",
+        "reason_code": "trade_secret_to_unauthorized_recipient"
+      }
     },
     {
-      "name": "複製物を許可されていない相手に提供 → 禁止(同じ列の2値目)",
+      "name": "複製物を許可のない相手に提供 → 禁止(同じ列の2値目)",
       "kind": "条文の禁止の行に当たる",
       "facts": {
         "provided_information": "複製物",
-        "recipient_authorization": "許可されていない"
+        "recipient_authorization": "許可なし"
       },
-      "expected": {"decision": "禁止", "reason_code": "trade_secret_to_unauthorized_recipient"}
+      "expected": {
+        "decision": "禁止",
+        "reason_code": "trade_secret_to_unauthorized_recipient"
+      }
     },
     {
       "name": "許可された相手への提供 → 許可",
-      "kind": "possible_values 外の値が既定の行に落ちる(U2)",
+      "kind": "予約語「その他」が既定の行(ワイルドカード)に落ちる(D45)",
       "facts": {
         "provided_information": "営業秘密として管理する情報",
-        "recipient_authorization": "許可されている"
+        "recipient_authorization": "その他"
       },
-      "expected": {"decision": "許可", "reason_code": "not_prohibited_combination"}
+      "expected": {
+        "decision": "許可",
+        "reason_code": "not_prohibited_combination"
+      },
+      "note": "条文は「許可されていない」側しか挙げていない。許可されている状態は「その他」として既定の行に落ちる"
     },
     {
       "name": "営業秘密でない情報の提供 → 許可",
-      "kind": "possible_values 外の値が既定の行に落ちる(U2)",
+      "kind": "予約語「その他」が既定の行(ワイルドカード)に落ちる(D45)",
+      "facts": {
+        "provided_information": "その他",
+        "recipient_authorization": "許可なし"
+      },
+      "expected": {
+        "decision": "許可",
+        "reason_code": "not_prohibited_combination"
+      }
+    },
+    {
+      "name": "情報の区分が「公開情報」(possible_values に無い値) → 人の確認に回す",
+      "kind": "知らない値がエスカレーションになる(D46)",
       "facts": {
         "provided_information": "公開情報",
-        "recipient_authorization": "許可されていない"
+        "recipient_authorization": "許可なし"
       },
-      "expected": {"decision": "許可", "reason_code": "not_prohibited_combination"}
+      "expected": {
+        "decision": "escalate",
+        "reason_code": "unknown_fact_value"
+      },
+      "note": "「公開情報」は条文にない区分なので、知らない値として人に回る。営業秘密かどうかの判断を黙って許可にしない"
     }
   ],
   "review": {
     "status": "draft",
     "reviewed_by": null,
-    "expected_gates": ["new_action_unapproved", "new_fact_unapproved"],
+    "expected_gates": [
+      "new_action_unapproved",
+      "new_fact_unapproved"
+    ],
     "notes": [
       "actor: 条文の主語は「従業員」。擬人化の前提であおいに当てた(ゴールデンパスと同じ扱い)",
+      "**action.parent を None にした**(設計書6.2)。あおいの既存の Action 階層(情報開示 → 外部送信・口頭伝達)は情報管理規程のもので、別の規程(IPA)の「情報提供」を根拠なく同じ階層に混ぜないため。承認のときに位置づけを決めていただきたい",
       "「組織、人」を列にしていない(evidence.not_modeled)。提供先の種別で結果が変わらないため。列を持たせるべきかの判断をお願いしたい",
-      "action.normalized「情報提供」と parent「情報開示」は提案である。あおいの既存 Action 階層には「情報開示」の子として「外部送信」「口頭伝達」があり、その兄弟に置く案になる。ただしこの条文は別の規程(IPA)のもので、同じ階層に入れてよいかは判断が要る",
+      "recipient_authorization の値は、第11条と同じ「許可なし」にそろえた(D44 の体言化)。別の規程の条文だが、同じ意味の区分に別の語を使うと統制語彙が増える(U1)",
       "営業秘密該当性(何が営業秘密か)は、この IR では fact の値としてそのまま受け取る形にしている。実際の判定では「営業秘密として管理する情報」に当たるかの判断が前段に必要で、条文だけでは決まらない"
     ]
   }

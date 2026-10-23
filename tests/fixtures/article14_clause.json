@@ -1,0 +1,13 @@
+{
+  "_note": "あおいの情報管理規程 第14条の条文本文と出典だけを抜き出したもの(D42 と同じ扱い)。正解IR(testdata/ir_gold/aoi_johokanri_art14.json)の引用をこのファイルと照合する。元のファイルにはあおいの既存実装のオラクル(期待する IR の中身)も入っているが、正解IR を独立に作る建前と混ざるため、**本文と出典だけ**を写している。",
+  "source": {
+    "document": "情報管理規程",
+    "article": "第14条 口頭による情報提供の制限",
+    "quoted_from": "reference/gijinka-extraction-pipeline/tests/fixtures/article14_clause.json の clause_text",
+    "also_quoted_in": "reference/gijinka-extraction-pipeline/FINAL_REPORT.md:59-61"
+  },
+  "clause_ref": "情報管理規程 第14条",
+  "clause_title": "口頭による情報提供の制限",
+  "clause_text": "当法人の職員は、患者又はその代理人からの電話等による問い合わせに対し、当該患者の生年月日及び連絡先の一致が確認できない場合、検査結果その他の医療情報を口頭で伝達してはならない。",
+  "actor": "あおい"
+}

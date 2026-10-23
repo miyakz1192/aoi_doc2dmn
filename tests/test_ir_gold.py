@@ -74,10 +74,30 @@ def test_every_scenario_matches(gold_results):
 
 
 def test_gates_are_raised_because_nothing_is_approved(gold_results):
-    """承認前なので、全件でゲートが立つ(これが正しい状態)。"""
+    """承認前なので、全件で少なくとも Action のゲートが立つ(これが正しい状態)。
+
+    新しい fact・値・中間判定の出力値を持たない条文(第14条。既存の fact を
+    再利用するだけ)では `new_fact_unapproved` は立たない。
+    """
     for result in gold_results:
         assert "new_action_unapproved" in result.gates, result.gold_id
-        assert "new_fact_unapproved" in result.gates, result.gold_id
+    with_new_vocabulary = [
+        r for r in gold_results if "new_fact_unapproved" in r.gates
+    ]
+    assert len(with_new_vocabulary) == 4, "新しい語彙を持つのは4件"
+
+
+def test_evidence_has_no_unsupported_item(gold_results):
+    """D44・D47: evidence の根拠が「逐語」か「正規化」か「既定の行」で、根拠なしが無い。"""
+    for result in gold_results:
+        assert result.evidence_basis["none"] == 0, result.gold_id
+        assert result.evidence_basis["verbatim"] > 0, result.gold_id
+
+
+def test_every_gold_ir_has_an_escalation_scenario(gold_results):
+    """D46: 知らない値が人の確認に回るシナリオが全件にある(envelope の確認の裏取り)。"""
+    for result in gold_results:
+        assert result.scenarios_total >= 4, result.gold_id
 
 
 def test_running_the_gold_irs_does_not_touch_the_registry(gold_results):
@@ -176,3 +196,44 @@ def test_axis_labels_come_from_the_testdata_oracle():
         assert gold["ir"]["clause_text"] == clause["text_raw"]
         assert gold["source"]["text_variant"] == "text_raw"
     assert checked == 4, "testdata 由来の正解IR は4件"
+
+
+def test_article14_quote_matches_the_committed_fixture():
+    """第14条の条文本文が、コミットした出典のファイルと逐語で一致する(A6)。
+
+    `reference/` はリポジトリに入っていないので、条文本文と出典だけを
+    `tests/fixtures/article14_clause.json` に写してコミットした(D42 と同じ扱い)。
+    オラクル(あおいの既存実装が期待する IR の中身)は写していない。
+    """
+    fixture = json.loads(
+        (REPO_ROOT / "tests" / "fixtures" / "article14_clause.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    gold = json.loads(
+        (GOLD_DIR / "aoi_johokanri_art14.json").read_text(encoding="utf-8")
+    )
+    assert gold["ir"]["clause_text"] == fixture["clause_text"]
+    assert gold["ir"]["clause_ref"] == fixture["clause_ref"]
+    assert gold["ir"]["actor"] == fixture["actor"]
+    # オラクルは写していない(正解IR を独立に作る建前と混ざらないようにする)
+    assert "oracle" not in fixture
+    # 引用の出典がファイル名で辿れる
+    assert any("article14_clause.json" in q for q in gold["source"]["quoted_from"])
+
+
+def test_article14_does_not_touch_the_shared_intermediate_decision():
+    """D49: 1条文だけの基準のために、共有の中間判定を変えない。
+
+    第22回は本人確認判定に新しい確認レベルを足していたが、それを参照する送信可否判定に
+    受け止める行が無く、外部送信が実行時に失敗した(C12 が止める形)。作り直した IR は
+    生年月日・連絡先を直接の入力列にしている。
+    """
+    gold = json.loads(
+        (GOLD_DIR / "aoi_johokanri_art14.json").read_text(encoding="utf-8")
+    )
+    ir = clause_ir_from_json(gold["ir"])
+    assert ir.rule_row_additions == []
+    assert ir.level_determination.intermediate == []
+    assert ir.new_decision_tables[0].input_columns == ["birth_match", "phone_match"]
+    assert ir.review_gates.gate_names() == ["new_action_unapproved"]

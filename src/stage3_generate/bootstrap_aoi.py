@@ -16,7 +16,7 @@
 | 層1 depends_on_decisions・depends_on_inputs | informationRequirement(宣言順) |
 | 層1 knowledge_sources | authorityRequirement |
 | 層2 の行 | decisionTable の rule(セルは DMN の表記のまま) |
-| 層3 possible_values | 決定表のセルに出てくる値だけ(D4)。DMN にない値は補わない |
+| 層3 possible_values | 決定表のセルに出てくる値だけ(D4)。DMN にない値は補わない。passthrough の fact には予約語「その他」が付く(D45) |
 | 層3 primitive | 設計書3.5節の一致プリミティブ表(`FACT_PRIMITIVES`) |
 | 層1 entry_points | **DMN には無い**(`ENTRY_POINTS`。出典は設計書 D32) |
 | 層3 sources | **DMN には無く、補わない**(`SOURCE_GAP_NOTE`・D33) |
@@ -55,6 +55,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
+from .ir_schema import effective_possible_values
 from .registry import Registry, dmn_path
 from .wiring_generator import (
     DMNDI_NS,
@@ -499,7 +500,12 @@ def build_registry(
             {
                 "variable": variable,
                 "primitive": primitive if primitive else "",
-                "possible_values": values,
+                # D45: passthrough の fact(あおいでは contact_consent)には
+                # 予約語「その他」が付く。初期登録の fact も新しい条文の fact と
+                # 同じ扱いにする
+                "possible_values": effective_possible_values(
+                    primitive or "", values
+                ),
                 "sources": {},
                 "comparison_kind": None,
                 "approved_by": REGISTERED_BY,

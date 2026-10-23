@@ -59,17 +59,30 @@ DMN XML／バインディング設定JSON／ルーティング表JSON／Scope・
 - **D39**: 既存の DMN モデルの namespace は変えない。`DMN_NAMESPACE_BASE` の規則は
   新しく作るモデルにだけ使う(`patch_existing_dmn` は元の definitions をそのまま使う)
 
+## v1.5 で変えた点(設計書2章 D45・D46・D48・D50)
+
+- **D45**: `passthrough` の fact は予約語「その他」を持つ。層3とバインディング設定の
+  `possible_values` に自動で加え、C5 もこれを通して照合する。IR の `possible_values` に
+  「その他」を書いたら C4 で止める(自動で付く語なので、書くかどうかの揺れを残さない)
+- **D46**: バインディング設定に `on_unknown_value = escalate` を出す。実行時の判定は
+  U4 の範囲だが、シナリオ評価の入口は `scenario_eval.py` に実装した
+- **D48**: **C12** を追加した。中間判定に出力値を足す IR で、その出力をドット参照して
+  いる既存のすべての判定について、足した値がどれかの行に当たることを確かめる。
+  C11 の逆向きで、当たる行が無いと実行時に「どの行にも当たらない」で失敗する
+- **D50**: 中間判定に出力値を足したら、層1の `history` に承認者込みで記録する
+
 ## クロス検証の実行順序(設計書5章)
 
 設計書5章は2段構えを定めている。
 
-1. 生成前(IR と登録簿だけで判定できるもの): C3 → C9 → C4 → C6 → C10 → C11 → C2
+1. 生成前(IR と登録簿だけで判定できるもの): C3 → C9 → C4 → C6 → C10 → C11 → C12 → C2
 2. 生成後(成果物を突合するもの): C1 → C5 → C7 → C8
 
 C9 が破れていると `required_facts` の算出自体が始められないため、この順にする。
 """
 from __future__ import annotations
 
+import itertools
 import json
 import re
 import uuid
@@ -79,10 +92,13 @@ from xml.etree import ElementTree as ET
 
 from .ir_schema import (
     BOOTSTRAP_ONLY_PRIMITIVES,
+    ON_UNKNOWN_VALUE,
+    OTHER_VALUE,
     PRIMITIVE_ARGS,
     ClauseIR,
     FactDef,
     RuleRowDraft,
+    effective_possible_values,
 )
 from .registry import Registry, dmn_path
 
@@ -749,6 +765,15 @@ def _check_c4_sources_match_primitive(ir: ClauseIR, registry: Registry) -> None:
 
 
 def _check_one_fact_sources(fact: FactDef, *, in_new_facts: bool) -> None:
+    if in_new_facts and OTHER_VALUE in fact.possible_values:
+        # D45: 「その他」は配線ジェネレータが自動で付ける予約語。IR に書かせると
+        # 「書く／書かない」の揺れが残り、正解IR と前段の出力の比較でぶれる。
+        # fact の定義の検査なので C4 に入れた(設計書は検証の割り当てを定めていない)。
+        raise SchemaWiringError(
+            f"C4検証失敗: fact {fact.variable!r} の possible_values に予約語 "
+            f"{OTHER_VALUE!r} が書かれています(D45)。これは passthrough の fact に"
+            "配線ジェネレータが自動で付ける語なので、IR には書かないでください。"
+        )
     if in_new_facts and fact.primitive in BOOTSTRAP_ONLY_PRIMITIVES:
         raise SchemaWiringError(
             f"C4検証失敗: fact {fact.variable!r} の primitive={fact.primitive!r} は"
@@ -1001,6 +1026,158 @@ def _check_c11_dot_reference_values(ir: ClauseIR, registry: Registry) -> None:
                 )
 
 
+def _check_c12_added_output_values_are_accepted(
+    ir: ClauseIR, registry: Registry
+) -> None:
+    """C12: 中間判定に足した出力値を、それを参照する既存の判定が受け止める(D48)。
+
+    C11 の逆向きである。C11 は「参照する値が、参照先が出力する値にあるか」を見るが、
+    参照先が**新しく出すようになった値**を、参照する側が受け止められるかは誰も見て
+    いなかった。受け止める行が無いと、実行時にその判定が「どの行にも当たらない」で
+    失敗する(第22回の第14条で実測した)。
+
+    ## 「受け止める」の判定(設計書の文言からの逸脱。**要報告事項**)
+
+    設計書5章 C12 は「足した値がどれかの行(「-」を含む)に当たる」と書いているが、
+    **その列だけを見る読み方では第14条の形を止められない。** あおいの送信可否判定の
+    tr_r1 は確認レベルの列が「-」なので、その列だけ見れば当たってしまう。しかし
+    tr_r1 は連絡同意の列が「不同意」なので、実際には同意の行動要求を受け止めない。
+
+    そこで、**足した値を含む入力の組み合わせすべてが、どれかの行に当たること**を
+    確かめる。他の列が取りうる値は、fact の列なら層3の possible_values(「その他」を
+    含む)、ドット参照の列なら参照先の判定が出す値から求める。値の範囲が分からない列が
+    あれば、確かめられないものとして停止する(C10 が層1の output_columns が無いときに
+    止めるのと同じ考え方)。
+
+    集める対象は、足した出力を「判定名.出力名」でドット参照している**既存の**判定
+    (登録簿の層1)である。設計書は「D16 の洗い出しと同じ逆たどりで集めてよい」と
+    しているが、逆たどりは間接的に使う判定まで集める。間接的な判定は、足した値では
+    なく参照先の**出力**を見ているので、直接のドット参照だけを対象にした。
+    """
+    ir_table_ids = {t.decision_table_id for t in ir.new_decision_tables}
+    for change in ir.level_determination.intermediate:
+        if not change.new_output_values:
+            continue
+        entry = registry.find_decision_table(decision_table_id=change.table_id)
+        if entry is None:
+            continue  # 実在確認は C9条件4 の責務
+        decision_name = entry.get("decision_name")
+        if not decision_name:
+            continue
+        for output, additions in change.new_output_values.items():
+            column = f"{decision_name}.{output}"
+            for consumer in registry.decision_tables:
+                consumer_id = consumer.get("decision_table_id", "")
+                if consumer_id in ir_table_ids:
+                    continue  # この IR が作る表は C11 が見ている
+                if column not in consumer.get("input_columns", []):
+                    continue
+                for addition in additions:
+                    _check_c12_one_consumer(
+                        ir, registry, consumer, column, addition.value
+                    )
+
+
+def _check_c12_one_consumer(
+    ir: ClauseIR,
+    registry: Registry,
+    consumer: dict,
+    column: str,
+    value: str,
+) -> None:
+    """足した値を含む入力の組み合わせが、その判定のどれかの行に当たるか(C12用)。"""
+    consumer_id = consumer.get("decision_table_id", "")
+    columns = list(consumer.get("input_columns", []))
+    spaces: list[list[str]] = []
+    for other in columns:
+        if other == column:
+            spaces.append([value])
+            continue
+        values = _column_value_space(ir, registry, other)
+        if not values:
+            raise SchemaWiringError(
+                f"C12検証失敗: 決定表 {consumer_id!r} の列 {other!r} が取りうる値が"
+                "分からないため、足した出力値を受け止められるかを確かめられません"
+                "(層3の possible_values か、参照先の判定の出力値が必要です)。"
+            )
+        spaces.append(values)
+
+    rows = _consumer_rows(ir, registry, consumer_id)
+    if not rows:
+        raise SchemaWiringError(
+            f"C12検証失敗: 決定表 {consumer_id!r} に行がありません。足した出力値 "
+            f"{value!r} を受け止められません(D48)。"
+        )
+    for combination in itertools.product(*spaces):
+        inputs = dict(zip(columns, combination))
+        if not any(_row_matches(row, inputs, consumer_id) for row in rows):
+            raise SchemaWiringError(
+                f"C12検証失敗: 中間判定に足す出力値 {value!r} を参照している既存の判定 "
+                f"{consumer.get('decision_name')!r}(決定表 {consumer_id!r})に、"
+                f"入力 {inputs} を受け止める行がありません(D48)。実行時に"
+                "「どの行にも当たらない」で評価が失敗します。受け止める行を足すか、"
+                "中間判定を変えずに事実を直接入力にした表を作ってください(D49)。"
+            )
+
+
+def _column_value_space(ir: ClauseIR, registry: Registry, column: str) -> list[str]:
+    """決定表の列が取りうる値(C12用)。分からなければ空リスト。
+
+    - ドット参照の列: 参照先の判定が出す値(層2の行・この IR が足す行・
+      `new_output_values`)
+    - fact の列: 層3の possible_values(「その他」を含む)と、この IR の
+      `new_facts`・`value_additions`
+    """
+    if _is_dot_reference(column):
+        name, output = _dot_prefix(column), _dot_suffix(column)
+        produced, _ = _produced_output_values(ir, registry, decision_name=name)
+        return sorted(produced.get(output, set()))
+
+    values: set[str] = set()
+    for fact in ir.facts.new_facts:
+        if fact.variable == column:
+            values.update(effective_possible_values(fact.primitive, fact.possible_values))
+    entry = registry.find_fact(column)
+    if entry is not None:
+        values.update(
+            effective_possible_values(
+                entry.get("primitive", ""), list(entry.get("possible_values", []))
+            )
+        )
+    values.update(a.value for a in ir.facts.value_additions.get(column, []))
+    return sorted(values)
+
+
+def _consumer_rows(
+    ir: ClauseIR, registry: Registry, decision_table_id: str
+) -> list[tuple[str, dict]]:
+    """その決定表の行(層2 ＋ この IR が足す行)を `(行ID, 条件)` で集める(C12用)。"""
+    rows: list[tuple[str, dict]] = [
+        (str(row.get("row_id", "")), dict(row.get("conditions") or {}))
+        for row in registry.rows_of(decision_table_id)
+    ]
+    for row in ir.rule_row_additions:
+        if row.decision_table_id == decision_table_id:
+            rows.append((row.row_id, dict(row.conditions)))
+    return rows
+
+
+def _row_matches(
+    row: tuple[str, dict], inputs: dict[str, str], decision_table_id: str
+) -> bool:
+    """行が入力の組み合わせに当たるか。セルが「-」または条件が無い列は当たる。"""
+    row_id, conditions = row
+    for column, value in inputs.items():
+        cell = str(conditions.get(column, "-")).strip()
+        if cell == "-":
+            continue
+        if value not in _cell_values(
+            cell, where=f"決定表 {decision_table_id} の行 {row_id} の列 {column}"
+        ):
+            return False
+    return True
+
+
 def _check_d17_same_dmn_model(ir: ClauseIR, registry: Registry) -> None:
     """D17: 中間判定を参照する最終判定は、参照先と同じ DMN モデルに入れる。
 
@@ -1080,9 +1257,10 @@ def _check_c5_cell_values(
                     f"C5検証失敗: {where} が参照する列 {column!r} の fact 定義が"
                     "見つかりません(facts.new_facts にも登録簿の層3にもありません)。"
                 )
-            allowed = set(fact.possible_values) | {
-                a.value for a in ir.facts.value_additions.get(column, [])
-            }
+            # D45: passthrough なら「その他」も決定表のセルに書いてよい
+            allowed = set(
+                effective_possible_values(fact.primitive, fact.possible_values)
+            ) | {a.value for a in ir.facts.value_additions.get(column, [])}
             unknown = [v for v in values if v not in allowed]
             if unknown:
                 raise SchemaWiringError(
@@ -1608,6 +1786,11 @@ def _build_bindings(
     取得元が分からなかった fact(あおいの7件)がこれに当たる。空のまま出して隠さない
     ことで、一致プリミティブの実装(U4)のときに埋める対象が見える。新しい条文の
     fact は C4 が空の sources を通さないので、ここに来るのは層3から引いた分だけ。
+
+    `possible_values` には、passthrough の fact なら予約語「その他」を加える(D45)。
+    `on_unknown_value` は固定で `escalate`(D46)。値が `possible_values` に無いときは
+    DMN に渡さず人の確認に回す、という宣言である。実行時の実装は U4 の範囲だが、
+    宣言はここに出しておく(シナリオ評価の入口は `scenario_eval.py`)。
     """
     facts_json = []
     for variable in required_facts:
@@ -1615,13 +1798,14 @@ def _build_bindings(
         payload = fact.to_json()
         if not payload["sources"]:
             payload["sources_undefined"] = True
-        additions = ir.facts.value_additions.get(variable)
-        if additions:
-            merged = list(payload["possible_values"])
-            for addition in additions:
-                if addition.value not in merged:
-                    merged.append(addition.value)
-            payload["possible_values"] = merged
+        # D45: 「その他」は必ず末尾に置く(層3に既に入っている場合は一度外す)
+        merged = [v for v in payload["possible_values"] if v != OTHER_VALUE]
+        for addition in ir.facts.value_additions.get(variable, []):
+            if addition.value not in merged:
+                merged.append(addition.value)
+        payload["possible_values"] = effective_possible_values(fact.primitive, merged)
+        # D46: 知らない値は DMN に渡さず人の確認に回す
+        payload["on_unknown_value"] = ON_UNKNOWN_VALUE
         facts_json.append(payload)
     return {"dmn_model": ir.target.dmn_model, "facts": facts_json}
 
@@ -1721,6 +1905,8 @@ def _build_updated_registry(
                 "depends_on_inputs": list(table.depends_on_inputs),
                 "knowledge_sources": list(table.knowledge_sources),
                 "provenance": provenance,
+                # D40: 層1も history を持つ(初期登録と同じ形にそろえる)
+                "history": [],
             }
         )
         for col in table.input_columns:
@@ -1755,6 +1941,29 @@ def _build_updated_registry(
         )
         entry["history"] = history
 
+    # 層1: 中間判定に足した出力値を history に残す(D50)。D37 で承認の対象にしたので、
+    # 承認者も一緒に記録する(fact の値の追加を層3の history に残すのと同じ扱い)
+    for change in ir.level_determination.intermediate:
+        if not change.new_output_values:
+            continue
+        entry = updated.find_decision_table(decision_table_id=change.table_id)
+        if entry is None:
+            continue  # 実在確認は C9条件4 の責務
+        history = list(entry.get("history", []))
+        for output, additions in change.new_output_values.items():
+            for addition in additions:
+                history.append(
+                    {
+                        "change": "output_value_addition",
+                        "output": output,
+                        "value": addition.value,
+                        "approved_by": addition.approved_by,
+                        "clause_ref": ir.clause_ref,
+                        "provenance": provenance,
+                    }
+                )
+        entry["history"] = history
+
     # 層2: 新規決定表の行と、既存表への追加行の両方
     for row in ir.rule_row_additions:
         updated.rule_rows.append(_rule_row_to_registry_entry(row, provenance))
@@ -1768,6 +1977,10 @@ def _build_updated_registry(
     # 層3: 新しい fact を追加し、value_additions を既存エントリに反映
     for fact in ir.facts.new_facts:
         entry = fact.to_json()
+        # D45: passthrough の fact には予約語「その他」を入れて台帳に載せる
+        entry["possible_values"] = effective_possible_values(
+            fact.primitive, entry["possible_values"]
+        )
         entry["defined_by"] = ir.clause_ref
         entry["used_by"] = sorted(set(used_by.get(fact.variable, [])))
         entry["provenance"] = provenance
@@ -1780,7 +1993,11 @@ def _build_updated_registry(
             continue  # 実在確認は C6 の責務
         values = list(entry.get("possible_values", []))
         added = [a for a in additions if a.value not in values]
-        entry["possible_values"] = values + [a.value for a in added]
+        # D45: 予約語「その他」は必ず末尾に置く(足した値の後ろ)
+        entry["possible_values"] = effective_possible_values(
+            entry.get("primitive", ""),
+            [v for v in values if v != OTHER_VALUE] + [a.value for a in added],
+        )
         if added:
             history = list(entry.get("history", []))
             history.append(
@@ -1831,6 +2048,7 @@ def generate_wiring_bundle(
     _check_c6_referenced_facts(ir, registry)
     _check_c10_dot_references(ir, registry)
     _check_c11_dot_reference_values(ir, registry)
+    _check_c12_added_output_values_are_accepted(ir, registry)
     _check_c2_new_facts_used(ir)
     _check_d17_same_dmn_model(ir, registry)
 

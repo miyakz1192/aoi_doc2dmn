@@ -46,22 +46,44 @@
         {
           "variable": "usage_authorization",
           "primitive": "passthrough",
-          "possible_values": ["許可なく"],
-          "sources": {"value": {"from": "action_request", "path": "usage.authorization"}},
+          "possible_values": [
+            "許可なし"
+          ],
+          "sources": {
+            "value": {
+              "from": "action_request",
+              "path": "usage.authorization"
+            }
+          },
           "approved_by": null
         },
         {
           "variable": "usage_purpose",
           "primitive": "passthrough",
-          "possible_values": ["職務以外の目的"],
-          "sources": {"value": {"from": "action_request", "path": "usage.purpose"}},
+          "possible_values": [
+            "職務以外の目的"
+          ],
+          "sources": {
+            "value": {
+              "from": "action_request",
+              "path": "usage.purpose"
+            }
+          },
           "approved_by": null
         },
         {
           "variable": "usage_target",
           "primitive": "passthrough",
-          "possible_values": ["会社の施設", "物品等"],
-          "sources": {"value": {"from": "action_request", "path": "usage.target"}},
+          "possible_values": [
+            "会社の施設",
+            "物品等"
+          ],
+          "sources": {
+            "value": {
+              "from": "action_request",
+              "path": "usage.target"
+            }
+          },
           "approved_by": null
         }
       ],
@@ -69,9 +91,16 @@
       "value_additions": {}
     },
     "level_determination": {
-      "atomic_fact": {"covered": true, "new_primitives": []},
+      "atomic_fact": {
+        "covered": true,
+        "new_primitives": []
+      },
       "intermediate": [],
-      "final": {"compared_table_id": null, "relation": null, "action": "new_table"}
+      "final": {
+        "compared_table_id": null,
+        "relation": null,
+        "action": "new_table"
+      }
     },
     "rule_row_additions": [],
     "new_decision_tables": [
@@ -79,19 +108,28 @@
         "decision_table_id": "dt_facility_property_use",
         "decision_id": "decision_facility_property_use",
         "decision_name": "施設物品使用可否判定",
-        "input_columns": ["usage_authorization", "usage_purpose", "usage_target"],
-        "knowledge_sources": ["ks_action_request"],
+        "input_columns": [
+          "usage_authorization",
+          "usage_purpose",
+          "usage_target"
+        ],
+        "knowledge_sources": [
+          "ks_action_request"
+        ],
         "rule_rows": [
           {
             "row_id": "id_r_fpu_1",
             "decision_table_id": "dt_facility_property_use",
             "position": 1,
             "conditions": {
-              "usage_authorization": "許可なく",
+              "usage_authorization": "許可なし",
               "usage_purpose": "職務以外の目的",
               "usage_target": "\"会社の施設\",\"物品等\""
             },
-            "outputs": {"decision": "禁止", "reason_code": "unauthorized_non_duty_use"}
+            "outputs": {
+              "decision": "禁止",
+              "reason_code": "unauthorized_non_duty_use"
+            }
           },
           {
             "row_id": "id_r_fpu_2",
@@ -102,14 +140,17 @@
               "usage_purpose": "-",
               "usage_target": "-"
             },
-            "outputs": {"decision": "許可", "reason_code": "not_prohibited_combination"}
+            "outputs": {
+              "decision": "許可",
+              "reason_code": "not_prohibited_combination"
+            }
           }
         ]
       }
     ],
     "compound_fact_application": {
       "rejected_in_primitive": false,
-      "rationale": "「許可なく かつ 職務以外の目的 かつ 会社の施設・物品等」という複合条件は、一致プリミティブ側でANDを組まず、新しく作る決定表の1行(id_r_fpu_1)の3列の条件として表現する(複合fact禁止原則)。施設と物品等は同じ列の2値として並べる。"
+      "rationale": "「許可なし かつ 職務以外の目的 かつ 会社の施設・物品等」という複合条件は、一致プリミティブ側でANDを組まず、新しく作る決定表の1行(id_r_fpu_1)の3列の条件として表現する(複合fact禁止原則)。施設と物品等は同じ列の2値として並べる。"
     },
     "provenance": {
       "origin": "regulation_clause",
@@ -123,34 +164,35 @@
     "action_surface": {
       "value": "使用しないこと",
       "quote": "使用しないこと",
-      "verbatim": true
+      "basis": "verbatim"
     },
     "possible_values": [
       {
         "fact": "usage_authorization",
-        "value": "許可なく",
+        "value": "許可なし",
         "quote": "許可なく",
-        "verbatim": true,
-        "note": "条文の語は連用修飾の「許可なく」で、区分の値としては不自然。「許可なし」に直すと逐語でなくなるため、逐語を優先した(要レビュー)"
+        "basis": "normalized",
+        "normalization": "体言化",
+        "note": "条文の語は連用修飾の「許可なく」。区分の値の形にした(D44)。反対側(許可を得ている状態)は条文にないので値を足さず、予約語「その他」で表す(D45)"
       },
       {
         "fact": "usage_purpose",
         "value": "職務以外の目的",
         "quote": "職務以外の目的",
-        "verbatim": true,
+        "basis": "verbatim",
         "note": "「職務以外」に当たる具体例(私的な複写・持ち帰りなど)は条文にないので足していない"
       },
       {
         "fact": "usage_target",
         "value": "会社の施設",
         "quote": "会社の施設",
-        "verbatim": true
+        "basis": "verbatim"
       },
       {
         "fact": "usage_target",
         "value": "物品等",
         "quote": "物品等",
-        "verbatim": true,
+        "basis": "verbatim",
         "note": "条文の「等」をそのまま値に含めた。「等」が指す範囲は条文に書かれていないため、値を増やしていない"
       }
     ],
@@ -158,13 +200,13 @@
       {
         "row_id": "id_r_fpu_1",
         "quote": "許可なく職務以外の目的で会社の施設、物品等を使用しないこと。",
-        "verbatim": true
+        "basis": "verbatim"
       },
       {
         "row_id": "id_r_fpu_2",
-        "quote": null,
-        "verbatim": false,
-        "note": "既定の行(ワイルドカード)。条文が禁止していない組み合わせを「許可」にするもので、条文に逐語の根拠はない"
+        "kind": "default_row",
+        "basis": "default_row",
+        "note": "禁止規定の裏(禁止の組み合わせに当たらないものは許可)。逐語の根拠は要らない(D47)"
       }
     ]
   },
@@ -173,52 +215,81 @@
       "name": "許可なく私用で会社の施設を使用 → 禁止",
       "kind": "条文の禁止の行に当たる",
       "facts": {
-        "usage_authorization": "許可なく",
+        "usage_authorization": "許可なし",
         "usage_purpose": "職務以外の目的",
         "usage_target": "会社の施設"
       },
-      "expected": {"decision": "禁止", "reason_code": "unauthorized_non_duty_use"}
+      "expected": {
+        "decision": "禁止",
+        "reason_code": "unauthorized_non_duty_use"
+      }
     },
     {
       "name": "許可なく私用で物品等を使用 → 禁止(同じ列の2値目)",
       "kind": "条文の禁止の行に当たる",
       "facts": {
-        "usage_authorization": "許可なく",
+        "usage_authorization": "許可なし",
         "usage_purpose": "職務以外の目的",
         "usage_target": "物品等"
       },
-      "expected": {"decision": "禁止", "reason_code": "unauthorized_non_duty_use"}
+      "expected": {
+        "decision": "禁止",
+        "reason_code": "unauthorized_non_duty_use"
+      }
     },
     {
-      "name": "職務上の目的での使用 → 許可",
-      "kind": "possible_values 外の値が既定の行に落ちる(U2)",
+      "name": "許可を得ている(条文が挙げる「許可なし」ではない) → 許可",
+      "kind": "予約語「その他」が既定の行(ワイルドカード)に落ちる(D45)",
       "facts": {
-        "usage_authorization": "許可なく",
-        "usage_purpose": "職務上の目的",
-        "usage_target": "会社の施設"
-      },
-      "expected": {"decision": "許可", "reason_code": "not_prohibited_combination"}
-    },
-    {
-      "name": "許可を得ている場合 → 許可",
-      "kind": "possible_values 外の値が既定の行に落ちる(U2)",
-      "facts": {
-        "usage_authorization": "許可あり",
+        "usage_authorization": "その他",
         "usage_purpose": "職務以外の目的",
         "usage_target": "会社の施設"
       },
-      "expected": {"decision": "許可", "reason_code": "not_prohibited_combination"}
+      "expected": {
+        "decision": "許可",
+        "reason_code": "not_prohibited_combination"
+      },
+      "note": "条文は「許可なく」の側しか挙げていない。許可を得ている状態は「その他」として既定の行に落ちる"
+    },
+    {
+      "name": "目的が条文の挙げる区分でない(職務上の目的) → 許可",
+      "kind": "予約語「その他」が既定の行(ワイルドカード)に落ちる(D45)",
+      "facts": {
+        "usage_authorization": "許可なし",
+        "usage_purpose": "その他",
+        "usage_target": "会社の施設"
+      },
+      "expected": {
+        "decision": "許可",
+        "reason_code": "not_prohibited_combination"
+      }
+    },
+    {
+      "name": "使用対象が「社員の私物」(possible_values に無い値) → 人の確認に回す",
+      "kind": "知らない値がエスカレーションになる(D46)",
+      "facts": {
+        "usage_authorization": "許可なし",
+        "usage_purpose": "職務以外の目的",
+        "usage_target": "社員の私物"
+      },
+      "expected": {
+        "decision": "escalate",
+        "reason_code": "unknown_fact_value"
+      }
     }
   ],
   "review": {
     "status": "draft",
     "reviewed_by": null,
-    "expected_gates": ["new_action_unapproved", "new_fact_unapproved"],
+    "expected_gates": [
+      "new_action_unapproved",
+      "new_fact_unapproved"
+    ],
     "notes": [
       "actor: 条文(就業規則 第11条)の主語は従業員である。擬人化の前提であおいに当てた(ゴールデンパスと同じ扱い)",
-      "usage_authorization の値「許可なく」は、条文の連用修飾をそのまま値にしている。区分の値としては「許可なし／許可あり」が自然だが、「許可あり」は条文にないため置いていない。値の表記をどうするかの判断をお願いしたい",
+      "usage_authorization の値は「許可なく」を体言化して「許可なし」にした(D44)。反対側(許可を得ている状態)は条文にないので値を足していない",
       "action.parent「会社資源利用」は条文にない。Action 正規化の階層への位置づけは人が承認する前提なので、提案として置いている",
-      "「物品等」の「等」が何を含むかは条文に書かれていないため、possible_values を増やしていない。実行時は「等」に当たる値が possible_values 外になり、既定の行(許可)に落ちる(U2)。この条文では禁止すべきものが許可に落ちうるので、値の増やし方は要検討"
+      "「物品等」の「等」に当たるものは、条文に書かれていないので値にしていない。実行時は「その他」として既定の行(許可)に落ちる。知らない値(社員の私物など)はエスカレーションになる(D46)。「等」の範囲を条文の外から足すかは判断をお願いしたい"
     ]
   }
 }

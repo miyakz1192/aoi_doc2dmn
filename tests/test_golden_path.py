@@ -116,20 +116,37 @@ def test_primitive_is_passthrough(golden_bundle):
 
 
 def test_possible_values_contain_only_clause_values(golden_bundle):
-    """D4: possible_values は条文に出てくる値だけ。
+    """D4・D45: possible_values は条文の値 ＋ 予約語「その他」だけ。
 
-    v1 は「運用担当」「その他」「検証環境」「開発環境」「一般」を含んでいたが、
-    いずれも条文に書かれていない(レビューアの業務知識の混入)。
+    v1 は「運用担当」「検証環境」「開発環境」「一般」を含んでいたが、いずれも条文に
+    書かれていない(レビューアの業務知識の混入)。「その他」は条文由来の値ではなく、
+    「知っている状態だが条文が挙げた値ではない」ことを表す構造上の語で、
+    passthrough の fact に配線ジェネレータが自動で付ける(D45)。
     """
-    _, bundle = golden_bundle
+    ir, bundle = golden_bundle
     by_var = {f["variable"]: f["possible_values"] for f in bundle.bindings["facts"]}
-    assert by_var["operator_role"] == ["システム開発担当"]
-    assert by_var["target_environment"] == ["本番環境"]
-    assert by_var["requested_privilege"] == ["特権"]
+    assert by_var["operator_role"] == ["システム開発担当", "その他"]
+    assert by_var["target_environment"] == ["本番環境", "その他"]
+    assert by_var["requested_privilege"] == ["特権", "その他"]
+    # IR の側には「その他」を書かない(書くと C4 が止める)
+    assert all("その他" not in f.possible_values for f in ir.facts.new_facts)
 
-    out_of_clause = {"運用担当", "その他", "検証環境", "開発環境", "一般"}
+    out_of_clause = {"運用担当", "検証環境", "開発環境", "一般"}
     for values in by_var.values():
         assert not (set(values) & out_of_clause)
+
+
+def test_bindings_declare_escalation_for_unknown_values(golden_bundle):
+    """D46: 知らない値は DMN に渡さず人の確認に回す、という宣言を出す。"""
+    _, bundle = golden_bundle
+    assert all(f["on_unknown_value"] == "escalate" for f in bundle.bindings["facts"])
+
+
+def test_registry_layer3_gets_the_reserved_value(golden_bundle):
+    """D45: 層3(fact 台帳)にも「その他」が入る。"""
+    _, bundle = golden_bundle
+    layer3 = {f["variable"]: f for f in bundle.registry["fact_registry"]}
+    assert layer3["operator_role"]["possible_values"] == ["システム開発担当", "その他"]
 
 
 def test_sources_use_from_path_form(golden_bundle):

@@ -46,22 +46,47 @@
         {
           "variable": "worker_category",
           "primitive": "passthrough",
-          "possible_values": ["妊娠中の女性", "産後１年を経過しない女性労働者", "１８歳未満の者"],
-          "sources": {"value": {"from": "action_request", "path": "worker.category"}},
+          "possible_values": [
+            "妊娠中の女性",
+            "産後１年を経過しない女性労働者",
+            "18歳未満の者"
+          ],
+          "sources": {
+            "value": {
+              "from": "action_request",
+              "path": "worker.category"
+            }
+          },
           "approved_by": null
         },
         {
           "variable": "exemption_request",
           "primitive": "passthrough",
-          "possible_values": ["請求した者"],
-          "sources": {"value": {"from": "action_request", "path": "worker.exemption_request"}},
+          "possible_values": [
+            "請求した者"
+          ],
+          "sources": {
+            "value": {
+              "from": "action_request",
+              "path": "worker.exemption_request"
+            }
+          },
           "approved_by": null
         },
         {
           "variable": "work_type",
           "primitive": "passthrough",
-          "possible_values": ["時間外労働", "休日労働", "深夜労働"],
-          "sources": {"value": {"from": "action_request", "path": "work.type"}},
+          "possible_values": [
+            "時間外労働",
+            "休日労働",
+            "深夜労働"
+          ],
+          "sources": {
+            "value": {
+              "from": "action_request",
+              "path": "work.type"
+            }
+          },
           "approved_by": null
         }
       ],
@@ -69,9 +94,16 @@
       "value_additions": {}
     },
     "level_determination": {
-      "atomic_fact": {"covered": true, "new_primitives": []},
+      "atomic_fact": {
+        "covered": true,
+        "new_primitives": []
+      },
       "intermediate": [],
-      "final": {"compared_table_id": null, "relation": null, "action": "new_table"}
+      "final": {
+        "compared_table_id": null,
+        "relation": null,
+        "action": "new_table"
+      }
     },
     "rule_row_additions": [],
     "new_decision_tables": [
@@ -79,8 +111,14 @@
         "decision_table_id": "dt_overtime_assignment",
         "decision_id": "decision_overtime_assignment",
         "decision_name": "時間外労働等従事可否判定",
-        "input_columns": ["worker_category", "exemption_request", "work_type"],
-        "knowledge_sources": ["ks_action_request"],
+        "input_columns": [
+          "worker_category",
+          "exemption_request",
+          "work_type"
+        ],
+        "knowledge_sources": [
+          "ks_action_request"
+        ],
         "rule_rows": [
           {
             "row_id": "id_r_ota_1",
@@ -91,18 +129,24 @@
               "exemption_request": "請求した者",
               "work_type": "\"時間外労働\",\"休日労働\",\"深夜労働\""
             },
-            "outputs": {"decision": "禁止", "reason_code": "maternity_requested_overtime_prohibited"}
+            "outputs": {
+              "decision": "禁止",
+              "reason_code": "maternity_requested_overtime_prohibited"
+            }
           },
           {
             "row_id": "id_r_ota_2",
             "decision_table_id": "dt_overtime_assignment",
             "position": 2,
             "conditions": {
-              "worker_category": "１８歳未満の者",
+              "worker_category": "18歳未満の者",
               "exemption_request": "-",
               "work_type": "\"時間外労働\",\"休日労働\",\"深夜労働\""
             },
-            "outputs": {"decision": "禁止", "reason_code": "minor_overtime_prohibited"}
+            "outputs": {
+              "decision": "禁止",
+              "reason_code": "minor_overtime_prohibited"
+            }
           },
           {
             "row_id": "id_r_ota_3",
@@ -113,14 +157,17 @@
               "exemption_request": "-",
               "work_type": "-"
             },
-            "outputs": {"decision": "許可", "reason_code": "not_prohibited_combination"}
+            "outputs": {
+              "decision": "許可",
+              "reason_code": "not_prohibited_combination"
+            }
           }
         ]
       }
     ],
     "compound_fact_application": {
       "rejected_in_primitive": false,
-      "rationale": "条文は「妊産婦であって請求した者」と「１８歳未満の者」を並列に挙げており、請求の要否が前者だけに係る。一致プリミティブ側でANDを組まず、決定表の2行(id_r_ota_1・id_r_ota_2)に分けて表現する(複合fact禁止原則)。1行にまとめると、18歳未満の者にも請求を要求してしまう。"
+      "rationale": "条文は「妊産婦であって請求した者」と「18歳未満の者」を並列に挙げており、請求の要否が前者だけに係る。一致プリミティブ側でANDを組まず、決定表の2行(id_r_ota_1・id_r_ota_2)に分けて表現する(複合fact禁止原則)。1行にまとめると、18歳未満の者にも請求を要求してしまう。"
     },
     "provenance": {
       "origin": "regulation_clause",
@@ -134,72 +181,75 @@
     "action_surface": {
       "value": "労働に従事させない",
       "quote": "労働に従事させない",
-      "verbatim": true
+      "basis": "verbatim"
     },
     "possible_values": [
       {
         "fact": "worker_category",
         "value": "妊娠中の女性",
         "quote": "妊娠中の女性",
-        "verbatim": true
+        "basis": "verbatim"
       },
       {
         "fact": "worker_category",
         "value": "産後１年を経過しない女性労働者",
         "quote": "産後１年を経過しない女性労働者",
-        "verbatim": true
+        "basis": "verbatim",
+        "note": "条文の全角数字のまま。半角にすると「産後1年」になるが、ここは語全体が条文の語なので逐語を保った(18歳未満の者とそろえるかは要レビュー)"
       },
       {
         "fact": "worker_category",
-        "value": "１８歳未満の者",
+        "value": "18歳未満の者",
         "quote": "１８歳未満の者",
-        "verbatim": true,
-        "note": "条文の全角数字をそのまま使っている。半角に直すと逐語でなくなるため、表記を変えていない"
+        "basis": "normalized",
+        "normalization": "半角化"
       },
       {
         "fact": "exemption_request",
         "value": "請求した者",
         "quote": "請求した者",
-        "verbatim": true
+        "basis": "verbatim",
+        "note": "条文は請求した側しか挙げていない。請求していない状態は予約語「その他」で表す(D45)"
       },
       {
         "fact": "work_type",
         "value": "時間外労働",
         "quote": "時間外労働",
-        "verbatim": true
+        "basis": "verbatim"
       },
       {
         "fact": "work_type",
         "value": "休日労働",
         "quote": "休日若しくは深夜（午後１０時から午前５時まで）労働",
-        "verbatim": false,
-        "note": "条文は「休日若しくは深夜…労働」と後ろの「労働」を共有している。これを「休日労働」「深夜労働」に展開した。逐語ではないが、語の並べ替えだけで外部知識は足していない"
+        "basis": "normalized",
+        "normalization": "並列で共有された語(「労働」)の展開"
       },
       {
         "fact": "work_type",
         "value": "深夜労働",
         "quote": "休日若しくは深夜（午後１０時から午前５時まで）労働",
-        "verbatim": false,
-        "note": "同上。「午後１０時から午前５時まで」という深夜の時間帯の定義は、この IR では表していない(時刻から深夜かを判定する層が必要。要レビュー)"
+        "basis": "normalized",
+        "normalization": "並列で共有された語(「労働」)の展開",
+        "note": "「午後１０時から午前５時まで」という深夜の時間帯の定義は、この IR では表していない(evidence.not_modeled)"
       }
     ],
     "rule_rows": [
       {
         "row_id": "id_r_ota_1",
         "quote": "妊娠中の女性、産後１年を経過しない女性労働者（以下「妊産婦」という。）であって請求した者……については、第２項による時間外労働又は休日若しくは深夜（午後１０時から午前５時まで）労働に従事させない。",
-        "verbatim": true
+        "basis": "verbatim"
       },
       {
         "row_id": "id_r_ota_2",
         "quote": "１８歳未満の者については、第２項による時間外労働又は休日若しくは深夜（午後１０時から午前５時まで）労働に従事させない。",
-        "verbatim": true,
+        "basis": "verbatim",
         "note": "「であって請求した者」は妊産婦に係るため、18歳未満の者の行では請求の列を「-」にしている"
       },
       {
         "row_id": "id_r_ota_3",
-        "quote": null,
-        "verbatim": false,
-        "note": "既定の行(ワイルドカード)。条文が禁止していない組み合わせを「許可」にするもので、条文に逐語の根拠はない"
+        "kind": "default_row",
+        "basis": "default_row",
+        "note": "禁止規定の裏(禁止の組み合わせに当たらないものは許可)。逐語の根拠は要らない(D47)"
       }
     ],
     "not_modeled": [
@@ -222,7 +272,10 @@
         "exemption_request": "請求した者",
         "work_type": "時間外労働"
       },
-      "expected": {"decision": "禁止", "reason_code": "maternity_requested_overtime_prohibited"}
+      "expected": {
+        "decision": "禁止",
+        "reason_code": "maternity_requested_overtime_prohibited"
+      }
     },
     {
       "name": "産後1年を経過しない女性労働者が請求 → 休日労働は禁止",
@@ -232,49 +285,66 @@
         "exemption_request": "請求した者",
         "work_type": "休日労働"
       },
-      "expected": {"decision": "禁止", "reason_code": "maternity_requested_overtime_prohibited"}
+      "expected": {
+        "decision": "禁止",
+        "reason_code": "maternity_requested_overtime_prohibited"
+      }
     },
     {
       "name": "18歳未満の者は請求がなくても深夜労働は禁止",
       "kind": "ワイルドカードの列に当たる(請求の有無を問わない)",
       "facts": {
-        "worker_category": "１８歳未満の者",
-        "exemption_request": "請求していない",
+        "worker_category": "18歳未満の者",
+        "exemption_request": "その他",
         "work_type": "深夜労働"
       },
-      "expected": {"decision": "禁止", "reason_code": "minor_overtime_prohibited"}
+      "expected": {
+        "decision": "禁止",
+        "reason_code": "minor_overtime_prohibited"
+      },
+      "note": "請求していない状態は「その他」。18歳未満の者の行は請求の列が「-」なので当たる"
     },
     {
       "name": "妊産婦でも請求していなければ禁止されない",
-      "kind": "possible_values 外の値が既定の行に落ちる(U2)",
+      "kind": "予約語「その他」が既定の行(ワイルドカード)に落ちる(D45)",
       "facts": {
         "worker_category": "妊娠中の女性",
-        "exemption_request": "請求していない",
+        "exemption_request": "その他",
         "work_type": "時間外労働"
       },
-      "expected": {"decision": "許可", "reason_code": "not_prohibited_combination"}
+      "expected": {
+        "decision": "許可",
+        "reason_code": "not_prohibited_combination"
+      },
+      "note": "条文は「であって請求した者」と限っている。請求していない状態(その他)は既定の行に落ちる"
     },
     {
-      "name": "所定労働時間内の労働 → 許可",
-      "kind": "possible_values 外の値が既定の行に落ちる(U2)",
+      "name": "労働の種別が「所定労働」(possible_values に無い値) → 人の確認に回す",
+      "kind": "知らない値がエスカレーションになる(D46)",
       "facts": {
-        "worker_category": "１８歳未満の者",
+        "worker_category": "18歳未満の者",
         "exemption_request": "請求した者",
         "work_type": "所定労働"
       },
-      "expected": {"decision": "許可", "reason_code": "not_prohibited_combination"}
+      "expected": {
+        "decision": "escalate",
+        "reason_code": "unknown_fact_value"
+      }
     }
   ],
   "review": {
     "status": "draft",
     "reviewed_by": null,
-    "expected_gates": ["new_action_unapproved", "new_fact_unapproved"],
+    "expected_gates": [
+      "new_action_unapproved",
+      "new_fact_unapproved"
+    ],
     "notes": [
-      "actor: この条文の主語は使用者(会社)側である(「従事させない」)。他の4件は従業員が主語なので、あおいへの当てはめの意味が違う。あおいが労働の割当を行う立場として扱ってよいかの判断をお願いしたい",
+      "**使用者の側の規範(U12)。** この条文の主語は使用者(会社)側である(「従事させない」)。他の3件は従業員が主語なので、あおいへの当てはめの意味が違う。**actor をあおいに当てる根拠は弱い**が、評価のために残している。扱いは U12 として設計書に記録した",
       "「請求した者」が妊産婦だけに係ることを、1行にまとめずに2行に分けて表した。これが条文の読み方として正しいかを見てほしい",
       "「午後１０時から午前５時まで」(深夜の定義)と「第２項による」(他の条文への参照)は表していない(evidence.not_modeled)。前者は時刻から深夜かを判定する層が、後者は条文間の参照を表す欄が必要で、どちらも IR v2 の型にない",
-      "possible_values は6値で、5件の中では最も値の種類が多い(設計書6.1の「値の種類が多い条文」に当たる)",
-      "「請求していない」は possible_values に無い値なので、妊産婦の場合は既定の行(許可)に落ちる。条文の「請求した者」だけを値にした結果で、D4 のとおりだが、シナリオ4のように「請求なし→許可」を確かめている"
+      "possible_values は6値で、4件の中では最も値の種類が多い(設計書6.1の「値の種類が多い条文」に当たる)",
+      "「１８歳未満の者」は半角化して「18歳未満の者」にした(D44)。一方「産後１年を経過しない女性労働者」の「１年」は語全体が条文の語なので逐語のままにしてある。表記をそろえるかの判断をお願いしたい"
     ]
   }
 }

@@ -57,6 +57,15 @@ v1(コミット 9e66776)との差分は同書 付録A。
   手で書かず `input_columns` から導出する。どちらも機械的に決まるので、手で書かせると
   正解 IR と前段の出力の比較で揺れ、食い違っても検査されない
 
+## v1.5 で変わった点(設計書2章 D45・D46)
+
+- **D45**: `passthrough` の fact は予約語 **「その他」** を値として必ず持つ。「知っている
+  状態だが、条文が挙げた値ではない」ことを表す。IR の `possible_values` には書かず、
+  配線ジェネレータが層3とバインディング設定に自動で加える(`effective_possible_values`)。
+  比較型(exact_match など)は値の集合が決まっているので持たない
+- **D46**: 実行時、fact の値が `possible_values`(「その他」を含む)にない場合は DMN に
+  渡さず人の確認に回す。バインディング設定に `on_unknown_value = escalate` を出す
+
 ## 引き継ぐ原則(設計書1.4)
 
 - 4点セットの同時生成、複合 fact 禁止、FIRST と行の順序、来歴の表し方、Action 正規化
@@ -115,6 +124,40 @@ PRIMITIVE_ARGS: dict[str, tuple[str, ...]] = {
 
 # new_facts では宣言できないプリミティブ(設計書2章 D23)。
 BOOTSTRAP_ONLY_PRIMITIVES: frozenset[str] = frozenset({"identifiability_classifier"})
+
+# 予約語「その他」(D45)。passthrough の fact が必ず持つ値で、「知っている状態だが、
+# 条文が挙げた値ではない」ことを表す。条文が片側の値しか挙げない fact(例:
+# 「請求した者」)で、反対側の状態を表す語が無かったために入れた。条文の情報を
+# 足すのではなく、構造上の語である。
+OTHER_VALUE = "その他"
+
+# 「その他」が自動で付くプリミティブ(D45)。比較型は値の集合(一致/不一致/未提供)が
+# 決まっているので付けない。
+OTHER_VALUE_PRIMITIVES: frozenset[str] = frozenset({"passthrough"})
+
+# 値が possible_values(「その他」を含む)に無いときの扱い(D46)。実行時は DMN に
+# 渡さず人の確認に回す。実装は U4 だが、バインディング設定にはこの宣言を出す。
+ON_UNKNOWN_VALUE = "escalate"
+
+
+def has_other_value(primitive: str) -> bool:
+    """この primitive の fact に予約語「その他」が付くか(D45)。"""
+    return primitive in OTHER_VALUE_PRIMITIVES
+
+
+def effective_possible_values(
+    primitive: str, possible_values: list[str]
+) -> list[str]:
+    """実行時に受け取れる値の一覧。passthrough なら末尾に「その他」を足す(D45)。
+
+    層3・バインディング設定・C5 はすべてこれを通す。IR の `possible_values` に
+    「その他」を書くことは許さない(C4 で止める)ので、二重に付くことはないが、
+    登録簿に既に入っている場合に備えて重複は除く。
+    """
+    values = list(possible_values)
+    if has_other_value(primitive) and OTHER_VALUE not in values:
+        values.append(OTHER_VALUE)
+    return values
 
 
 # --------------------------------------------------------------------------

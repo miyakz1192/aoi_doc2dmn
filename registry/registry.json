@@ -703,7 +703,8 @@
       "primitive": "passthrough",
       "possible_values": [
         "不同意",
-        "同意"
+        "同意",
+        "その他"
       ],
       "sources": {},
       "comparison_kind": null,

@@ -14,7 +14,7 @@ import dataclasses
 
 import pytest
 
-from tests.conftest import make_provenance
+from tests.conftest import make_provenance, passthrough_fact
 
 from src.stage3_generate.ir_schema import (
     AtomicFactLayer,
@@ -782,6 +782,19 @@ def _make_no_change_ir(simple_ir, seeded_registry) -> None:
             "depends_on_inputs": [],
             "knowledge_sources": [],
             "provenance": make_provenance("既存規程 第0条").to_json(),
+            "history": [],
+        }
+    )
+    # C12(D48): 足した出力値を受け止める行が無いと止まるので、ワイルドカードの行を置く
+    seeded_registry.rule_rows.append(
+        {
+            "row_id": "id_final_1",
+            "decision_table_id": "dt_final",
+            "position": 1,
+            "conditions": {"本人確認判定.identity_level": "-"},
+            "outputs": {"decision": "許可"},
+            "provenance": make_provenance("既存規程 第0条").to_json(),
+            "history": [],
         }
     )
     simple_ir.target = DecisionTarget(
@@ -1075,3 +1088,80 @@ def test_d38_layer1_depends_on_is_derived_from_input_columns(
     # 名前ではなく ID に解決されている
     assert entry["depends_on_decisions"] == ["decision_identity"]
     assert entry["depends_on_inputs"] == []
+
+
+# --------------------------------------------------------------------------
+# v1.5 で足した検証の失敗テスト(第23回 HANDOFF タスクA1・A3)
+# --------------------------------------------------------------------------
+
+
+def test_c4_rejects_the_reserved_value_in_the_ir(simple_ir, empty_registry):
+    """D45: IR の possible_values に予約語「その他」を書いたら止まる。
+
+    「その他」は passthrough の fact に配線ジェネレータが自動で付ける語なので、
+    IR に書かせると「書く／書かない」の揺れが残る。
+    """
+    simple_ir.facts.new_facts[0].possible_values = ["開発担当", "その他"]
+    with pytest.raises(SchemaWiringError, match="C4検証失敗.*その他"):
+        generate_wiring_bundle(simple_ir, registry=empty_registry)
+
+
+def test_c12_passes_when_a_wildcard_row_accepts_the_value(simple_ir, seeded_registry, tmp_path):
+    """C12: 足した値を受け止める行(ワイルドカード)があれば通る(D48)。
+
+    `_make_no_change_ir` が置く既存の最終判定は、確認レベルの列が「-」の行を1本
+    持つので、足した「中」を受け止められる。C12 より後の工程(既存 DMN の読み込み)で
+    止まることで、C12 を通過したことを確かめる。
+    """
+    _make_no_change_ir(simple_ir, seeded_registry)
+    with pytest.raises(SchemaWiringError) as excinfo:
+        generate_wiring_bundle(simple_ir, registry=seeded_registry, dmn_dir=tmp_path)
+    assert "C12検証失敗" not in str(excinfo.value)
+    assert "DMN ファイル" in str(excinfo.value)
+
+
+def test_c12_stops_when_the_consumer_has_no_matching_row(
+    simple_ir, seeded_registry, tmp_path
+):
+    """C12: 受け止める行が無ければ止まる(D48)。
+
+    既存の最終判定の行を「確認レベルが高のときだけ」に変えると、足した「中」を
+    受け止める行が無くなる。
+    """
+    _make_no_change_ir(simple_ir, seeded_registry)
+    row = next(r for r in seeded_registry.rule_rows if r["row_id"] == "id_final_1")
+    row["conditions"] = {"本人確認判定.identity_level": '"高"'}
+    with pytest.raises(SchemaWiringError, match="C12検証失敗"):
+        generate_wiring_bundle(simple_ir, registry=seeded_registry, dmn_dir=tmp_path)
+
+
+def test_c12_looks_at_the_whole_row_not_just_the_column(
+    simple_ir, seeded_registry, tmp_path
+):
+    """C12: 「その列が-」だけでは受け止めたことにならない(設計書の文言からの逸脱)。
+
+    第22回の第14条で実際に起きた形である。あおいの送信可否判定の tr_r1 は確認レベルの
+    列が「-」だが、連絡同意の列が「不同意」なので、同意の行動要求は受け止めない。
+    列だけを見る読み方では、この形を止められない。
+    """
+    _make_no_change_ir(simple_ir, seeded_registry)
+    # 既存の最終判定に「連絡同意」の列を足し、行は「不同意」のときだけに限る
+    entry = seeded_registry.find_decision_table(decision_table_id="dt_final")
+    entry["input_columns"] = ["本人確認判定.identity_level", "contact_consent"]
+    seeded_registry.fact_registry.append(
+        {
+            **passthrough_fact("contact_consent", ["同意", "不同意"], "req.consent").to_json(),
+            "defined_by": "既存規程 第0条",
+            "used_by": ["dt_final"],
+            "provenance": make_provenance("既存規程 第0条").to_json(),
+            "history": [],
+        }
+    )
+    row = next(r for r in seeded_registry.rule_rows if r["row_id"] == "id_final_1")
+    # 確認レベルの列は「-」のまま、連絡同意だけを絞る
+    row["conditions"] = {
+        "本人確認判定.identity_level": "-",
+        "contact_consent": '"不同意"',
+    }
+    with pytest.raises(SchemaWiringError, match="C12検証失敗.*contact_consent"):
+        generate_wiring_bundle(simple_ir, registry=seeded_registry, dmn_dir=tmp_path)

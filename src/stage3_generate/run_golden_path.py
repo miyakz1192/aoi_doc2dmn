@@ -59,7 +59,7 @@ SCENARIOS = [
         "expected": {"decision": "禁止", "reason_code": "dev_privileged_op_on_production"},
     },
     {
-        "name": "開発担当者だが検証環境 → 許可(possible_values外の値が既定行に落ちる・U2)",
+        "name": "開発担当者だが検証環境 → 許可(DMN単体の挙動。D46ではバインディング層でエスカレーション)",
         "facts": {
             "operator_role": "システム開発担当",
             "target_environment": "検証環境",
@@ -68,7 +68,7 @@ SCENARIOS = [
         "expected": {"decision": "許可", "reason_code": "not_prohibited_combination"},
     },
     {
-        "name": "開発担当者が本番環境だが一般権限 → 許可(possible_values外の値が既定行に落ちる・U2)",
+        "name": "開発担当者が本番環境だが一般権限 → 許可(DMN単体の挙動。D46ではエスカレーション)",
         "facts": {
             "operator_role": "システム開発担当",
             "target_environment": "本番環境",
@@ -77,7 +77,7 @@ SCENARIOS = [
         "expected": {"decision": "許可", "reason_code": "not_prohibited_combination"},
     },
     {
-        "name": "運用担当者が本番環境で特権操作 → 許可(possible_values外の値が既定行に落ちる・U2)",
+        "name": "運用担当者が本番環境で特権操作 → 許可(DMN単体の挙動。D46ではエスカレーション)",
         "facts": {
             "operator_role": "運用担当",
             "target_environment": "本番環境",
