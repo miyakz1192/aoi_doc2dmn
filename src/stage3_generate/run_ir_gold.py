@@ -14,13 +14,16 @@
 | `evidence_quote` が条文本文に逐語で実在する(`quote_verified` の裏取り) | 設計書3.4 |
 | `vocab_flagged` が②の安全網フラグの実際の結果と一致する | 同上 |
 | 立つゲートが `review.expected_gates` と一致する | ゲートは導出なので、手で書いた期待値と突き合わせる |
-| 承認者がすべて None である(ゲートが立つのが正しい状態) | 第21回 HANDOFF 3.4節 |
+| 承認者がすべて None である(承認は review に記録する) | D53 |
 | クロス検証 C1〜C12 を通過する | 設計書6.2 手順3 |
 | シナリオがすべて期待どおりになる | 設計書6.2 手順4 |
 | 既定の行(ワイルドカード)に落ちるシナリオが1件以上ある | 同上 |
 | 「その他」が既定の行に落ちるシナリオが1件以上ある(passthrough の fact を持つ場合) | 同上・D45 |
 | 知らない値がエスカレーションになるシナリオが1件以上ある | 同上・D46 |
 | evidence の根拠が「逐語」か「正規化」で、**根拠なしが無い** | D44・D47 |
+| 値に全角数字が無い | D56 |
+| approved の正解IR に reviewed_by・reviewed_at・decisions がある | D53 |
+| passthrough の fact に other_value_note がある | D55 |
 
 ## 値の正規化と根拠の種類(D44・D47)
 
@@ -79,6 +82,11 @@ WILDCARD_KINDS = ("既定の行", "ワイルドカード")
 OTHER_KINDS = (OTHER_VALUE,)
 ESCALATE_KINDS = ("エスカレーション", "escalate")
 BASIS_KINDS = ("verbatim", "normalized", "default_row")
+# D56: 値の正規化では数字を半角に統一する。全角数字(U+FF10〜FF19)を見つけたら
+# 止める(警告だと残り続け、実行時の文字列一致で当たらない行ができる)
+FULLWIDTH_DIGITS = "０１２３４５６７８９"
+# D53: 正解IR の承認は review に記録する。IR の中の approved_by は None のまま残す
+REVIEW_STATUSES = ("draft", "approved", "rejected")
 
 
 @dataclass
@@ -141,15 +149,35 @@ def _check_envelope(gold: dict, ir: ClauseIR, *, passthrough: bool) -> list[str]
             f"立つゲート {ir.review_gates.gate_names()} が review.expected_gates "
             f"{list(expected)} と一致しません"
         )
-    if review.get("status") not in ("draft", "approved", "rejected"):
-        problems.append(f"review.status が不正です: {review.get('status')!r}")
+    status = review.get("status")
+    if status not in REVIEW_STATUSES:
+        problems.append(f"review.status が不正です: {status!r}")
+    if status == "approved":
+        # D53: 正解IR の承認は review に記録する。誰がいつ承認したかが無いと、
+        # 「承認済み」だけが残って追跡できない
+        for key in ("reviewed_by", "reviewed_at"):
+            if not review.get(key):
+                problems.append(
+                    f"review.status=approved ですが review.{key} がありません(D53)"
+                )
+        if not review.get("decisions"):
+            problems.append(
+                "review.status=approved ですが review.decisions がありません(D53)"
+            )
 
-    # 承認者はすべて None(ゲートが立つのが正しい状態。第21回 HANDOFF 3.4節)
+    # 承認者はすべて None(D53。正解IR の承認は review に記録し、IR の中の
+    # approved_by は None のまま残す。語彙の承認は promotion のとき。U8)
     if ir.action.is_new and ir.action.approved_by is not None:
         problems.append("action.approved_by が入っています(承認は人が行う)")
     for fact in ir.facts.new_facts:
         if fact.approved_by is not None:
             problems.append(f"fact {fact.variable} の approved_by が入っています")
+        # D55: passthrough の fact は「その他」が指す状態の注記を持つ(C4 も止めるが、
+        # 報告のためにここでも見る)
+        if has_other_value(fact.primitive) and not fact.other_value_note:
+            problems.append(
+                f"fact {fact.variable} に other_value_note がありません(D55)"
+            )
     for additions in ir.facts.value_additions.values():
         for addition in additions:
             if addition.approved_by is not None:
@@ -189,6 +217,48 @@ def _check_envelope(gold: dict, ir: ClauseIR, *, passthrough: bool) -> list[str]
             problems.append(
                 f"予約語「{OTHER_VALUE}」が既定の行に落ちるシナリオがありません(D45)"
             )
+    return problems
+
+
+def _check_halfwidth_digits(gold: dict, ir: ClauseIR) -> list[str]:
+    """値に全角数字があれば止める(D56)。
+
+    対象は「実行時に文字列一致で引かれる値」、つまり possible_values・決定表のセル・
+    中間判定に足す出力値・シナリオの fact の値である。条文本文と evidence の引用は
+    逐語なので対象にしない(条文が全角で書いていればそのまま残す)。
+    """
+    problems: list[str] = []
+
+    def check(where: str, value: object) -> None:
+        text = str(value)
+        found = sorted({c for c in text if c in FULLWIDTH_DIGITS})
+        if found:
+            problems.append(
+                f"{where} の値 {text!r} に全角数字 {found} があります"
+                "(D56。数字は半角に統一する)"
+            )
+
+    for fact in ir.facts.new_facts:
+        for value in fact.possible_values:
+            check(f"fact {fact.variable} の possible_values", value)
+    for variable, additions in ir.facts.value_additions.items():
+        for addition in additions:
+            check(f"fact {variable} の value_additions", addition.value)
+    for change in ir.level_determination.intermediate:
+        for name, additions in change.new_output_values.items():
+            for addition in additions:
+                check(f"{change.table_id} の new_output_values[{name}]", addition.value)
+    rows = list(ir.rule_row_additions)
+    for table in ir.new_decision_tables:
+        rows.extend(table.rule_rows)
+    for row in rows:
+        for column, cell in row.conditions.items():
+            check(f"行 {row.row_id} の条件 {column}", cell)
+        for name, cell in row.outputs.items():
+            check(f"行 {row.row_id} の出力 {name}", cell)
+    for scenario in gold.get("scenarios", []) or []:
+        for variable, value in (scenario.get("facts") or {}).items():
+            check(f"シナリオ {scenario.get('name')!r} の {variable}", value)
     return problems
 
 
@@ -242,12 +312,17 @@ def run_one(
     result.problems.extend(
         _check_envelope(gold, ir, passthrough=_has_passthrough_fact(ir, registry))
     )
+    result.problems.extend(_check_halfwidth_digits(gold, ir))
 
     try:
         bundle = generate_wiring_bundle(ir, registry=registry, dmn_dir=dmn_dir)
     except SchemaWiringError as exc:
         result.problems.append(f"クロス検証で停止: {exc}")
         result.ok = False
+        # クロス検証で止まった件も報告する(第24回までは早く返していて、何も
+        # 印字されないまま「失敗 n件」だけが出ていた)
+        if verbose:
+            _print_one(result)
         return result, registry
 
     result.routes = [

@@ -71,6 +71,18 @@ DMN XML／バインディング設定JSON／ルーティング表JSON／Scope・
   C11 の逆向きで、当たる行が無いと実行時に「どの行にも当たらない」で失敗する
 - **D50**: 中間判定に出力値を足したら、層1の `history` に承認者込みで記録する
 
+## v1.6 で変えた点(設計書2章 D55・D57・D58・D59)
+
+- **D55**: `other_value_note` を層3とバインディング設定に出す。passthrough の
+  `new_facts` に注記が無ければ C4 で止める
+- **D57**: `target.dmn_model` に既存のモデルのファイルがあれば、新しい表だけを足す IR も
+  既存ファイルを読んで追記する(`_needs_existing_dmn`)。読まないと、既存の表に手を
+  入れない IR が単体の DMN を生成して既存モデルを置き換える(第24回の穴#1)
+- **D58**: `disjoint` を使えるようにした。`add_rows`・`add_row` との組み合わせは
+  C9 で止める(列が1つも重ならない表に行は足せない)
+- **D59**: 比較型の fact の `possible_values` はプリミティブの定義から導く
+  (`effective_possible_values`)。IR に書いたら C4 で止める
+
 ## クロス検証の実行順序(設計書5章)
 
 設計書5章は2段構えを定めている。
@@ -98,7 +110,9 @@ from .ir_schema import (
     ClauseIR,
     FactDef,
     RuleRowDraft,
+    derived_possible_values,
     effective_possible_values,
+    has_other_value,
 )
 from .registry import Registry, dmn_path
 
@@ -544,6 +558,16 @@ def _check_c9_level_determination(ir: ClauseIR, registry: Registry) -> None:
             raise SchemaWiringError(
                 "C9検証失敗(条件2): final.action=add_rows ですが compared_table_id が None です。"
             )
+        if lv.final.relation == "disjoint":
+            # D58: 列が1つも重ならない相手に行は足せない(足した行は、既存の列を
+            # すべて「-」にしないと当たらず、それはもう「同じ表の行」ではない)。
+            # 設計書は disjoint を new_table と組み合わせて使うと述べているので、
+            # add_rows との組み合わせはここで止める(判断を任された点。要報告)。
+            raise SchemaWiringError(
+                f"C9検証失敗(条件2): final.relation=disjoint ですが action=add_rows です"
+                f"(D58)。列集合が1つも重ならない決定表 {compared!r} に行を足すことは"
+                "できません(新しい表を作ってください)。"
+            )
         entry_table = registry.find_decision_table(decision_id=entry_id)
         ir_entry = _ir_tables_by_decision_id(ir).get(entry_id)
         entry_table_id = None
@@ -575,6 +599,14 @@ def _check_c9_level_determination(ir: ClauseIR, registry: Registry) -> None:
     for change in lv.intermediate:
         if change.action != "add_row":
             continue
+        if change.relation == "disjoint":
+            # 最終判定と同じ理由で止める(D58)。中間判定の列と1つも重ならないなら、
+            # その表に行を足すのではなく、別の表で表す。
+            raise SchemaWiringError(
+                f"C9検証失敗(条件3): intermediate の relation=disjoint ですが "
+                f"action=add_row です(D58)。列集合が1つも重ならない決定表 "
+                f"{change.table_id!r} に行を足すことはできません。"
+            )
         rows = [r for r in ir.rule_row_additions if r.decision_table_id == change.table_id]
         if not rows:
             raise SchemaWiringError(
@@ -765,6 +797,27 @@ def _check_c4_sources_match_primitive(ir: ClauseIR, registry: Registry) -> None:
 
 
 def _check_one_fact_sources(fact: FactDef, *, in_new_facts: bool) -> None:
+    if in_new_facts and has_other_value(fact.primitive) and not fact.other_value_note:
+        # D55: 「その他」が指す状態は fact ごとに違う(許可を得ている・請求していない)。
+        # 実行時に値を当てはめる側が、何を「その他」にしてよいかを知るための注記で、
+        # 無いと「その他」が何でもありの受け皿になる。
+        raise SchemaWiringError(
+            f"C4検証失敗: passthrough の fact {fact.variable!r} に other_value_note が"
+            f"ありません(D55)。予約語「{OTHER_VALUE}」が指す状態("
+            "例: 許可を得ている)を書いてください。"
+        )
+    if in_new_facts and derived_possible_values(fact.primitive) is not None:
+        # D59: 比較型の値の集合はプリミティブの定義で決まる。IR に書かせると
+        # 「書く／書かない」「どこまで書くか」の揺れが残り、正解IR と前段の出力の
+        # 比較でぶれる(「その他」を書かせないのと同じ扱い。D45・D61)。
+        if fact.possible_values:
+            raise SchemaWiringError(
+                f"C4検証失敗: 比較型の fact {fact.variable!r}"
+                f"(primitive={fact.primitive!r})の possible_values に "
+                f"{list(fact.possible_values)} が書かれています(D59)。比較型の値は"
+                f"プリミティブの定義 {list(derived_possible_values(fact.primitive) or ())} "
+                "から導くので、IR には書かないでください。"
+            )
     if in_new_facts and OTHER_VALUE in fact.possible_values:
         # D45: 「その他」は配線ジェネレータが自動で付ける予約語。IR に書かせると
         # 「書く／書かない」の揺れが残り、正解IR と前段の出力の比較でぶれる。
@@ -1036,9 +1089,9 @@ def _check_c12_added_output_values_are_accepted(
     いなかった。受け止める行が無いと、実行時にその判定が「どの行にも当たらない」で
     失敗する(第22回の第14条で実測した)。
 
-    ## 「受け止める」の判定(設計書の文言からの逸脱。**要報告事項**)
+    ## 「受け止める」の判定(v1.5 の文言からの逸脱。v1.6 の D61 で採用された)
 
-    設計書5章 C12 は「足した値がどれかの行(「-」を含む)に当たる」と書いているが、
+    設計書 v1.5 の C12 は「足した値がどれかの行(「-」を含む)に当たる」と書いていたが、
     **その列だけを見る読み方では第14条の形を止められない。** あおいの送信可否判定の
     tr_r1 は確認レベルの列が「-」なので、その列だけ見れば当たってしまう。しかし
     tr_r1 は連絡同意の列が「不同意」なので、実際には同意の行動要求を受け止めない。
@@ -1050,9 +1103,10 @@ def _check_c12_added_output_values_are_accepted(
     止めるのと同じ考え方)。
 
     集める対象は、足した出力を「判定名.出力名」でドット参照している**既存の**判定
-    (登録簿の層1)である。設計書は「D16 の洗い出しと同じ逆たどりで集めてよい」と
-    しているが、逆たどりは間接的に使う判定まで集める。間接的な判定は、足した値では
-    なく参照先の**出力**を見ているので、直接のドット参照だけを対象にした。
+    (登録簿の層1)である。v1.5 の設計書は「D16 の洗い出しと同じ逆たどりで集めてよい」と
+    していたが、逆たどりは間接的に使う判定まで集める。間接的な判定は、足した値では
+    なく参照先の**出力**を見ているので、直接のドット参照だけを対象にした
+    (この読み方も D61 で採用された)。
     """
     ir_table_ids = {t.decision_table_id for t in ir.new_decision_tables}
     for change in ir.level_determination.intermediate:
@@ -2071,7 +2125,7 @@ def generate_wiring_bundle(
     _check_c5_cell_values(ir, registry, fact_defs)
 
     dmn_model = ir.target.dmn_model
-    if _needs_existing_dmn(ir, registry):
+    if _needs_existing_dmn(ir, registry, dmn_dir):
         # 既存モデルへの行の挿入・列の追加(D15・D19)
         dmn_xml = patch_existing_dmn(ir, registry, dmn_dir=dmn_dir)
     else:
@@ -2098,10 +2152,20 @@ def generate_wiring_bundle(
     )
 
 
-def _needs_existing_dmn(ir: ClauseIR, registry: Registry) -> bool:
-    """既存の DMN ファイルを読み込む必要があるか(D15)。
+def _needs_existing_dmn(
+    ir: ClauseIR, registry: Registry, dmn_dir: str | Path = DMN_DIR_DEFAULT
+) -> bool:
+    """既存の DMN ファイルを読み込む必要があるか(D15・D57)。
 
-    IR が既存の表に行・列を足しているなら読み込む。新しい表を作るだけなら、
-    既存ファイルは不要で、完結した1つの DMN を生成する。
+    次のどちらかなら読み込む。
+
+    - IR が既存の表に行・列を足している(D15)
+    - `target.dmn_model` に既存のモデルのファイルがある(D57)。新しい表だけを足す
+      IR も、既存のファイルに追記する。読み込まないと、完結した1つの DMN を生成して
+      既存モデルのファイルと namespace を置き換えてしまう(D39 に反する。第24回の穴#1)
+
+    どちらでもない(新しいモデルを作る)なら、完結した1つの DMN を生成する。
     """
-    return bool(_changed_existing_tables(ir, registry))
+    if _changed_existing_tables(ir, registry):
+        return True
+    return dmn_path(ir.target.dmn_model, dmn_dir).exists()

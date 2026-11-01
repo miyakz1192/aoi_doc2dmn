@@ -231,10 +231,11 @@ def intermediate_row_ir() -> ClauseIR:
         ),
         facts=FactUsage(
             referenced_facts=["name_match", "birth_match", "phone_match"],
-            # phone_match の possible_values に「不一致」が無いので足す(D14)
-            value_additions={
-                "phone_match": [ValueAddition(value="不一致", approved_by=APPROVER)]
-            },
+            # D59: phone_match は exact_match なので possible_values は
+            # 一致／不一致／未提供 がプリミティブの定義から入る。第24回までは
+            # 「不一致」を value_additions で足していた(初期登録が「一致／未提供」
+            # しか持っていなかったため)が、その必要はなくなった
+            value_additions={},
         ),
         level=LevelDetermination(
             atomic_fact=AtomicFactLayer(covered=True),
@@ -336,23 +337,45 @@ def test_d16_rebuilds_every_affected_final_decision(intermediate_row_ir, aoi_reg
     ) | set(routes[1]["required_facts"])
 
 
-def test_intermediate_row_value_addition_lands_in_registry_and_bindings(
+def test_value_addition_lands_in_registry_and_bindings(level2_ir, aoi_registry):
+    """D14: 追加した値が層3と履歴に承認者付きで残り、バインディングにも出る。
+
+    対象は passthrough の contact_consent にする。比較型の fact の値はプリミティブの
+    定義から入る(D59)ので、値を足す余地があるのは passthrough の fact だけである。
+    """
+    bundle = generate_wiring_bundle(level2_ir, registry=aoi_registry, dmn_dir=DMN_DIR)
+    layer3 = {f["variable"]: f for f in bundle.registry["fact_registry"]}
+    assert "保留" in layer3["contact_consent"]["possible_values"]
+    history = layer3["contact_consent"]["history"][-1]
+    assert history["change"] == "value_addition"
+    assert history["added_values"] == [{"value": "保留", "approved_by": APPROVER}]
+
+    bound = {f["variable"]: f for f in bundle.bindings["facts"]}
+    assert "保留" in bound["contact_consent"]["possible_values"]
+    # 予約語「その他」は必ず末尾(D45)
+    assert bound["contact_consent"]["possible_values"][-1] == "その他"
+    # 承認済みなので new_fact_unapproved は立たない(D14)
+    assert bundle.registry["review"]["gates"] == []
+
+
+def test_comparison_fact_values_come_from_the_primitive(
     intermediate_row_ir, aoi_registry
 ):
-    """D14: 追加した値が層3と履歴に承認者付きで残り、バインディングにも出る。"""
+    """D59: 比較型の fact の possible_values はプリミティブの定義から入る。
+
+    第901条は本人確認判定に phone_match=「不一致」の行を足す。第24回までは、
+    初期登録が「一致／未提供」しか持っていなかったので value_additions が必要
+    だった。D59 で定義から導くようになり、足さなくても C5 を通る。
+    """
     bundle = generate_wiring_bundle(
         intermediate_row_ir, registry=aoi_registry, dmn_dir=DMN_DIR
     )
     layer3 = {f["variable"]: f for f in bundle.registry["fact_registry"]}
-    assert "不一致" in layer3["phone_match"]["possible_values"]
-    history = layer3["phone_match"]["history"][-1]
-    assert history["change"] == "value_addition"
-    assert history["added_values"] == [{"value": "不一致", "approved_by": APPROVER}]
-
+    assert layer3["phone_match"]["possible_values"] == ["一致", "不一致", "未提供"]
+    # 値を足していないので履歴は増えない
+    assert layer3["phone_match"]["history"] == []
     bound = {f["variable"]: f for f in bundle.bindings["facts"]}
-    assert "不一致" in bound["phone_match"]["possible_values"]
-    # 承認済みなので new_fact_unapproved は立たない(D14)
-    assert bundle.registry["review"]["gates"] == []
+    assert bound["phone_match"]["possible_values"] == ["一致", "不一致", "未提供"]
 
 
 @pytest.mark.parametrize(
@@ -551,7 +574,10 @@ def add_column_ir() -> ClauseIR:
     new_fact = FactDef(
         variable="address_match",
         primitive="fuzzy_match_name",
-        possible_values=["一致", "不一致"],
+        # D59: 比較型の possible_values はプリミティブの定義から導くので、IR には
+        # 書かない(書くと C4 が止める)。層3とバインディング設定には
+        # 一致／不一致／未提供 が入る
+        possible_values=[],
         sources={
             "claimed": SourceRef(from_="action_request", path="claimed_address"),
             "registered": SourceRef(from_="master", path="patient.address"),
@@ -775,12 +801,10 @@ def no_change_ir() -> ClauseIR:
         ),
         facts=FactUsage(
             referenced_facts=["name_match", "birth_match"],
-            # 条文が言う「電話番号が一致しない」場合の値。あおいの DMN は
-            # phone_match に「一致／未提供」しか持たないので足す(D14・D46 により、
-            # possible_values に無い値はシナリオでエスカレーションになる)
-            value_additions={
-                "phone_match": [ValueAddition(value="不一致", approved_by=APPROVER)]
-            },
+            # D59: 条文が言う「電話番号が一致しない」場合の値(不一致)は、
+            # exact_match のプリミティブの定義から入る。第24回までは
+            # value_additions で足していた
+            value_additions={},
         ),
         level=LevelDetermination(
             atomic_fact=AtomicFactLayer(covered=True),
@@ -1075,9 +1099,10 @@ def test_c12_passes_when_the_consumer_gets_a_row_for_the_value(aoi_registry, tmp
     ]
     # 外部送信も評価できる(第22回に実測した失敗が起きない)
     facts = {
-        # 氏名の「未提供」は possible_values に無く(あおいの DMN が使っていない)、
-        # D46 でエスカレーションになるため「不一致」を使う
-        "name_match": "不一致",
+        # D59: 氏名の「未提供」は fuzzy_match_name の定義から possible_values に
+        # 入るので、そのまま使える。第24回は初期登録に「未提供」が無く、D46 で
+        # エスカレーションになるため「不一致」に変えていた
+        "name_match": "未提供",
         "birth_match": "一致",
         "phone_match": "一致",
         "has_medical": "含まない",
@@ -1142,3 +1167,107 @@ def test_reserved_value_reaches_the_default_row(level2_ir, aoi_registry, tmp_pat
     result = _evaluate(bundle, tmp_path, DECISION_TRANSMISSION, facts)
     assert result["decision"] == "許可"
     assert result["reason_code"] == "公開情報"
+
+
+# --------------------------------------------------------------------------
+# 8. 既存モデルへの追記(D57。第24回の穴#1)
+# --------------------------------------------------------------------------
+
+STANDALONE_DECISION_ID = "test_decision_standalone"
+STANDALONE_TABLE_ID = "test_dt_standalone"
+
+
+@pytest.fixture
+def new_table_only_ir() -> ClauseIR:
+    """あおいのモデルに、既存の表に手を入れない新しい表だけを足す IR。
+
+    入力列はあおいの既存 fact(contact_consent)にして、中間判定もドット参照も
+    使わない。第24回はこの形で `_needs_existing_dmn` が False になり、単体の DMN が
+    生成されて `registry/dmn/aoi_transmission.dmn` を置き換えていた(穴#1)。
+    """
+    new_table = NewDecisionTableDraft(
+        decision_table_id=STANDALONE_TABLE_ID,
+        decision_id=STANDALONE_DECISION_ID,
+        decision_name="テスト単独判定",
+        input_columns=["contact_consent"],
+        rule_rows=[
+            RuleRowDraft(
+                row_id="test_standalone_r1",
+                decision_table_id=STANDALONE_TABLE_ID,
+                position=1,
+                conditions={"contact_consent": "不同意"},
+                outputs={"decision": "禁止", "reason_code": "test_no_consent"},
+            ),
+            RuleRowDraft(
+                row_id="test_standalone_r2",
+                decision_table_id=STANDALONE_TABLE_ID,
+                position=2,
+                conditions={"contact_consent": "-"},
+                outputs={"decision": "許可", "reason_code": "test_consent"},
+            ),
+        ],
+    )
+    return _assemble_test_ir(
+        clause_ref="(テスト用) 架空規程 第906条",
+        action_normalized="テスト単独行為",
+        action_is_new=True,
+        target=DecisionTarget(
+            dmn_model=DMN_MODEL, entry_decision_id=STANDALONE_DECISION_ID
+        ),
+        facts=FactUsage(referenced_facts=["contact_consent"]),
+        level=LevelDetermination(
+            atomic_fact=AtomicFactLayer(covered=True),
+            intermediate=[],
+            final=FinalLayer(
+                compared_table_id=DT_TRANSMISSION,
+                relation="disjoint",
+                action="new_table",
+            ),
+        ),
+        new_tables=[new_table],
+        row_additions=[],
+    )
+
+
+def test_new_table_only_ir_appends_to_the_existing_model(
+    new_table_only_ir, aoi_registry
+):
+    """D57: 新しい表だけを足す IR も、既存の DMN ファイルに追記する。
+
+    第24回までは単体の DMN を生成していたので、あおいの3つの判定が消え、
+    namespace も作り直されていた(D39 に反する)。
+    """
+    bundle = generate_wiring_bundle(
+        new_table_only_ir, registry=aoi_registry, dmn_dir=DMN_DIR
+    )
+    # 元の3つの判定が残っている
+    for decision_id in (
+        DECISION_IDENTITY,
+        "decision_classification",
+        DECISION_TRANSMISSION,
+    ):
+        assert f'id="{decision_id}"' in bundle.dmn_xml, decision_id
+    # 新しい判定も同じ definitions の中にある(D17)
+    assert f'id="{STANDALONE_DECISION_ID}"' in bundle.dmn_xml
+    # namespace は変わらない(D39)
+    assert 'namespace="http://gijinka.example.com/dmn/aoi"' in bundle.dmn_xml
+    assert (
+        'namespace="http://gijinka.example.com/dmn/aoi_transmission"'
+        not in bundle.dmn_xml
+    )
+    # 既存の表の行は1行も増えない
+    assert len(_rules_of(bundle.dmn_xml, DT_TRANSMISSION)) == 7
+    assert len(_rules_of(bundle.dmn_xml, STANDALONE_TABLE_ID)) == 2
+
+
+def test_new_table_only_ir_records_the_disjoint_relation(new_table_only_ir, aoi_registry):
+    """D58: 列が重ならない相手でも compared_table_id に書ける。"""
+    bundle = generate_wiring_bundle(
+        new_table_only_ir, registry=aoi_registry, dmn_dir=DMN_DIR
+    )
+    assert new_table_only_ir.level_determination.final.relation == "disjoint"
+    assert new_table_only_ir.level_determination.outcome == "level1_new_table"
+    # ルートは新しい判定の1本だけ(既存の最終判定は作り直さない)
+    assert [r["decision_id"] for r in bundle.routing_table["routes"]] == [
+        STANDALONE_DECISION_ID
+    ]

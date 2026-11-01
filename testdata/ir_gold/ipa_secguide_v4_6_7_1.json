@@ -32,7 +32,7 @@
     "action": {
       "surface": "特権/管理者権限で操作を行う",
       "normalized": "特権操作",
-      "parent": "システム操作",
+      "parent": null,
       "is_new": true,
       "approved_by": null
     },
@@ -55,7 +55,8 @@
               "path": "operator.role"
             }
           },
-          "approved_by": null
+          "approved_by": null,
+          "other_value_note": "システム開発担当以外の担当"
         },
         {
           "variable": "target_environment",
@@ -69,7 +70,8 @@
               "path": "target.environment"
             }
           },
-          "approved_by": null
+          "approved_by": null,
+          "other_value_note": "本番環境以外の環境"
         },
         {
           "variable": "requested_privilege",
@@ -83,7 +85,8 @@
               "path": "requested_privilege"
             }
           },
-          "approved_by": null
+          "approved_by": null,
+          "other_value_note": "特権以外の権限"
         }
       ],
       "referenced_facts": [],
@@ -244,23 +247,37 @@
       }
     },
     {
-      "name": "環境が「検証環境」(possible_values に無い値) → 人の確認に回す",
+      "name": "環境が条文の挙げる区分でない(検証環境) → 許可",
+      "kind": "予約語「その他」が既定の行(ワイルドカード)に落ちる(D45)",
+      "facts": {
+        "operator_role": "システム開発担当",
+        "target_environment": "その他",
+        "requested_privilege": "特権"
+      },
+      "expected": {
+        "decision": "許可",
+        "reason_code": "not_prohibited_combination"
+      },
+      "note": "当てはめる側が「検証環境」を『その他』と判断した場合(D54)。第24回まではこの値を知らない値のシナリオに使っていた"
+    },
+    {
+      "name": "環境の当てはめができなかった(「判定不能」) → 人の確認に回す",
       "kind": "知らない値がエスカレーションになる(D46)",
       "facts": {
         "operator_role": "システム開発担当",
-        "target_environment": "検証環境",
+        "target_environment": "判定不能",
         "requested_privilege": "特権"
       },
       "expected": {
         "decision": "escalate",
         "reason_code": "unknown_fact_value"
       },
-      "note": "v1.4 までは既定の行(許可)に落ちていた(U2)。知っている値(その他)と知らない値を分けたので、安全側に倒れる"
+      "note": "D54: 知らない値は、当てはめる側が判断できなかったことを表す値にする。条文の値に当たらないと判断できたものは「その他」(既定の行)に落ちる"
     }
   ],
   "review": {
-    "status": "draft",
-    "reviewed_by": null,
+    "status": "approved",
+    "reviewed_by": "Kazuhiro",
     "expected_gates": [
       "new_action_unapproved",
       "new_fact_unapproved"
@@ -268,9 +285,58 @@
     "notes": [
       "actor: 条文に行為者の語はない(「システム開発を担当する者」は判定の対象となる操作者で、fact の operator_role として表している)。actor は擬人化の前提であおいに当てた。v1 のゴールデンパスと同じ扱い",
       "operator_role の値「システム開発担当」は、条文の「システム開発を担当する者」を体言化した正規化である(D44 で許される)。requested_privilege の「特権」は「特権/管理者権限」の前半を採ったもので、「管理者権限」を別の値として足すかは判断をお願いしたい",
-      "action.parent「システム操作」は条文にない。Action 正規化の階層への位置づけは人が承認する前提(設計書1.4)なので、提案として置いている",
+      "**action.parent を None にした(レビュー A-2・D60)。** 第24回は「システム操作」を提案していたが、特権操作をシステム操作の子に置くと、後で「システム操作」を許可する条文が来たときに、その許可が特権操作に及ぶおそれがある。親への許可は子に及ばないと決めたうえで(D60)、階層の位置づけそのものは人の判断に回す。禁止の継承は未決(U13)",
       "possible_values には予約語「その他」が自動で付く(D45)。条文の値に当たらない「知っている状態」はここに入り、既定の行(許可)に落ちる。知らない値は DMN の手前でエスカレーションになる(D46)",
-      "v1.2〜v1.4 の実装(golden_path.py)と同じ内容にしてある。差分が出た場合は実装側の退行を疑える"
+      "v1.2〜v1.4 の実装(golden_path.py)と同じ内容にしてある。差分が出た場合は実装側の退行を疑える",
+      "各 fact の other_value_note(D55)はレビュー G-4 で承認された内容を入れた。golden_path.py も同じ内容・同じ parent=None にそろえてある"
+    ],
+    "reviewed_at": "2026-11-02",
+    "decisions": [
+      {
+        "id": "G-1",
+        "point": "「従業員」「職員」をあおいに当てる",
+        "result": "推奨どおり(承認)"
+      },
+      {
+        "id": "G-2",
+        "point": "正解IR の中の approved_by は None のまま残す",
+        "result": "推奨どおり(D53。承認は review.status に記録する)"
+      },
+      {
+        "id": "G-3",
+        "point": "art12(パワハラ)を正解IR から外す",
+        "result": "推奨どおり(D51。manifest.json の not_expressible に残す)"
+      },
+      {
+        "id": "G-4",
+        "point": "「その他」が指す状態を fact ごとに注記する",
+        "result": "推奨どおり(D55。other_value_note の内容は第25回 HANDOFF 3.2の表)"
+      },
+      {
+        "id": "G-5",
+        "point": "escalate のシナリオの値を見直す",
+        "result": "推奨どおり(D54。知らない値は「判定不能」にし、元の値は「その他」のシナリオに移した)"
+      },
+      {
+        "id": "G-6",
+        "point": "数字は半角に統一",
+        "result": "推奨どおり(D56)"
+      },
+      {
+        "id": "A-1",
+        "point": "requested_privilege は「特権」だけにする",
+        "result": "推奨どおり"
+      },
+      {
+        "id": "A-2",
+        "point": "Action「特権操作」の親を「システム操作」にする",
+        "result": "**変更。** 親は None にして位置づけを人の判断に回す(D60)"
+      },
+      {
+        "id": "A-3",
+        "point": "特権アカウントの actor をあおいに当てる",
+        "result": "推奨どおり"
+      }
     ]
   }
 }

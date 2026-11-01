@@ -48,7 +48,7 @@
           "primitive": "passthrough",
           "possible_values": [
             "妊娠中の女性",
-            "産後１年を経過しない女性労働者",
+            "産後1年を経過しない女性労働者",
             "18歳未満の者"
           ],
           "sources": {
@@ -57,7 +57,8 @@
               "path": "worker.category"
             }
           },
-          "approved_by": null
+          "approved_by": null,
+          "other_value_note": "妊産婦・18歳未満の者のどれにも当たらない労働者"
         },
         {
           "variable": "exemption_request",
@@ -71,7 +72,8 @@
               "path": "worker.exemption_request"
             }
           },
-          "approved_by": null
+          "approved_by": null,
+          "other_value_note": "請求していない"
         },
         {
           "variable": "work_type",
@@ -87,7 +89,8 @@
               "path": "work.type"
             }
           },
-          "approved_by": null
+          "approved_by": null,
+          "other_value_note": "時間外・休日・深夜のどれでもない労働"
         }
       ],
       "referenced_facts": [],
@@ -125,7 +128,7 @@
             "decision_table_id": "dt_overtime_assignment",
             "position": 1,
             "conditions": {
-              "worker_category": "\"妊娠中の女性\",\"産後１年を経過しない女性労働者\"",
+              "worker_category": "\"妊娠中の女性\",\"産後1年を経過しない女性労働者\"",
               "exemption_request": "請求した者",
               "work_type": "\"時間外労働\",\"休日労働\",\"深夜労働\""
             },
@@ -192,10 +195,11 @@
       },
       {
         "fact": "worker_category",
-        "value": "産後１年を経過しない女性労働者",
+        "value": "産後1年を経過しない女性労働者",
         "quote": "産後１年を経過しない女性労働者",
-        "basis": "verbatim",
-        "note": "条文の全角数字のまま。半角にすると「産後1年」になるが、ここは語全体が条文の語なので逐語を保った(18歳未満の者とそろえるかは要レビュー)"
+        "basis": "normalized",
+        "note": "条文は「産後１年」と全角で書いている。値は半角に統一する(D56・レビュー D-3)。引用(quote)は逐語のまま残す",
+        "normalization": "半角化"
       },
       {
         "fact": "worker_category",
@@ -281,7 +285,7 @@
       "name": "産後1年を経過しない女性労働者が請求 → 休日労働は禁止",
       "kind": "条文の禁止の行に当たる",
       "facts": {
-        "worker_category": "産後１年を経過しない女性労働者",
+        "worker_category": "産後1年を経過しない女性労働者",
         "exemption_request": "請求した者",
         "work_type": "休日労働"
       },
@@ -319,22 +323,37 @@
       "note": "条文は「であって請求した者」と限っている。請求していない状態(その他)は既定の行に落ちる"
     },
     {
-      "name": "労働の種別が「所定労働」(possible_values に無い値) → 人の確認に回す",
+      "name": "労働の種別の当てはめができなかった(「判定不能」) → 人の確認に回す",
       "kind": "知らない値がエスカレーションになる(D46)",
       "facts": {
         "worker_category": "18歳未満の者",
         "exemption_request": "請求した者",
-        "work_type": "所定労働"
+        "work_type": "判定不能"
       },
       "expected": {
         "decision": "escalate",
         "reason_code": "unknown_fact_value"
-      }
+      },
+      "note": "D54: 知らない値は、当てはめる側が判断できなかったことを表す値にする。条文の値に当たらないと判断できたものは「その他」(既定の行)に落ちる"
+    },
+    {
+      "name": "労働の種別が条文の挙げる区分でない(所定労働) → 許可",
+      "kind": "予約語「その他」が既定の行(ワイルドカード)に落ちる(D45)",
+      "facts": {
+        "worker_category": "18歳未満の者",
+        "exemption_request": "請求した者",
+        "work_type": "その他"
+      },
+      "expected": {
+        "decision": "許可",
+        "reason_code": "not_prohibited_combination"
+      },
+      "note": "当てはめる側が「所定労働」を『その他』と判断した場合(D54)。第24回まではこの値を知らない値のシナリオに使っていた"
     }
   ],
   "review": {
-    "status": "draft",
-    "reviewed_by": null,
+    "status": "approved",
+    "reviewed_by": "Kazuhiro",
     "expected_gates": [
       "new_action_unapproved",
       "new_fact_unapproved"
@@ -344,7 +363,60 @@
       "「請求した者」が妊産婦だけに係ることを、1行にまとめずに2行に分けて表した。これが条文の読み方として正しいかを見てほしい",
       "「午後１０時から午前５時まで」(深夜の定義)と「第２項による」(他の条文への参照)は表していない(evidence.not_modeled)。前者は時刻から深夜かを判定する層が、後者は条文間の参照を表す欄が必要で、どちらも IR v2 の型にない",
       "possible_values は6値で、4件の中では最も値の種類が多い(設計書6.1の「値の種類が多い条文」に当たる)",
-      "「１８歳未満の者」は半角化して「18歳未満の者」にした(D44)。一方「産後１年を経過しない女性労働者」の「１年」は語全体が条文の語なので逐語のままにしてある。表記をそろえるかの判断をお願いしたい"
+      "**「産後１年」を半角の「産後1年」にした(D56・レビュー D-3)。** 「１８歳未満の者」と表記をそろえた。値は実行時に文字列一致で引くので、表記の規則を1つにする。evidence の引用(quote)は逐語のまま残し、basis は normalized(半角化)にした"
+    ],
+    "reviewed_at": "2026-11-02",
+    "decisions": [
+      {
+        "id": "G-1",
+        "point": "「従業員」「職員」をあおいに当てる",
+        "result": "推奨どおり(承認)"
+      },
+      {
+        "id": "G-2",
+        "point": "正解IR の中の approved_by は None のまま残す",
+        "result": "推奨どおり(D53。承認は review.status に記録する)"
+      },
+      {
+        "id": "G-3",
+        "point": "art12(パワハラ)を正解IR から外す",
+        "result": "推奨どおり(D51。manifest.json の not_expressible に残す)"
+      },
+      {
+        "id": "G-4",
+        "point": "「その他」が指す状態を fact ごとに注記する",
+        "result": "推奨どおり(D55。other_value_note の内容は第25回 HANDOFF 3.2の表)"
+      },
+      {
+        "id": "G-5",
+        "point": "escalate のシナリオの値を見直す",
+        "result": "推奨どおり(D54。知らない値は「判定不能」にし、元の値は「その他」のシナリオに移した)"
+      },
+      {
+        "id": "G-6",
+        "point": "数字は半角に統一",
+        "result": "推奨どおり(D56)"
+      },
+      {
+        "id": "D-1",
+        "point": "使用者の側の規範(U12)を評価用に承認する",
+        "result": "推奨どおり(actor をあおいに当てる根拠は弱いが、評価のために残す)"
+      },
+      {
+        "id": "D-2",
+        "point": "「請求した者」が妊産婦だけに係るため2行に分ける",
+        "result": "推奨どおり"
+      },
+      {
+        "id": "D-3",
+        "point": "「産後1年」の半角化",
+        "result": "推奨どおり(D56)"
+      },
+      {
+        "id": "D-4",
+        "point": "第2項・深夜の時間帯を表さない",
+        "result": "推奨どおり(evidence.not_modeled)"
+      }
     ]
   }
 }

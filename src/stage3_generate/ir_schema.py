@@ -66,6 +66,17 @@ v1(コミット 9e66776)との差分は同書 付録A。
 - **D46**: 実行時、fact の値が `possible_values`(「その他」を含む)にない場合は DMN に
   渡さず人の確認に回す。バインディング設定に `on_unknown_value = escalate` を出す
 
+## v1.6 で変わった点(設計書2章 D55・D58・D59)
+
+- **D55**: `FactDef.other_value_note` を追加。passthrough の fact で予約語「その他」が
+  指す状態(「許可を得ている」「請求していない」など)を書く。実行時に値を当てはめる側が、
+  何を「その他」にしてよいかを知るための情報で、`new_facts` では必須(C4 で止める)
+- **D58**: `ColumnSetRelationKind` に `disjoint`(列集合が1つも重ならない)を追加。
+  「比べる相手がない」(compared_table_id = None)と「比べたが重ならない」を分ける
+- **D59**: 比較型の fact の `possible_values` は、プリミティブの定義(`PRIMITIVE_VALUES`)
+  から導く。D4(表に出てくる値だけ)は passthrough の fact にだけ当てる。表に出てくる値
+  だけにすると、「未提供」のような正当な値が実行時にエスカレーションになる
+
 ## 引き継ぐ原則(設計書1.4)
 
 - 4点セットの同時生成、複合 fact 禁止、FIRST と行の順序、来歴の表し方、Action 正規化
@@ -81,6 +92,8 @@ ColumnSetRelationKind = Literal[
     "exact_match",
     "proper_subset",
     "intersecting_non_subset",
+    # D58: 列集合が1つも重ならない。「比べる相手がない」(None)と区別して記録する
+    "disjoint",
 ]
 
 LevelOutcome = Literal[
@@ -122,6 +135,26 @@ PRIMITIVE_ARGS: dict[str, tuple[str, ...]] = {
     "identifiability_classifier": ("data_category", "care_setting"),
 }
 
+# 比較型のプリミティブの possible_values(設計書3.5節の表)。D59: 比較型の値の集合は
+# 条文ではなくプリミティブの定義で決まるので、possible_values はここから導く。
+# D4(表に出てくる値だけ)は passthrough の fact にだけ当てる。
+PRIMITIVE_VALUES: dict[str, tuple[str, ...]] = {
+    "exact_match": ("一致", "不一致", "未提供"),
+    "fuzzy_match_name": ("一致", "不一致", "未提供"),
+    "date_match": ("一致", "不一致", "未提供"),
+    "ontology_class_match": ("含む", "含まない"),
+    "identifiability_classifier": ("可能", "不可能_院内", "不可能_公開"),
+}
+
+
+def derived_possible_values(primitive: str) -> Optional[tuple[str, ...]]:
+    """この primitive の possible_values が定義から決まるなら、その値(D59)。
+
+    passthrough は条文が挙げた値で決まる(D4)ので None を返す。
+    """
+    return PRIMITIVE_VALUES.get(primitive)
+
+
 # new_facts では宣言できないプリミティブ(設計書2章 D23)。
 BOOTSTRAP_ONLY_PRIMITIVES: frozenset[str] = frozenset({"identifiability_classifier"})
 
@@ -148,12 +181,22 @@ def has_other_value(primitive: str) -> bool:
 def effective_possible_values(
     primitive: str, possible_values: list[str]
 ) -> list[str]:
-    """実行時に受け取れる値の一覧。passthrough なら末尾に「その他」を足す(D45)。
+    """実行時に受け取れる値の一覧。
 
-    層3・バインディング設定・C5 はすべてこれを通す。IR の `possible_values` に
-    「その他」を書くことは許さない(C4 で止める)ので、二重に付くことはないが、
-    登録簿に既に入っている場合に備えて重複は除く。
+    - 比較型なら、プリミティブの定義から導いた値を先に置く(D59)。渡された値に
+      定義の外の値があれば落とさずに後ろに残す(黙って消すと、その値を参照する
+      行が C5 をすり抜ける)。
+    - passthrough なら、渡された値の末尾に予約語「その他」を足す(D45)。
+
+    層3・バインディング設定・C5・C12 はすべてこれを通す。IR の `possible_values`
+    に「その他」を書くこと、比較型の fact に possible_values を書くことは許さない
+    (どちらも C4 で止める)。
     """
+    derived = derived_possible_values(primitive)
+    if derived is not None:
+        values = list(derived)
+        values.extend(v for v in possible_values if v not in values)
+        return values
     values = list(possible_values)
     if has_other_value(primitive) and OTHER_VALUE not in values:
         values.append(OTHER_VALUE)
@@ -250,6 +293,10 @@ class FactDef:
     comparison_kind: Optional[str] = None
     # この fact の追加を承認した人。未承認なら None(D14)
     approved_by: Optional[str] = None
+    # passthrough の fact で、予約語「その他」が指す状態(D55)。実行時に値を
+    # 当てはめる側が、何を「その他」にしてよいかを知るための注記。new_facts では
+    # 必須で、C4 が確かめる。比較型の fact は値の集合が決まっているので None
+    other_value_note: Optional[str] = None
 
     def to_json(self) -> dict:
         out: dict = {
@@ -261,6 +308,9 @@ class FactDef:
         if self.comparison_kind is not None:
             out["comparison_kind"] = self.comparison_kind
         out["approved_by"] = self.approved_by
+        # D55: passthrough の fact だけが持つ欄。比較型には出さない
+        if has_other_value(self.primitive) or self.other_value_note is not None:
+            out["other_value_note"] = self.other_value_note
         return out
 
     @classmethod
@@ -274,6 +324,7 @@ class FactDef:
             },
             comparison_kind=payload.get("comparison_kind"),
             approved_by=payload.get("approved_by"),
+            other_value_note=payload.get("other_value_note"),
         )
 
 

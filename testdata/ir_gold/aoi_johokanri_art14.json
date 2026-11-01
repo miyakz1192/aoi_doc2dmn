@@ -73,8 +73,8 @@
       },
       "intermediate": [],
       "final": {
-        "compared_table_id": null,
-        "relation": null,
+        "compared_table_id": "dt_transmission",
+        "relation": "disjoint",
         "action": "new_table"
       }
     },
@@ -231,23 +231,82 @@
       "expected": {
         "decision": "escalate",
         "reason_code": "unknown_fact_value"
-      }
+      },
+      "note": "「未照合」は、当てはめる側が照合できなかったことを表す値なので、知らない値として人に回る(D54。この条文は比較型の fact だけを使うので「その他」は存在しない)"
     }
   ],
   "review": {
-    "status": "draft",
-    "reviewed_by": null,
+    "status": "approved",
+    "reviewed_by": "Kazuhiro",
     "expected_gates": [
       "new_action_unapproved"
     ],
     "notes": [
       "**D49 により作り直した。** 第22回は本人確認判定に新しい確認レベル「中(生年月日・連絡先一致)」を足していたが、それを参照する送信可否判定に受け止める行が無く、外部送信が実行時に失敗していた(C12 が止める形)。この条文だけの基準なので、共有の中間判定を変えず、生年月日・連絡先を直接の入力列にした表を作った",
       "**連絡先 → phone_match の対応付けは解釈である**(evidence.fact_mapping)。あおいの phone_match は DMN のラベルが「電話番号/診察券番号」で、条文の「連絡先」と語が一致しない。条文が「電話等による問い合わせ」と述べていることを根拠にしたが、連絡先に住所やメールを含めるなら fact を増やす必要がある",
-      "**compared_table_id を None にした。** 既存の最終判定は送信可否判定だけだが、その入力列(機微度・確認レベル・連絡同意)とこの表の入力列(生年月日・連絡先の照合)は1つも重ならない。ColumnSetRelationKind には互いに素な場合を表す値がなく(exact_match／proper_subset／intersecting_non_subset)、比べた相手として書けないため、相手なしとした",
-      "**dmn_model を verbal_disclosure(新しいモデル)にした。** 中間判定を参照しなくなったので D17 の制約がかからない。aoi_transmission を指定すると、既存の表に手を入れないこの IR は『単体の DMN』として生成され、あおいのモデルのファイルを上書きしてしまう(7節の穴 #1)",
+      "**compared_table_id に送信可否判定(dt_transmission)を書き、relation を disjoint にした(D58・レビュー E-3)。** その入力列(機微度・確認レベル・連絡同意)とこの表の入力列(生年月日・連絡先の照合)は1つも重ならない。第24回は互いに素を表す値がなく相手なし(None)にしていたが、「比べる相手がない」と「比べたが重ならない」はレベル判定の記録として意味が違うので、v1.6 で disjoint を足した",
+      "**dmn_model を verbal_disclosure(新しいモデル)にした(レビュー E-2 で承認)。** 中間判定を参照しないので D17 の制約がかからない。第24回はこれを選ばざるを得ない事情もあった(既存の表に手を入れない IR が単体の DMN として生成され、あおいのモデルを上書きしていた)が、その穴は D57 で直したので、いまは別モデルにすること自体が判断である",
       "本人確認判定には手を入れないので、ルートは「あおい × 口頭伝達」の1本だけになり、外部送信のルートは作り直されない。新しい語彙(fact・値・出力値)がないので、立つゲートは new_action_unapproved だけである",
       "「検査結果その他の医療情報」を列にしていない(evidence.not_modeled)。あおいには情報分類判定があるので、それを参照すべきかの判断をお願いしたい",
       "knowledge_sources は空にした。この判定の入力は2つの fact だけで、条文に知識源の根拠がない(D22)。参照先の知識源は引き継がない(設計書 付録E #10)"
+    ],
+    "reviewed_at": "2026-11-02",
+    "decisions": [
+      {
+        "id": "G-1",
+        "point": "「従業員」「職員」をあおいに当てる",
+        "result": "推奨どおり(承認)"
+      },
+      {
+        "id": "G-2",
+        "point": "正解IR の中の approved_by は None のまま残す",
+        "result": "推奨どおり(D53。承認は review.status に記録する)"
+      },
+      {
+        "id": "G-3",
+        "point": "art12(パワハラ)を正解IR から外す",
+        "result": "推奨どおり(D51。manifest.json の not_expressible に残す)"
+      },
+      {
+        "id": "G-4",
+        "point": "「その他」が指す状態を fact ごとに注記する",
+        "result": "推奨どおり(D55。other_value_note の内容は第25回 HANDOFF 3.2の表)"
+      },
+      {
+        "id": "G-5",
+        "point": "escalate のシナリオの値を見直す",
+        "result": "推奨どおり(D54。知らない値は「判定不能」にし、元の値は「その他」のシナリオに移した)"
+      },
+      {
+        "id": "G-6",
+        "point": "数字は半角に統一",
+        "result": "推奨どおり(D56)"
+      },
+      {
+        "id": "E-1",
+        "point": "条文の「連絡先」を phone_match に当てる",
+        "result": "推奨どおり(解釈として evidence.fact_mapping に残す)"
+      },
+      {
+        "id": "E-2",
+        "point": "新しい DMN モデル(verbal_disclosure)にする",
+        "result": "推奨どおり"
+      },
+      {
+        "id": "E-3",
+        "point": "比べた相手を disjoint として記録する",
+        "result": "推奨どおり(D58)"
+      },
+      {
+        "id": "E-4",
+        "point": "「検査結果その他の医療情報」を参照しない",
+        "result": "推奨どおり(evidence.not_modeled)"
+      },
+      {
+        "id": "E-5",
+        "point": "Action「口頭伝達」と親「情報開示」",
+        "result": "推奨どおり"
+      }
     ]
   }
 }

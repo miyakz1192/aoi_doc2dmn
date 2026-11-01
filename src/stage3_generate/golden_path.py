@@ -99,6 +99,8 @@ def _new_facts(approved_by: str | None = None) -> list[FactDef]:
                 "value": SourceRef(from_="action_request", path="operator.role"),
             },
             approved_by=approved_by,
+            # D55: 予約語「その他」が指す状態。正解IR(ipa_secguide_v4_6_7_1)と同じ文
+            other_value_note="システム開発担当以外の担当",
         ),
         FactDef(
             variable="target_environment",
@@ -108,6 +110,7 @@ def _new_facts(approved_by: str | None = None) -> list[FactDef]:
                 "value": SourceRef(from_="action_request", path="target.environment"),
             },
             approved_by=approved_by,
+            other_value_note="本番環境以外の環境",
         ),
         FactDef(
             variable="requested_privilege",
@@ -117,6 +120,7 @@ def _new_facts(approved_by: str | None = None) -> list[FactDef]:
                 "value": SourceRef(from_="action_request", path="requested_privilege"),
             },
             approved_by=approved_by,
+            other_value_note="特権以外の権限",
         ),
     ]
 
@@ -143,7 +147,11 @@ def build_golden_path_ir(
     action = ActionRef(
         surface="特権/管理者権限で操作を行う",
         normalized="特権操作",
-        parent="システム操作",
+        # D60・レビュー A-2: 親は None にして、位置づけを人の判断に回す。
+        # 特権操作を「システム操作」の子に置くと、後で「システム操作」を許可する
+        # 条文が来たときに、その許可が特権操作に及ぶおそれがある(許可は子に及ばない
+        # と決めたが、階層の整理そのものは人の承認とする)
+        parent=None,
         is_new=True,
         approved_by=action_approved_by,
     )

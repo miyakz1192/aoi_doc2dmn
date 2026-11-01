@@ -16,10 +16,11 @@
 | 層1 depends_on_decisions・depends_on_inputs | informationRequirement(宣言順) |
 | 層1 knowledge_sources | authorityRequirement |
 | 層2 の行 | decisionTable の rule(セルは DMN の表記のまま) |
-| 層3 possible_values | 決定表のセルに出てくる値だけ(D4)。DMN にない値は補わない。passthrough の fact には予約語「その他」が付く(D45) |
+| 層3 possible_values | passthrough は決定表のセルに出てくる値だけ(D4)＋予約語「その他」(D45)。比較型はプリミティブの定義から導く(D59) |
 | 層3 primitive | 設計書3.5節の一致プリミティブ表(`FACT_PRIMITIVES`) |
 | 層1 entry_points | **DMN には無い**(`ENTRY_POINTS`。出典は設計書 D32) |
 | 層3 sources | **DMN には無く、補わない**(`SOURCE_GAP_NOTE`・D33) |
+| 層3 other_value_note | **DMN には無い**。passthrough の fact に固定の文を入れる(`OTHER_VALUE_NOTE_BOOTSTRAP`・D55) |
 
 DMN に無いものを勝手に埋めないのが原則(設計書1.4・HANDOFF 4節)。埋めずに空にしたもの、
 出典を付けて入れたものは、どちらも下の定数のところに理由を書いてある。
@@ -55,7 +56,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-from .ir_schema import effective_possible_values
+from .ir_schema import derived_possible_values, effective_possible_values
 from .registry import Registry, dmn_path
 from .wiring_generator import (
     DMNDI_NS,
@@ -124,6 +125,15 @@ ENTRY_POINTS_SOURCE = (
 SOURCE_GAP_NOTE = (
     "sources は元の DMN XML に情報が無いため未設定。"
     "一致プリミティブの実装時に、出典付きで付与する必要がある"
+)
+
+# D55: passthrough の fact の other_value_note。初期登録の fact は条文由来ではなく、
+# 「その他」が指す状態の根拠が元の DMN に無い。補うと実装者の創作になるので、
+# 根拠が無いことが分かる固定の文を入れ、provenance にもその旨を書く。
+OTHER_VALUE_NOTE_BOOTSTRAP = "(初期登録)DMN の表に現れない状態"
+OTHER_VALUE_NOTE_GAP = (
+    "other_value_note は元の DMN XML に情報が無いため固定の文。"
+    "「その他」が指す状態は、語彙の承認(U8)のときに出典付きで埋める必要がある"
 )
 
 # 元の DMN の不足・矛盾に対する修正(D34)。`reference/` の元ファイルは書き換えず、
@@ -496,19 +506,38 @@ def build_registry(
     for variable in _fact_order(decisions):
         values = _values_of_column(decisions, variable)
         primitive = FACT_PRIMITIVES.get(variable)
+        derived = derived_possible_values(primitive or "")
+        if derived is not None:
+            # D59: 比較型の値はプリミティブの定義で決まる。表に出てくる値が定義の
+            # 外にあれば、落として黙って狭めるのではなく止める(元の DMN の矛盾)
+            outside = [v for v in values if v not in derived]
+            if outside:
+                raise SchemaWiringError(
+                    f"初期登録に失敗: fact {variable!r}(primitive={primitive!r})の"
+                    f"決定表のセルに、プリミティブの定義 {list(derived)} に無い値 "
+                    f"{outside} があります(D59)。"
+                )
         layer3.append(
             {
                 "variable": variable,
                 "primitive": primitive if primitive else "",
                 # D45: passthrough の fact(あおいでは contact_consent)には
                 # 予約語「その他」が付く。初期登録の fact も新しい条文の fact と
-                # 同じ扱いにする
+                # 同じ扱いにする。
+                # D59: 比較型(name_match など)は、表に出てくる値ではなく
+                # プリミティブの定義から導く(「未提供」が知らない値にならないように)
                 "possible_values": effective_possible_values(
                     primitive or "", values
                 ),
                 "sources": {},
                 "comparison_kind": None,
                 "approved_by": REGISTERED_BY,
+                # D55: passthrough の fact だけが持つ
+                "other_value_note": (
+                    OTHER_VALUE_NOTE_BOOTSTRAP
+                    if primitive == "passthrough"
+                    else None
+                ),
                 "defined_by": CLAUSE_REF,
                 "used_by": sorted(
                     {
@@ -517,7 +546,14 @@ def build_registry(
                         if variable in d["input_columns"]
                     }
                 ),
-                "provenance": _provenance(SOURCE_GAP_NOTE),
+                "provenance": _provenance(
+                    SOURCE_GAP_NOTE
+                    + (
+                        f"／{OTHER_VALUE_NOTE_GAP}"
+                        if primitive == "passthrough"
+                        else ""
+                    )
+                ),
                 "history": [],
             }
         )

@@ -56,7 +56,8 @@
               "path": "provided_information.category"
             }
           },
-          "approved_by": null
+          "approved_by": null,
+          "other_value_note": "営業秘密として管理する情報・その複製物に当たらないもの"
         },
         {
           "variable": "recipient_authorization",
@@ -70,7 +71,8 @@
               "path": "recipient.authorization"
             }
           },
-          "approved_by": null
+          "approved_by": null,
+          "other_value_note": "許可されている"
         }
       ],
       "referenced_facts": [],
@@ -243,25 +245,26 @@
       "expected": {
         "decision": "許可",
         "reason_code": "not_prohibited_combination"
-      }
+      },
+      "note": "当てはめる側が「公開情報」などを『その他』と判断した場合(D54)。第24回まではこの値を知らない値のシナリオに使っていた。営業秘密かどうかの判断がつかない場合は『判定不能』として人に回る"
     },
     {
-      "name": "情報の区分が「公開情報」(possible_values に無い値) → 人の確認に回す",
+      "name": "情報の区分の当てはめができなかった(「判定不能」) → 人の確認に回す",
       "kind": "知らない値がエスカレーションになる(D46)",
       "facts": {
-        "provided_information": "公開情報",
+        "provided_information": "判定不能",
         "recipient_authorization": "許可なし"
       },
       "expected": {
         "decision": "escalate",
         "reason_code": "unknown_fact_value"
       },
-      "note": "「公開情報」は条文にない区分なので、知らない値として人に回る。営業秘密かどうかの判断を黙って許可にしない"
+      "note": "D54: 知らない値は、当てはめる側が判断できなかったことを表す値にする。条文の値に当たらないと判断できたものは「その他」(既定の行)に落ちる"
     }
   ],
   "review": {
-    "status": "draft",
-    "reviewed_by": null,
+    "status": "approved",
+    "reviewed_by": "Kazuhiro",
     "expected_gates": [
       "new_action_unapproved",
       "new_fact_unapproved"
@@ -272,6 +275,59 @@
       "「組織、人」を列にしていない(evidence.not_modeled)。提供先の種別で結果が変わらないため。列を持たせるべきかの判断をお願いしたい",
       "recipient_authorization の値は、第11条と同じ「許可なし」にそろえた(D44 の体言化)。別の規程の条文だが、同じ意味の区分に別の語を使うと統制語彙が増える(U1)",
       "営業秘密該当性(何が営業秘密か)は、この IR では fact の値としてそのまま受け取る形にしている。実際の判定では「営業秘密として管理する情報」に当たるかの判断が前段に必要で、条文だけでは決まらない"
+    ],
+    "reviewed_at": "2026-11-02",
+    "decisions": [
+      {
+        "id": "G-1",
+        "point": "「従業員」「職員」をあおいに当てる",
+        "result": "推奨どおり(承認)"
+      },
+      {
+        "id": "G-2",
+        "point": "正解IR の中の approved_by は None のまま残す",
+        "result": "推奨どおり(D53。承認は review.status に記録する)"
+      },
+      {
+        "id": "G-3",
+        "point": "art12(パワハラ)を正解IR から外す",
+        "result": "推奨どおり(D51。manifest.json の not_expressible に残す)"
+      },
+      {
+        "id": "G-4",
+        "point": "「その他」が指す状態を fact ごとに注記する",
+        "result": "推奨どおり(D55。other_value_note の内容は第25回 HANDOFF 3.2の表)"
+      },
+      {
+        "id": "G-5",
+        "point": "escalate のシナリオの値を見直す",
+        "result": "推奨どおり(D54。知らない値は「判定不能」にし、元の値は「その他」のシナリオに移した)"
+      },
+      {
+        "id": "G-6",
+        "point": "数字は半角に統一",
+        "result": "推奨どおり(D56)"
+      },
+      {
+        "id": "C-1",
+        "point": "action の parent を None にする",
+        "result": "推奨どおり(D60)"
+      },
+      {
+        "id": "C-2",
+        "point": "「組織、人」を列にしない",
+        "result": "推奨どおり"
+      },
+      {
+        "id": "C-3",
+        "point": "「許可されていない」を「許可なし」にそろえる",
+        "result": "推奨どおり"
+      },
+      {
+        "id": "C-4",
+        "point": "営業秘密を値で受け取る",
+        "result": "推奨どおり"
+      }
     ]
   }
 }

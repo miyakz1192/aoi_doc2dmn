@@ -1165,3 +1165,93 @@ def test_c12_looks_at_the_whole_row_not_just_the_column(
     }
     with pytest.raises(SchemaWiringError, match="C12検証失敗.*contact_consent"):
         generate_wiring_bundle(simple_ir, registry=seeded_registry, dmn_dir=tmp_path)
+
+
+# --------------------------------------------------------------------------
+# v1.6 で足した検証の失敗テスト(第25回 HANDOFF タスクA2・A4・A5)
+# --------------------------------------------------------------------------
+
+
+def test_c4_passthrough_without_other_value_note(simple_ir, empty_registry):
+    """D55: passthrough の new_facts に other_value_note が無ければ止まる。
+
+    「その他」が指す状態は fact ごとに違う(許可を得ている・請求していない)。
+    注記が無いと、実行時に値を当てはめる側が何を「その他」にしてよいか分からず、
+    「その他」が何でもありの受け皿になる。
+    """
+    simple_ir.facts.new_facts[0].other_value_note = None
+    with pytest.raises(SchemaWiringError, match="C4検証失敗.*other_value_note"):
+        generate_wiring_bundle(simple_ir, registry=empty_registry)
+
+
+def test_c4_comparison_fact_must_not_declare_possible_values(simple_ir, empty_registry):
+    """D59: 比較型の fact に possible_values を書いたら止まる。
+
+    比較型の値の集合はプリミティブの定義で決まる(3.5節)ので、IR に書かせると
+    「書く／書かない」「どこまで書くか」の揺れが残る(「その他」と同じ扱い)。
+    """
+    fact = simple_ir.facts.new_facts[0]
+    fact.primitive = "exact_match"
+    fact.possible_values = ["一致", "不一致"]
+    fact.sources = {
+        "claimed": SourceRef(from_="action_request", path="claimed"),
+        "registered": SourceRef(from_="master", path="registered"),
+    }
+    fact.other_value_note = None
+    with pytest.raises(SchemaWiringError, match="C4検証失敗.*比較型"):
+        generate_wiring_bundle(simple_ir, registry=empty_registry)
+
+
+def test_comparison_fact_values_are_derived_from_the_primitive(
+    simple_ir, empty_registry
+):
+    """D59: 比較型の fact の possible_values は、プリミティブの定義から入る。
+
+    IR には書かないが、層3とバインディング設定には一致／不一致／未提供 が入る。
+    「未提供」が落ちていたために、正当な値が実行時にエスカレーションになっていた
+    (第24回の穴#4)。
+    """
+    fact = simple_ir.facts.new_facts[0]
+    fact.primitive = "date_match"
+    fact.possible_values = []
+    fact.sources = {
+        "claimed": SourceRef(from_="action_request", path="claimed"),
+        "registered": SourceRef(from_="master", path="registered"),
+    }
+    fact.other_value_note = None
+    # 決定表のセルは「一致」のままにする(C5 は導いた値で照合する)
+    table = simple_ir.new_decision_tables[0]
+    table.rule_rows[0].conditions[fact.variable] = "一致"
+    bundle = generate_wiring_bundle(simple_ir, registry=empty_registry)
+    bound = {f["variable"]: f for f in bundle.bindings["facts"]}
+    assert bound[fact.variable]["possible_values"] == ["一致", "不一致", "未提供"]
+    # 比較型には予約語「その他」も other_value_note も付かない(D45・D55)
+    assert "その他" not in bound[fact.variable]["possible_values"]
+    assert "other_value_note" not in bound[fact.variable]
+    layer3 = {f["variable"]: f for f in bundle.registry["fact_registry"]}
+    assert layer3[fact.variable]["possible_values"] == ["一致", "不一致", "未提供"]
+
+
+def test_c9_disjoint_cannot_be_combined_with_add_rows(simple_ir, seeded_registry):
+    """D58: 列集合が1つも重ならない表に行を足すことはできない。
+
+    `disjoint` は「比べたが重ならない」ことの記録で、new_table と組み合わせて使う。
+    """
+    simple_ir.level_determination.final = FinalLayer(
+        compared_table_id="dt_identity", relation="disjoint", action="add_rows"
+    )
+    with pytest.raises(SchemaWiringError, match="C9検証失敗.*disjoint"):
+        generate_wiring_bundle(simple_ir, registry=seeded_registry)
+
+
+def test_c9_disjoint_is_allowed_with_new_table(simple_ir, seeded_registry):
+    """D58: `disjoint` + `new_table` は通る(第14条がこの形)。
+
+    比べる相手がない(None)のではなく、比べたが列が重ならなかったことを記録する。
+    """
+    simple_ir.level_determination.final = FinalLayer(
+        compared_table_id="dt_identity", relation="disjoint", action="new_table"
+    )
+    bundle = generate_wiring_bundle(simple_ir, registry=seeded_registry)
+    # 比べた相手を記録しただけなので、ゲートは変わらない
+    assert bundle.registry["review"]["gates"] == ["new_fact_unapproved"]

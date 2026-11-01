@@ -1,7 +1,7 @@
 # aoi_doc2dmn ③a 中間表現（IR）v2 設計書（Markdown 版）
 
 > **この文書について**
-> - Word 版「aoi_doc2dmn_IRv2_設計書.docx」v1.5（2026-10-23）の Markdown 版。正本は Word 版で、図は文章と表で置き換えている。
+> - Word 版「aoi_doc2dmn_IRv2_設計書.docx」v1.6（2026-11-02）の Markdown 版。正本は Word 版で、図は文章と表で置き換えている。
 > - **③a の IR 設計の基準文書である。** 次の旧文書と食い違う点は、本書を優先する。
 >   - gijinka_dmn_generation_design_v1.docx：バインディング設定（fact の定義は IR に入れ、共有分は登録簿の層3に置く。区分の値は passthrough）、ルーティング表（dmn_model・decision_id・required_facts を持つ）、登録簿（層1に dmn_model、層3 fact 台帳を新設）
 >   - gijinka_extraction_pipeline_design_v1.docx：レベル1／2判定（3層とも同じ「列集合の関係」で表すのをやめ、層ごとの型にする。関係＝根拠と action＝結論を分ける）
@@ -10,11 +10,11 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| 版 | v1.5（ToBe 設計・レビュー待ち。v1.1 からの変更は付録B、v1.2 からは付録C、v1.3 からは付録D、v1.4 からは付録E） |
-| 作成日／改訂日 | 2026-10-16／2026-10-23 |
+| 版 | v1.6（ToBe 設計・レビュー待ち。v1.1 からの変更は付録B、v1.2 からは付録C、v1.3 からは付録D、v1.4 からは付録E、v1.5 からは付録F） |
+| 作成日／改訂日 | 2026-10-16／2026-11-02 |
 | 作成 | Claude（Kazuhiro さんとの議論に基づく） |
 | 対象 | aoi_doc2dmn ③a（宣言的 × ハード制約） |
-| 基準とした実装 | v1：コミット 9e66776（AsIs）／v2 初回実装：コミット 10fc38b／v1.2 実装：コミット 71d3424／v1.3 実装：コミット e6e3ee6／v1.4 実装：コミット 6fcaf03 |
+| 基準とした実装 | v1：コミット 9e66776（AsIs）／v2 初回実装：コミット 10fc38b／v1.2 実装：コミット 71d3424／v1.3 実装：コミット e6e3ee6／v1.4 実装：コミット 6fcaf03／v1.5 実装：コミット 25cd82f |
 
 ## はじめに
 
@@ -27,7 +27,7 @@
 | 文書 | 内容 | 時点 |
 | --- | --- | --- |
 | AsIs 仕様書（Claude Docs）<br>https://claude.ai/code/artifact/11cc2737-119c-4776-8f64-d7085b0afbce | IR・配線ジェネレータ・4点セットの実装の記録と、そこで見つかった問題 | コミット 9e66776 |
-| 本書（IR v2 設計書） | IR の改訂内容、4点セットの導き方、クロス検証、正解 IR の作り方 | v1.1 までの内容はコミット 10fc38b、v1.2 の内容はコミット 71d3424、v1.3 の内容はコミット e6e3ee6、v1.4 の内容はコミット 6fcaf03 で実装済み。v1.5 の追加分はこれから |
+| 本書（IR v2 設計書） | IR の改訂内容、4点セットの導き方、クロス検証、正解 IR の作り方 | v1.1 までの内容はコミット 10fc38b、v1.2 の内容はコミット 71d3424、v1.3 の内容はコミット e6e3ee6、v1.4 の内容はコミット 6fcaf03、v1.5 の内容はコミット 25cd82f で実装済み。v1.6 の追加分はこれから |
 
 ### 対象範囲
 
@@ -185,6 +185,20 @@ IR v2 は、前段（条文 → IR）の出力であり、配線ジェネレー�
 | D51 | 評価の判断（「相当な範囲を超えた」など）を含む条文は、③a の正解 IR にしない。manifest.json の not_expressible に理由と共に登録する | 評価の判断を passthrough で受け取ると、判定が決定表の外に移り、表は恒真になる。新しいプリミティブは③a の範囲外（D20） | 選び方の基準がなかった（art12 で判明） |
 | D52 | 正解 IR の評価の仕組みとして、第22回の判断を採用する。ゲートは導出し、期待値を review.expected_gates に書く。評価では登録簿と DMN ファイルの両方を持ち回る。列にしなかった条文の語句を evidence.not_modeled に書く。層1の depends_on_decisions は、配線ジェネレータが判定名から ID に解決する | ゲートや依存は他の欄から決まるので手で書かせない（D31・D38 と同じ）。DMN を持ち回らないと、同じモデルに手を入れる2件目の条文で前の行が消える | 設計書に規定がなかった |
 
+次の D53〜D61 は、v1.5 の実装（コミット 25cd82f）の報告（第24回）と、Kazuhiro さんによる正解 IR 5件のレビュー（2026年11月2日）を受けて追加した。対応関係は付録Fにまとめる。
+
+| # | 決定 | 理由 | v1.5 からの変更 |
+| --- | --- | --- | --- |
+| D53 | 正解 IR の承認と、語彙（Action・fact・値）の承認を分ける。正解 IR の承認は review.status = approved・reviewed_by・reviewed_at に記録し、IR の中の approved_by は None のまま残す。語彙の承認は、登録簿への反映（promotion、U8）のときに記録する | 前段が出力する IR は人の承認を経ていないので approved_by は None である。正解 IR だけが承認済みだと、比べたときに承認の有無の差がすべて不一致になる | 区別がなく、正解 IR の承認で approved_by を埋めるのかが決まっていなかった |
+| D54 | 「その他」と知らない値の境目は、値の意味ではなく、実行時に値を当てはめる側が判断できたかどうかで決まる。当てはめる側が「条文の値に当たらない」と判断できたものは「その他」（既定の行へ）、判断できなかったものは語彙にない値のまま渡り、エスカレーションになる（D46）。正解 IR の escalate のシナリオには、判断できなかったことを表す値（「判定不能」など）を使う | 下書きの escalate のシナリオ（検証環境・社員の私物・公開情報・所定労働）は、どれも本来「その他」に当たる値だった | 境目が定義されていなかった |
+| D55 | passthrough の fact は、「その他」が指す状態の注記（other_value_note）を持つ。新しい fact（new_facts）では必須とし、C4 で確かめる。層3とバインディング設定にも出力する | 実行時に値を当てはめる側が、何を「その他」にしてよいかを知るための情報である。「その他」が指す状態は fact ごとに違う（許可を得ている、請求していない、など） | 注記の置き場所がなく、review.notes に散らばっていた |
+| D56 | 値の正規化では、数字を半角に統一する | 値は実行時に文字列一致で引くので、表記の規則を1つにする | 「18歳未満」は半角、「産後１年」は全角が混在していた |
+| D57 | target.dmn_model に既存のモデル（registry/dmn/<dmn_model>.dmn がある）を指定した IR は、新しい表だけを足す場合も、既存のファイルを読み込んで追記する | 既存の表に手を入れない IR が単体の DMN を作り、既存モデルのファイルと namespace を置き換えてしまう（D39 に反する） | 既存の表に行・列を足す場合だけ既存ファイルを読んでいた |
+| D58 | ColumnSetRelationKind に disjoint（列集合が1つも重ならない）を足す。比べた既存の最終判定があれば、重ならなくても compared_table_id に書く | 「比べる相手がない」と「比べたが重ならない」は、レベル判定の記録として意味が違う | 互いに素を表す値がなく、相手なし（None）とするしかなかった |
+| D59 | 比較型の fact（exact_match・fuzzy_match_name・date_match・ontology_class_match・identifiability_classifier）の possible_values は、プリミティブの定義（3.5節）から導く。D4（表に出てくる値だけ）は passthrough の fact にだけ適用する。初期登録の fact もこれで作り直す | 比較型の値の集合は条文ではなくプリミティブの定義で決まるので、業務知識の補完に当たらない。表に出てくる値だけにすると、「未提供」のような正当な値がエスカレーションになる | 初期登録の name_match が「一致／不一致」だけで、「未提供」が知らない値になっていた |
+| D60 | Action の階層では、親への許可は子に及ばない。新しい Action の親の位置づけは人の承認とし、根拠がなければ parent を None にして判断を人に回す | 特権操作をシステム操作の子に置くと、後で「システム操作」を許可する条文が来たとき、その許可が特権操作に及ぶおそれがある（レビュー A-2）。実行時のルーティングは文字列一致なので今は伝わらないが、階層の意味を決めておかないと、階層を使い始めたときに危険が現実になる | 階層の意味が決まっていなかった |
+| D61 | 第24回の実装上の判断を採用する。C12 は足した値を含む入力の組み合わせが網羅されているかを行全体で見て、対象は足した出力を直接ドット参照している判定とする。IR に「その他」を書いたら C4 で止める。シナリオ評価の入口は scenario_eval に置く。条文の語と既存の fact の対応付けは evidence.fact_mapping に書く | C12 を列ごとに見ると、その列が「-」の行（あおいの tr_r1）ですり抜ける。ほかは設計書に書いていなかった点を補ったもの | 設計書の C12 の文言は列ごとの読み方だった |
+
 ## 3. IR v2 の型
 
 ### 3.1 全体構造
@@ -236,6 +250,7 @@ IR v2 は、前段（条文 → IR）の出力であり、配線ジェネレー�
 |   | sources | dict[str, SourceRef] | プリミティブの引数名 → 値の取得元 |
 |   | comparison_kind | str（任意） | 語彙登録時に人が付ける比較の種類の注釈 |
 |   | approved_by | str または None | この fact の追加を承認した人。未承認なら None（D14） |
+|   | other_value_note | str または None | passthrough の fact で、予約語「その他」が指す状態（例：許可を得ている）。new_facts では必須（D55） |
 | SourceRef | from（Python では from_） | str | 取得元の種類：action_request（行動要求）／ master（マスタ照会）／ literal（固定値）。from は Python の予約語なのでフィールド名は from_、JSON では from |
 |   | path または value | str | from が action_request・master なら path、literal なら value |
 | AtomicFactLayer | covered | bool | 必要な比較を既存の一致プリミティブで賄えるか |
@@ -253,7 +268,7 @@ IR v2 は、前段（条文 → IR）の出力であり、配線ジェネレー�
 |   | final | FinalLayer | ③ 最終判定の層 |
 |   | outcome（導出） | level1_new_table / level2_row_addition / level2_intermediate_only | final.action が new_table なら level1_new_table、add_rows なら level2_row_addition、no_change なら level2_intermediate_only。値は持たず計算する |
 
-ColumnSetRelationKind（exact_match / proper_subset / intersecting_non_subset）は v1 と同じ値を使う。ただし一致プリミティブの exact_match とは別物である。
+ColumnSetRelationKind は v1 の3値（exact_match / proper_subset / intersecting_non_subset）に、v1.6 で disjoint（1つも重ならない）を足した（D58）。一致プリミティブの exact_match とは別物である。
 
 ### 3.4 変更しない型
 
@@ -520,7 +535,7 @@ IR が既存の表に行・列・出力値を足した場合、作り直すル�
 | inputData | new_decision_tables の input_columns のうちドットを含まない列 |
 | knowledgeSource・authorityRequirement | new_decision_tables の knowledge_sources |
 
-既存のモデルに行を足す場合（レベル2、または中間判定への行追加）は、registry/dmn/<dmn_model>.dmn を読み込み、position の位置に rule を挿入して出力する（D15）。挿入先の表の hit_policy が FIRST でなければ停止する（D35）。列を足す場合（add_column）は、input と inputData を足し、既存の全 rule のその列を「-」にする（D19）。中間判定の出力値を足すだけなら、DMN XML の構造は変わらない。
+target.dmn_model に既存のモデルを指定した IR は、新しい表だけを足す場合も、既存のファイルを読み込んで追記する（D57）。既存のモデルに行を足す場合（レベル2、または中間判定への行追加）は、registry/dmn/<dmn_model>.dmn を読み込み、position の位置に rule を挿入して出力する（D15）。挿入先の表の hit_policy が FIRST でなければ停止する（D35）。列を足す場合（add_column）は、input と inputData を足し、既存の全 rule のその列を「-」にする（D19）。中間判定の出力値を足すだけなら、DMN XML の構造は変わらない。
 
 ドット参照の requiredDecision の href には、参照先の decision の id を入れる。FEEL 式（inputExpression の text）には decision の name を使う。初回実装で href に name を入れていた誤りは修正済みである。
 
@@ -586,7 +601,7 @@ v1 の gate_reasons は日本語の説明文だけで、集計に向かなかっ
 | C1 | fact の不足 | required_facts（作り直すすべてのルートの和集合）のすべてが facts.new_facts か層3にある。IR が言及しない中間判定の fact の不足は、C1 だけが捕まえる（D26） | v1 から |
 | C2 | fact の余剰 | facts.new_facts のすべてが、どこかの決定表で使われている | v1 から |
 | C3 | 複合 fact の拒否 | compound_fact_application.rejected_in_primitive が False である（D31） | v1 から |
-| C4 | sources と引数 | sources のキーが、primitive の引数名と一致する（3.5節）。表にないプリミティブ、および new_facts での identifiability_classifier は停止（D23） | 追加 |
+| C4 | sources と引数 | sources のキーが、primitive の引数名と一致する（3.5節）。表にないプリミティブ、および new_facts での identifiability_classifier は停止（D23）。IR の possible_values に「その他」を書いた場合、passthrough の new_facts に other_value_note がない場合も停止（D55・D61） | 追加 |
 | C5 | 決定表の値 | 新規の表の行と rule_row_additions の各条件の値（「-」以外、ドット参照の列を除く）が、その fact の possible_values（value_additions を含む）にある | 追加 |
 | C6 | 参照 fact の実在と網羅 | facts.referenced_facts と value_additions のキーが層3に実在する。D25 の手順で求めた「IR が使う既存 fact」と referenced_facts が一致する（D21・D25） | 追加（v1.2 で網羅を追加、v1.3 で基準を変更） |
 | C7 | 判定先の実在 | target.entry_decision_id が DMN XML（add_rows の場合は挿入後の既存モデル）と層1に実在する（D15） | 追加（v1.2 で add_rows に対応） |
@@ -594,7 +609,7 @@ v1 の gate_reasons は日本語の説明文だけで、集計に向かなかっ
 | C9 | レベル判定の整合 | 3.7節の8条件を満たす | 追加（v1.2 で条件6、v1.3 で条件7・8を追加、v1.4 で条件3を双方向に） |
 | C10 | ドット参照の解決 | 「判定名.出力名」の判定が実在し、その出力名を持つ。出力名は IR の新規表の行、または層1の output_columns で確かめる（D12） | 追加 |
 | C11 | ドット参照の値 | 「判定名.出力名」の列の条件値（「-」以外）が、参照先の判定の出力値にある。出力値は層2の行・IR の rule_row_additions・intermediate の new_output_values（同じ出力名の分だけ）から集める（D13・D29）。値は D28 の関数で揃えて比べる | v1.2 で追加 |
-| C12 | 足した出力値の受け止め | 中間判定に出力値を足す IR で、その出力をドット参照している既存のすべての判定について、足した値がどれかの行（「-」を含む）に当たる（D48）。C11 の逆向き | v1.5 で追加 |
+| C12 | 足した出力値の受け止め | 中間判定に出力値を足す IR で、その出力をドット参照している既存のすべての判定について、足した値を含む入力の組み合わせが、行全体で見てどれかの行に当たる（D48・D61）。対象は足した出力を直接ドット参照している判定。C11 の逆向き | v1.5 で追加 |
 
 各検証には、わざと違反させた IR で SchemaWiringError になることを確かめる失敗テストを付け、リポジトリにコミットする。ただし C8 は、ルーティング表とバインディング設定を同じ required_facts から導くので、IR の側から違反を作れない。C8 には両者が一致することを確かめるテストを置き、どちらかの導出だけが変わったときに気付けるようにする。
 
@@ -666,6 +681,7 @@ v1 の gate_reasons は日本語の説明文だけで、集計に向かなかっ
 | U10 | 業務知識の混入 | 前段を自動化したとき、LLM が条文にない値を possible_values に提案するのを止める仕組みがない | 当面は new_fact_unapproved ゲート（人が見る）だけが歯止め。前段の設計で扱う |
 | U11 | あおいの fact の取得元 | 初期登録した7件の fact の sources（どのマスタのどの項目と比べるか）が分からない。参考実装のテストには patient_record という取得元が出てくるが、本書の from の語彙（action_request／master／literal）にない | 空のまま sources_undefined を付ける（D33）。一致プリミティブの実装（U4）に入るときに、あおいの fact の取得元の表を作って埋める。patient_record は master に当たると見込む |
 | U12 | 使用者の側の規範 | 「（労働に）従事させない」のように、規範の主体が使用者の側の条文を、AI エージェントにどう当てはめるかが決まっていない | 正解 IR では actor をあおいのまま評価用に残し、review.notes に記録する。扱いは別途決める |
+| U13 | 禁止の継承 | D60 で許可は子に及ばないと決めたが、親への禁止を子に及ぼすかは決めていない | 当面は階層を規則の継承に使わない（実行時は文字列一致）。及ぼす場合は安全側だが、階層の整理と合わせて決める |
 
 ## 8. 用語集
 
@@ -867,4 +883,20 @@ v1.5 は、v1.4 の実装と正解 IR の初版（第22回 HANDOFF）を受け�
 | 8 | actor の当てはめと Action の階層 | 使用者の側の規範は U12 として記録。別の規程の語は既存の階層に混ぜない（6.2節） |
 | 9 | レベル2・no_change の実在の条文がない | 架空の条文で埋めない（6.1節）。情報管理規程のテストデータを整備するときに改めて探す |
 | 10 | ClauseIR を JSON に書き出す向きがない、知識源を参照先から引き継ぐかの規定がない | 前段との比較（6.3節）に入るときに扱う。知識源は引き継がない（DRD の依存で辿れる） |
+
+## 付録F　v1.5 から v1.6 への変更点
+
+v1.6 は、v1.5 の実装（第24回 HANDOFF）と、Kazuhiro さんによる正解 IR 5件のレビュー（2026年11月2日。判断点24点のうち23点が推奨どおり、1点が変更）を受けて改訂した。
+
+| # | 出どころ | 扱い |
+| --- | --- | --- |
+| 1 | 第24回の逸脱7件（C12 の行全体・直接参照、「その他」の停止を C4 に、scenario_eval、第14条の別モデル、fact_mapping、層1の history） | 採用（D61）。第14条の別モデルはレビュー E-2 で承認 |
+| 2 | 第24回の穴#1：既存モデルに表だけを足す IR が既存ファイルを上書きする | 既存ファイルを読んで追記する（D57） |
+| 3 | 第24回の穴#2：列集合が互いに素を表す値がない | disjoint を足す（D58） |
+| 4 | 第24回の穴#3、レビュー G-4：「その他」が指す状態が読めない | other_value_note（D55） |
+| 5 | 第24回の穴#4：初期登録の比較型の fact に「未提供」がない | 比較型の値はプリミティブの定義から導く（D59） |
+| 6 | レビュー G-2：正解 IR の承認と approved_by | 承認を分ける（D53） |
+| 7 | レビュー G-5：escalate のシナリオの値が「その他」に当たる | 境目を定義（D54） |
+| 8 | レビュー G-6・D-3：数字の表記 | 半角に統一（D56） |
+| 9 | レビュー A-2（変更）：特権操作の親をシステム操作にすると、親への許可が子に及ぶおそれ | 親は None にして人の判断に回す。許可は子に及ばない（D60）。禁止の継承は U13 |
 

@@ -563,11 +563,13 @@
       "primitive": "fuzzy_match_name",
       "possible_values": [
         "一致",
-        "不一致"
+        "不一致",
+        "未提供"
       ],
       "sources": {},
       "comparison_kind": null,
       "approved_by": "bootstrap",
+      "other_value_note": null,
       "defined_by": "あおいの既存DMN(条文由来ではない)",
       "used_by": [
         "dt_identity"
@@ -586,12 +588,13 @@
       "primitive": "date_match",
       "possible_values": [
         "一致",
-        "未提供",
-        "不一致"
+        "不一致",
+        "未提供"
       ],
       "sources": {},
       "comparison_kind": null,
       "approved_by": "bootstrap",
+      "other_value_note": null,
       "defined_by": "あおいの既存DMN(条文由来ではない)",
       "used_by": [
         "dt_identity"
@@ -610,11 +613,13 @@
       "primitive": "exact_match",
       "possible_values": [
         "一致",
+        "不一致",
         "未提供"
       ],
       "sources": {},
       "comparison_kind": null,
       "approved_by": "bootstrap",
+      "other_value_note": null,
       "defined_by": "あおいの既存DMN(条文由来ではない)",
       "used_by": [
         "dt_identity"
@@ -638,6 +643,7 @@
       "sources": {},
       "comparison_kind": null,
       "approved_by": "bootstrap",
+      "other_value_note": null,
       "defined_by": "あおいの既存DMN(条文由来ではない)",
       "used_by": [
         "dt_classification"
@@ -661,6 +667,7 @@
       "sources": {},
       "comparison_kind": null,
       "approved_by": "bootstrap",
+      "other_value_note": null,
       "defined_by": "あおいの既存DMN(条文由来ではない)",
       "used_by": [
         "dt_classification"
@@ -685,6 +692,7 @@
       "sources": {},
       "comparison_kind": null,
       "approved_by": "bootstrap",
+      "other_value_note": null,
       "defined_by": "あおいの既存DMN(条文由来ではない)",
       "used_by": [
         "dt_classification"
@@ -709,6 +717,7 @@
       "sources": {},
       "comparison_kind": null,
       "approved_by": "bootstrap",
+      "other_value_note": "(初期登録)DMN の表に現れない状態",
       "defined_by": "あおいの既存DMN(条文由来ではない)",
       "used_by": [
         "dt_transmission"
@@ -718,7 +727,7 @@
         "clause_ref": "あおいの既存DMN(条文由来ではない)",
         "registered_by": "bootstrap",
         "registered_at": "2026-10-23T00:00:00+00:00",
-        "note": "sources は元の DMN XML に情報が無いため未設定。一致プリミティブの実装時に、出典付きで付与する必要がある"
+        "note": "sources は元の DMN XML に情報が無いため未設定。一致プリミティブの実装時に、出典付きで付与する必要がある／other_value_note は元の DMN XML に情報が無いため固定の文。「その他」が指す状態は、語彙の承認(U8)のときに出典付きで埋める必要がある"
       },
       "history": []
     }

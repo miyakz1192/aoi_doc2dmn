@@ -55,7 +55,8 @@
               "path": "usage.authorization"
             }
           },
-          "approved_by": null
+          "approved_by": null,
+          "other_value_note": "許可を得ている"
         },
         {
           "variable": "usage_purpose",
@@ -69,7 +70,8 @@
               "path": "usage.purpose"
             }
           },
-          "approved_by": null
+          "approved_by": null,
+          "other_value_note": "職務の目的"
         },
         {
           "variable": "usage_target",
@@ -84,7 +86,8 @@
               "path": "usage.target"
             }
           },
-          "approved_by": null
+          "approved_by": null,
+          "other_value_note": "会社の施設・物品等に当たらないもの。「等」に当たるものを禁止側に入れるかは、当てはめる側の判断になる(レビュー B-2)"
         }
       ],
       "referenced_facts": [],
@@ -265,22 +268,37 @@
       }
     },
     {
-      "name": "使用対象が「社員の私物」(possible_values に無い値) → 人の確認に回す",
+      "name": "使用対象が条文の挙げる区分でない(社員の私物) → 許可",
+      "kind": "予約語「その他」が既定の行(ワイルドカード)に落ちる(D45)",
+      "facts": {
+        "usage_authorization": "許可なし",
+        "usage_purpose": "職務以外の目的",
+        "usage_target": "その他"
+      },
+      "expected": {
+        "decision": "許可",
+        "reason_code": "not_prohibited_combination"
+      },
+      "note": "当てはめる側が「社員の私物」を『その他』と判断した場合(D54)。「等」に当たるものを禁止側に入れるかは当てはめる側の判断になる(レビュー B-2)"
+    },
+    {
+      "name": "使用対象の当てはめができなかった(「判定不能」) → 人の確認に回す",
       "kind": "知らない値がエスカレーションになる(D46)",
       "facts": {
         "usage_authorization": "許可なし",
         "usage_purpose": "職務以外の目的",
-        "usage_target": "社員の私物"
+        "usage_target": "判定不能"
       },
       "expected": {
         "decision": "escalate",
         "reason_code": "unknown_fact_value"
-      }
+      },
+      "note": "D54: 知らない値は、当てはめる側が判断できなかったことを表す値にする。条文の値に当たらないと判断できたものは「その他」(既定の行)に落ちる"
     }
   ],
   "review": {
-    "status": "draft",
-    "reviewed_by": null,
+    "status": "approved",
+    "reviewed_by": "Kazuhiro",
     "expected_gates": [
       "new_action_unapproved",
       "new_fact_unapproved"
@@ -289,7 +307,61 @@
       "actor: 条文(就業規則 第11条)の主語は従業員である。擬人化の前提であおいに当てた(ゴールデンパスと同じ扱い)",
       "usage_authorization の値は「許可なく」を体言化して「許可なし」にした(D44)。反対側(許可を得ている状態)は条文にないので値を足していない",
       "action.parent「会社資源利用」は条文にない。Action 正規化の階層への位置づけは人が承認する前提なので、提案として置いている",
-      "「物品等」の「等」に当たるものは、条文に書かれていないので値にしていない。実行時は「その他」として既定の行(許可)に落ちる。知らない値(社員の私物など)はエスカレーションになる(D46)。「等」の範囲を条文の外から足すかは判断をお願いしたい"
+      "「物品等」の「等」に当たるものは、条文に書かれていないので値にしていない。実行時は「その他」として既定の行(許可)に落ちる。知らない値(社員の私物など)はエスカレーションになる(D46)。「等」の範囲を条文の外から足すかは判断をお願いしたい",
+      "usage_target の other_value_note には、「等」の扱いが当てはめる側の判断になることを書いた(レビュー B-2・D55)。「等」に当たるものを値として足すことはしていない"
+    ],
+    "reviewed_at": "2026-11-02",
+    "decisions": [
+      {
+        "id": "G-1",
+        "point": "「従業員」「職員」をあおいに当てる",
+        "result": "推奨どおり(承認)"
+      },
+      {
+        "id": "G-2",
+        "point": "正解IR の中の approved_by は None のまま残す",
+        "result": "推奨どおり(D53。承認は review.status に記録する)"
+      },
+      {
+        "id": "G-3",
+        "point": "art12(パワハラ)を正解IR から外す",
+        "result": "推奨どおり(D51。manifest.json の not_expressible に残す)"
+      },
+      {
+        "id": "G-4",
+        "point": "「その他」が指す状態を fact ごとに注記する",
+        "result": "推奨どおり(D55。other_value_note の内容は第25回 HANDOFF 3.2の表)"
+      },
+      {
+        "id": "G-5",
+        "point": "escalate のシナリオの値を見直す",
+        "result": "推奨どおり(D54。知らない値は「判定不能」にし、元の値は「その他」のシナリオに移した)"
+      },
+      {
+        "id": "G-6",
+        "point": "数字は半角に統一",
+        "result": "推奨どおり(D56)"
+      },
+      {
+        "id": "B-1",
+        "point": "「許可なく」を「許可なし」に正規化する",
+        "result": "推奨どおり"
+      },
+      {
+        "id": "B-2",
+        "point": "「物品等」の「等」に当たる値を足さない",
+        "result": "推奨どおり"
+      },
+      {
+        "id": "B-3",
+        "point": "「職務以外の目的」を1つの値にする",
+        "result": "推奨どおり"
+      },
+      {
+        "id": "B-4",
+        "point": "Action「施設物品使用」と親「会社資源利用」",
+        "result": "推奨どおり"
+      }
     ]
   }
 }

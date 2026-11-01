@@ -37,13 +37,13 @@ aoi_doc2dmn/
 ├── testdata/
 │   ├── clauses/clauses_v1.json  # オラクル付きテストデータ（28件。厚労省モデル就業規則16件＋
 │   │                             IPA情報セキュリティ関連規程等12件）
-│   ├── ir_gold/                 # 正解IRの下書き（5件＋manifest.json。review.status=draft）
+│   ├── ir_gold/                 # 承認済みの正解IR（5件＋manifest.json。review.status=approved）
 │   ├── candidates/              # テストデータ拡張時の候補・レビュー記録
 │   └── schema.md                # オラクルのスキーマ定義・カバレッジ表・①関連判定の基準
 ├── registry/
 │   ├── registry.json     # 永続化した登録簿（③の入力。既存の決定表とfact台帳）
 │   └── dmn/              # 既存のDMNモデル（<dmn_model>.dmn。行・列の追加先）
-├── tests/                # pytest（クロス検証C1〜C11の失敗テスト・ゴールデンパス固定・
+├── tests/                # pytest（クロス検証C1〜C12の失敗テスト・ゴールデンパス固定・
 │   │                     #         受け入れ経路（レベル2/行追加/列追加/no_change）・
 │   │                     #         初期登録した DMN の修正（D34）・正解IRのテスト）
 │   └── fixtures/         # あおいの元のDMN（初期登録の入力。D42）
@@ -76,8 +76,8 @@ aoi_doc2dmn/
   パイプライン）への移行フェーズに入った。詳細は`testdata/schema.md`「軸1・軸2分類の精度改善
   フェーズの区切り」節、「gold label判定の方針」節を参照
 - `src/stage3_generate/`: ③a（宣言的×ハード制約）の**後半**（IR → 4点セット）は
-  IR v2（`docs/design/aoi_doc2dmn_IRv2_design.md` v1.5）で実装済み。fact の定義がIRに入り
-  （`facts.new_facts`）、4点すべてをIRと登録簿から生成する。クロス検証はC1〜C11で、
+  IR v2（`docs/design/aoi_doc2dmn_IRv2_design.md` v1.6）で実装済み。fact の定義がIRに入り
+  （`facts.new_facts`）、4点すべてをIRと登録簿から生成する。クロス検証はC1〜C12で、
   それぞれの失敗テストが`tests/`にある
 - v1.2 で**受け入れ経路**を実装した。新しい表を作るだけ（レベル1）でなく、既存のDMN
   モデルへの行の挿入（レベル2・中間判定への行追加）と列の追加ができる。既存の表に
@@ -89,7 +89,8 @@ aoi_doc2dmn/
 - `registry/registry.json`には、あおいの送信可否判定（本人確認判定・情報分類判定・
   送信可否判定）を初期登録済み（`provenance.origin = bootstrap`）。層1が3件・層2が18件・
   層3が7件。DMNは`registry/dmn/aoi_transmission.dmn`（元のDMNに承認済みの修正2件を
-  当てたもの。D34）
+  当てたもの。D34）。比較型のfactの`possible_values`はプリミティブの定義から導く
+  （D59。`name_match`に「未提供」、`phone_match`に「不一致」が入る）
 - v1.4 では、中間判定の新しい出力値を承認の対象にし（D37）、C9条件3を双方向の一致に
   した（D36）。`depends_on_decisions`／`depends_on_inputs`はIRから外し、`input_columns`
   からの導出にした（D38）
@@ -98,8 +99,14 @@ aoi_doc2dmn/
   バインディング設定の`on_unknown_value`と`scenario_eval.py`）。あわせて**C12**を
   足した（D48）。中間判定に足した出力値を、それを参照する既存の判定が受け止められるか
   を確かめる（C11の逆向き）
-- `testdata/ir_gold/`に**正解IRの下書き**が5件ある（`review.status = "draft"`）。
-  `run_ir_gold.py`が`manifest.json`の順に配線ジェネレータへ通し、C1〜C11とDMN評価
+- v1.6 では、Kazuhiroさんのレビュー（2026-11-02）の結果を反映した。`passthrough`のfactは
+  「その他」が指す状態の注記を持ち（D55。`other_value_note`。無ければC4で止める）、
+  比較型のfactの`possible_values`はプリミティブの定義から導く（D59）。既存のDMNモデルを
+  指す IR は、新しい表だけを足す場合も既存ファイルに追記する（D57）。`ColumnSetRelationKind`
+  に`disjoint`を足し（D58）、値の数字は半角に統一する（D56）
+- `testdata/ir_gold/`に**承認済みの正解IR**が5件ある（`review.status = "approved"`・
+  `reviewed_by`・`reviewed_at`・`decisions`。D53。IRの中の`approved_by`はNoneのまま）。
+  `run_ir_gold.py`が`manifest.json`の順に配線ジェネレータへ通し、C1〜C12とDMN評価
   シナリオを確かめる（登録簿はメモリ上で持ち回り、`registry/`には反映しない。D43）。
   型で表しきれなかった条文は`testdata/ir_gold/NOT_EXPRESSIBLE.md`に記録してある
 - ③aの**前段**（条文 → IR）は未実装。現状は`golden_path.py`がゴールデンパス1件のIRを
@@ -190,17 +197,18 @@ C1〜C12を通過すること・DMN評価シナリオが一致することを確
 
 Ollamaは不要。5つのファイルに分かれている。
 
-- `test_cross_validation.py`：クロス検証C1〜C11の失敗テスト（わざと違反させたIRで
+- `test_cross_validation.py`：クロス検証C1〜C12の失敗テスト（わざと違反させたIRで
   `SchemaWiringError`になること）
-- `test_golden_path.py`：ゴールデンパスがC1〜C11を通過しDMN評価4/4になること、承認者を
+- `test_golden_path.py`：ゴールデンパスがC1〜C12を通過しDMN評価4/4になること、承認者を
   入れるとレビューゲートが下りること
 - `test_acceptance_paths.py`：初期登録したあおいの登録簿を使い、レベル2・中間判定への
-  行追加・列の追加・no_change（第901〜904条）が通ること（挿入後のDMNの評価シナリオ込み。
-  既定の行に落ちるケースを含む）
+  行追加・列の追加・no_change（第901〜906条）が通ること（挿入後のDMNの評価シナリオ込み。
+  既定の行に落ちるケース・既存モデルへの追記（D57）を含む）
 - `test_bootstrap_fixes.py`：初期登録したDMNの修正（D34）。修正を外すとC11で止まること、
   修正の前後で評価結果が変わらないこと
-- `test_ir_gold.py`：正解IRの下書きが全件C1〜C12を通りシナリオが一致すること、
-  evidenceの根拠が逐語か正規化であること、`registry/`を書き換えないこと
+- `test_ir_gold.py`：正解IRが全件C1〜C12を通りシナリオが一致すること、evidenceの根拠が
+  逐語か正規化であること、値の数字が半角であること（D56）、承認がreviewに記録され
+  IRの中の`approved_by`はNoneのままであること（D53）、`registry/`を書き換えないこと
 
 元のDMNと第14条の条文本文は`tests/fixtures/`にコミットしてあるため（D42）、
 `reference/`が無い環境でも全件が動く（skipは0件）。

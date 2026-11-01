@@ -73,12 +73,24 @@ def make_provenance(clause_ref: str) -> Provenance:
     )
 
 
-def passthrough_fact(variable: str, values: list[str], path: str) -> FactDef:
+def passthrough_fact(
+    variable: str,
+    values: list[str],
+    path: str,
+    *,
+    other_value_note: str | None = "(テスト)条文の値に当たらない状態",
+) -> FactDef:
+    """passthrough の fact。`other_value_note` は D55 で必須なので既定値を入れる。
+
+    注記が無い場合に C4 が止まることは `test_c4_passthrough_without_other_value_note`
+    が確かめるので、そちらでは `other_value_note=None` を渡す。
+    """
     return FactDef(
         variable=variable,
         primitive="passthrough",
         possible_values=list(values),
         sources={"value": SourceRef(from_="action_request", path=path)},
+        other_value_note=other_value_note,
     )
 
 

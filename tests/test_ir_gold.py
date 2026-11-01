@@ -112,19 +112,48 @@ def test_running_the_gold_irs_does_not_touch_the_registry(gold_results):
 
 @pytest.mark.parametrize("path", _gold_files(), ids=lambda p: p.stem)
 def test_gold_file_shape(path):
-    """設計書6.2「正解 IR のファイル」のキーが揃い、下書きの状態になっている。"""
+    """設計書6.2「正解 IR のファイル」のキーが揃い、承認が review に記録されている。
+
+    D53: 正解IR の承認と、語彙(Action・fact・値)の承認は別物である。承認は
+    `review.status` 側に記録し、IR の中の `approved_by` は None のまま残す。
+    `human_review_status` は前段の出力のレビュー状態を表す欄なので pending のまま。
+    """
     gold = json.loads(path.read_text(encoding="utf-8"))
     for key in REQUIRED_KEYS:
         assert key in gold, key
     assert gold["gold_id"] == path.stem
-    assert gold["review"]["status"] == "draft"
-    assert gold["review"]["reviewed_by"] is None
-    assert gold["review"]["notes"], "レビューで見てほしい点を書く"
-    # 承認者はすべて None(承認は人が行う)
+    review = gold["review"]
+    assert review["status"] == "approved"
+    assert review["reviewed_by"] == "Kazuhiro"
+    assert review["reviewed_at"] == "2026-11-02"
+    assert review["decisions"], "レビューの判断点の結果を書く(D53)"
+    assert review["notes"], "レビューで見てほしい点を書く"
+    # 語彙の承認者はすべて None のまま(D53)
     ir = clause_ir_from_json(gold["ir"])
     assert ir.action.approved_by is None
     assert all(f.approved_by is None for f in ir.facts.new_facts)
     assert ir.human_review_status == "pending"
+
+
+@pytest.mark.parametrize("path", _gold_files(), ids=lambda p: p.stem)
+def test_passthrough_facts_have_an_other_value_note(path):
+    """D55: passthrough の fact は「その他」が指す状態の注記を持つ。"""
+    gold = json.loads(path.read_text(encoding="utf-8"))
+    ir = clause_ir_from_json(gold["ir"])
+    for fact in ir.facts.new_facts:
+        if fact.primitive == "passthrough":
+            assert fact.other_value_note, fact.variable
+        else:
+            assert fact.other_value_note is None, fact.variable
+
+
+@pytest.mark.parametrize("path", _gold_files(), ids=lambda p: p.stem)
+def test_values_use_halfwidth_digits(path):
+    """D56: 実行時に文字列一致で引かれる値に全角数字がない。"""
+    from src.stage3_generate.run_ir_gold import _check_halfwidth_digits
+
+    gold = json.loads(path.read_text(encoding="utf-8"))
+    assert _check_halfwidth_digits(gold, clause_ir_from_json(gold["ir"])) == []
 
 
 @pytest.mark.parametrize("path", _gold_files(), ids=lambda p: p.stem)
