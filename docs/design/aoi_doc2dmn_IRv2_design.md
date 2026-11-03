@@ -1,7 +1,7 @@
 # aoi_doc2dmn ③a 中間表現（IR）v2 設計書（Markdown 版）
 
 > **この文書について**
-> - Word 版「aoi_doc2dmn_IRv2_設計書.docx」v1.6（2026-11-02）の Markdown 版。正本は Word 版で、図は文章と表で置き換えている。
+> - Word 版「aoi_doc2dmn_IRv2_設計書.docx」v1.7（2026-11-03）の Markdown 版。正本は Word 版で、図は文章と表で置き換えている。
 > - **③a の IR 設計の基準文書である。** 次の旧文書と食い違う点は、本書を優先する。
 >   - gijinka_dmn_generation_design_v1.docx：バインディング設定（fact の定義は IR に入れ、共有分は登録簿の層3に置く。区分の値は passthrough）、ルーティング表（dmn_model・decision_id・required_facts を持つ）、登録簿（層1に dmn_model、層3 fact 台帳を新設）
 >   - gijinka_extraction_pipeline_design_v1.docx：レベル1／2判定（3層とも同じ「列集合の関係」で表すのをやめ、層ごとの型にする。関係＝根拠と action＝結論を分ける）
@@ -10,11 +10,11 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| 版 | v1.6（ToBe 設計・レビュー待ち。v1.1 からの変更は付録B、v1.2 からは付録C、v1.3 からは付録D、v1.4 からは付録E、v1.5 からは付録F） |
-| 作成日／改訂日 | 2026-10-16／2026-11-02 |
+| 版 | v1.7（ToBe 設計・レビュー待ち。v1.1 からの変更は付録B、v1.2 からは付録C、v1.3 からは付録D、v1.4 からは付録E、v1.5 からは付録F、v1.6 からは付録G） |
+| 作成日／改訂日 | 2026-10-16／2026-11-03 |
 | 作成 | Claude（Kazuhiro さんとの議論に基づく） |
 | 対象 | aoi_doc2dmn ③a（宣言的 × ハード制約） |
-| 基準とした実装 | v1：コミット 9e66776（AsIs）／v2 初回実装：コミット 10fc38b／v1.2 実装：コミット 71d3424／v1.3 実装：コミット e6e3ee6／v1.4 実装：コミット 6fcaf03／v1.5 実装：コミット 25cd82f |
+| 基準とした実装 | v1：コミット 9e66776（AsIs）／v2 初回実装：コミット 10fc38b／v1.2 実装：コミット 71d3424／v1.3 実装：コミット e6e3ee6／v1.4 実装：コミット 6fcaf03／v1.5 実装：コミット 25cd82f／v1.6 実装：コミット 550f5db |
 
 ## はじめに
 
@@ -27,7 +27,7 @@
 | 文書 | 内容 | 時点 |
 | --- | --- | --- |
 | AsIs 仕様書（Claude Docs）<br>https://claude.ai/code/artifact/11cc2737-119c-4776-8f64-d7085b0afbce | IR・配線ジェネレータ・4点セットの実装の記録と、そこで見つかった問題 | コミット 9e66776 |
-| 本書（IR v2 設計書） | IR の改訂内容、4点セットの導き方、クロス検証、正解 IR の作り方 | v1.1 までの内容はコミット 10fc38b、v1.2 の内容はコミット 71d3424、v1.3 の内容はコミット e6e3ee6、v1.4 の内容はコミット 6fcaf03、v1.5 の内容はコミット 25cd82f で実装済み。v1.6 の追加分はこれから |
+| 本書（IR v2 設計書） | IR の改訂内容、4点セットの導き方、クロス検証、正解 IR の作り方 | v1.1 までの内容はコミット 10fc38b、v1.2 の内容はコミット 71d3424、v1.3 の内容はコミット e6e3ee6、v1.4 の内容はコミット 6fcaf03、v1.5 の内容はコミット 25cd82f、v1.6 の内容はコミット 550f5db で実装済み。v1.7 の追加分はこれから |
 
 ### 対象範囲
 
@@ -199,6 +199,16 @@ IR v2 は、前段（条文 → IR）の出力であり、配線ジェネレー�
 | D60 | Action の階層では、親への許可は子に及ばない。新しい Action の親の位置づけは人の承認とし、根拠がなければ parent を None にして判断を人に回す | 特権操作をシステム操作の子に置くと、後で「システム操作」を許可する条文が来たとき、その許可が特権操作に及ぶおそれがある（レビュー A-2）。実行時のルーティングは文字列一致なので今は伝わらないが、階層の意味を決めておかないと、階層を使い始めたときに危険が現実になる | 階層の意味が決まっていなかった |
 | D61 | 第24回の実装上の判断を採用する。C12 は足した値を含む入力の組み合わせが網羅されているかを行全体で見て、対象は足した出力を直接ドット参照している判定とする。IR に「その他」を書いたら C4 で止める。シナリオ評価の入口は scenario_eval に置く。条文の語と既存の fact の対応付けは evidence.fact_mapping に書く | C12 を列ごとに見ると、その列が「-」の行（あおいの tr_r1）ですり抜ける。ほかは設計書に書いていなかった点を補ったもの | 設計書の C12 の文言は列ごとの読み方だった |
 
+次の D62〜D66 は、v1.6 の実装（コミット 550f5db）の報告（第26回）を受けて、2026年11月3日に追加した。前段（条文 → IR）の自動化で LLM に IR の型を見せる前に、型の形を整えることが中心である。対応関係は付録Gにまとめる。
+
+| # | 決定 | 理由 | v1.6 からの変更 |
+| --- | --- | --- | --- |
+| D62 | FactDef を2つの型に分ける。PassthroughFact（区分の値の fact）は possible_values と other_value_note（必須）を持つ。ComparisonFact（比較の fact）は primitive を持ち、possible_values と other_value_note を持たない（値の集合はプリミティブの定義から導く。D59）。JSON では primitive が passthrough かどうかで型を決める。層3とバインディング設定には、どちらの型でも、実際に使う値の一覧（「その他」や導出値を含む）を出力する | 1つの型で両方を表すと、possible_values が「比較型では書いてはいけない欄」になり、規則を型ではなく検査（C4）でしか表せない。前段で LLM にこの型を見せると、規則がスキーマに現れず、書き間違いを検査で後から止めることになる | 1つの FactDef で両方を表し、C4 で欄の使い分けを確かめていた |
+| D63 | 正解 IR のシナリオで、「その他」が既定の行に落ちる場合を、passthrough の fact ごとに少なくとも1件含める | other_value_note（D55）が指す状態を、fact ごとに確かめる手段がほかにない | 条文ごとに1件以上だった |
+| D64 | 第26回の実装上の判断を採用する。disjoint は final の add_rows とも intermediate の add_row とも組み合わせられない。値（possible_values・決定表のセル・出力値・シナリオの値）の全角数字は停止とする（条文本文と evidence の引用は逐語なので対象外） | 重ならない表に行を足すことはできない。値は実行時に文字列一致で引くので、警告では実行時に当たらない行が残る | D58 は add_rows だけを挙げ、D56 は検査の強さを決めていなかった |
+| D65 | テストデータを足すときは、既存の元の文書（IPA の情報セキュリティ関連規程、厚生労働省のモデル就業規則）から、話題ごとにまとめて候補を抜き出す。軸1・軸2の正解ラベルは Kazuhiro さんが確認する | 28件は②の評価のためにばらけて選んだので、同じ話題の条文がほとんどない。同じ話題の条文を固めると、Action の再利用・fact の再利用・レベル2が自然に出てくる | 正解 IR の型のうち、レベル2・no_change・値の追加・中間判定と、既存の Action への寄せが、実在の条文で埋まっていなかった |
+| D66 | IR の human_review_status は、前段の出力のレビュー状態を表す欄であり、正解 IR の承認（review.status）とは別の軸である。欄名は当面変えない | 名前が近く混同しやすいが、前段の出力に付く欄として意味は正しい | 2つの欄の関係が書かれていなかった |
+
 ## 3. IR v2 の型
 
 ### 3.1 全体構造
@@ -244,13 +254,17 @@ IR v2 は、前段（条文 → IR）の出力であり、配線ジェネレー�
 |   | value_additions | dict[str, list[ValueAddition]] | 既存 fact の possible_values に追加する値（fact 名 → 値と承認者の一覧）（D14） |
 | ValueAddition | value | str | 追加する値 |
 |   | approved_by | str または None | この値の追加を承認した人。未承認なら None（D14） |
-| FactDef | variable | str | fact の名前。DMN の inputData 名と同じ |
-|   | primitive | str | 一致プリミティブ。区分の値は passthrough、比較は exact_match など（3.5節） |
-|   | possible_values | list[str] | 決定表が参照する値（条文に出てくる値） |
+| FactDef（D62） | （型の分け方） | PassthroughFact または ComparisonFact | primitive が passthrough なら PassthroughFact、それ以外は ComparisonFact。共通の欄は variable・sources・approved_by |
+| PassthroughFact | variable | str | fact の名前。DMN の inputData 名と同じ |
+|   | possible_values | list[str] | 決定表が参照する値（条文に出てくる値）。予約語「その他」は書かない（自動で付く。D45） |
+|   | other_value_note | str | 予約語「その他」が指す状態（例：許可を得ている）。必須（D55） |
+|   | sources | dict[str, SourceRef] | 引数 value の取得元 |
+|   | approved_by | str または None | この fact の追加を承認した人。未承認なら None（D14） |
+| ComparisonFact | variable | str | fact の名前 |
+|   | primitive | str | 比較のプリミティブ（exact_match・fuzzy_match_name・date_match・ontology_class_match、初期登録分だけ identifiability_classifier）。値の集合はプリミティブの定義から導く（3.5節・D59） |
 |   | sources | dict[str, SourceRef] | プリミティブの引数名 → 値の取得元 |
 |   | comparison_kind | str（任意） | 語彙登録時に人が付ける比較の種類の注釈 |
 |   | approved_by | str または None | この fact の追加を承認した人。未承認なら None（D14） |
-|   | other_value_note | str または None | passthrough の fact で、予約語「その他」が指す状態（例：許可を得ている）。new_facts では必須（D55） |
 | SourceRef | from（Python では from_） | str | 取得元の種類：action_request（行動要求）／ master（マスタ照会）／ literal（固定値）。from は Python の予約語なのでフィールド名は from_、JSON では from |
 |   | path または value | str | from が action_request・master なら path、literal なら value |
 | AtomicFactLayer | covered | bool | 必要な比較を既存の一致プリミティブで賄えるか |
@@ -346,13 +360,23 @@ class SourceRef:
     value: str | None = None     # literal のとき
 
 @dataclass
-class FactDef:
+class PassthroughFact:                                   # D62：区分の値の fact
     variable: str
-    primitive: str
-    possible_values: list[str]
+    possible_values: list[str]                           # 「その他」は書かない（D45）
+    other_value_note: str                                # 必須（D55）
+    sources: dict[str, SourceRef]
+    approved_by: str | None = None                       # D14
+    primitive: Literal["passthrough"] = "passthrough"
+
+@dataclass
+class ComparisonFact:                                    # D62：比較の fact
+    variable: str
+    primitive: str                                       # 値の集合はプリミティブから導く（D59）
     sources: dict[str, SourceRef]
     comparison_kind: str | None = None
-    approved_by: str | None = None                       # D14
+    approved_by: str | None = None
+
+FactDef = PassthroughFact | ComparisonFact
 
 @dataclass
 class ValueAddition:                                     # D14
@@ -431,21 +455,24 @@ IR の各欄は互いに矛盾してはならない。次の8条件は配線ジ�
 {
   "actor": "あおい",
   "action": { "surface": "特権/管理者権限で操作を行う", "normalized": "特権操作",
-              "parent": "システム操作", "is_new": true, "approved_by": null },
+              "parent": null, "is_new": true, "approved_by": null },
   "target": { "dmn_model": "privileged_operation",
               "entry_decision_id": "decision_privileged_operation" },
   "facts": {
     "new_facts": [
       { "variable": "operator_role", "primitive": "passthrough",
         "possible_values": ["システム開発担当"],
+        "other_value_note": "システム開発担当以外の担当",
         "sources": { "value": { "from": "action_request", "path": "operator.role" } },
         "approved_by": null },
       { "variable": "target_environment", "primitive": "passthrough",
         "possible_values": ["本番環境"],
+        "other_value_note": "本番環境以外の環境",
         "sources": { "value": { "from": "action_request", "path": "target.environment" } },
         "approved_by": null },
       { "variable": "requested_privilege", "primitive": "passthrough",
         "possible_values": ["特権"],
+        "other_value_note": "特権以外の権限",
         "sources": { "value": { "from": "action_request", "path": "requested_privilege" } },
         "approved_by": null }
     ],
@@ -601,7 +628,7 @@ v1 の gate_reasons は日本語の説明文だけで、集計に向かなかっ
 | C1 | fact の不足 | required_facts（作り直すすべてのルートの和集合）のすべてが facts.new_facts か層3にある。IR が言及しない中間判定の fact の不足は、C1 だけが捕まえる（D26） | v1 から |
 | C2 | fact の余剰 | facts.new_facts のすべてが、どこかの決定表で使われている | v1 から |
 | C3 | 複合 fact の拒否 | compound_fact_application.rejected_in_primitive が False である（D31） | v1 から |
-| C4 | sources と引数 | sources のキーが、primitive の引数名と一致する（3.5節）。表にないプリミティブ、および new_facts での identifiability_classifier は停止（D23）。IR の possible_values に「その他」を書いた場合、passthrough の new_facts に other_value_note がない場合も停止（D55・D61） | 追加 |
+| C4 | sources と引数 | sources のキーが、primitive の引数名と一致する（3.5節）。表にないプリミティブ、および new_facts での identifiability_classifier は停止（D23）。IR の possible_values に「その他」を書いた場合、passthrough の new_facts に other_value_note がない場合、比較型の new_facts に possible_values がある場合も停止（D55・D61・D62）。v1.7 で型を分けたので、これらは JSON を読み込むときの歯止めとして残す | 追加 |
 | C5 | 決定表の値 | 新規の表の行と rule_row_additions の各条件の値（「-」以外、ドット参照の列を除く）が、その fact の possible_values（value_additions を含む）にある | 追加 |
 | C6 | 参照 fact の実在と網羅 | facts.referenced_facts と value_additions のキーが層3に実在する。D25 の手順で求めた「IR が使う既存 fact」と referenced_facts が一致する（D21・D25） | 追加（v1.2 で網羅を追加、v1.3 で基準を変更） |
 | C7 | 判定先の実在 | target.entry_decision_id が DMN XML（add_rows の場合は挿入後の既存モデル）と層1に実在する（D15） | 追加（v1.2 で add_rows に対応） |
@@ -621,7 +648,7 @@ v1 の gate_reasons は日本語の説明文だけで、集計に向かなかっ
 
 ### 6.1 件数と選び方
 
-5〜10件を作る。テストデータ28件のうち、ハード制約 × 宣言的の条文から選ぶ。ただし、評価の判断を含む条文は③a の正解 IR にしない（D51）。次の型を少なくとも1件ずつ含める。該当する実在の条文がない型は、架空の条文で埋めず、「なかった」と記録する。
+5〜10件を作る（初版は5件を承認済み）。テストデータのうち、ハード制約 × 宣言的の条文から選ぶ。テストデータを足すときは、既存の元の文書から話題ごとにまとめて候補を抜き出す（D65）。ただし、評価の判断を含む条文は③a の正解 IR にしない（D51）。次の型を少なくとも1件ずつ含める。該当する実在の条文がない型は、架空の条文で埋めず、「なかった」と記録する。
 
 | 型 | 確かめたいこと | 候補 |
 | --- | --- | --- |
@@ -638,7 +665,7 @@ v1 の gate_reasons は日本語の説明文だけで、集計に向かなかっ
 1. IR に入れる情報は、条文本文と、出典付きで明示的に付与した context に限る（1.4節）
 1. 1件ずつ JSON で作り、testdata/ir_gold/ に置く。適用順を manifest.json に書く（D43）
 1. 初期登録した登録簿から始め、manifest の順に配線ジェネレータに通す。各 IR が C1〜C11 をすべて通過することを確かめる。出力された登録簿は次の IR の入力にし、registry/ には反映しない（D43）
-1. DMN 評価のシナリオ（入力の事実と期待する判定）を付け、自作エンジンで期待通りになることを確かめる。シナリオには、「その他」が既定の行に落ちる場合と、possible_values にない値がエスカレーションになる場合（D46）を、それぞれ少なくとも1件含める
+1. DMN 評価のシナリオ（入力の事実と期待する判定）を付け、自作エンジンで期待通りになることを確かめる。シナリオには、「その他」が既定の行に落ちる場合を passthrough の fact ごとに少なくとも1件（D63）、possible_values にない値がエスカレーションになる場合（D46）を少なくとも1件含める
 1. Kazuhiro さんがレビューし、承認したものを正解とする
 書き方の注意を2つ挙げる。referenced_facts は条文の語ではなく、書いた行と表から決める。条文が「電話番号が一致しなくても」と言及していても、行の条件が「-」なら入れない（D41）。new_output_values には、その表がまだ出していない値だけを書く（D36）。
 
@@ -682,6 +709,7 @@ v1 の gate_reasons は日本語の説明文だけで、集計に向かなかっ
 | U11 | あおいの fact の取得元 | 初期登録した7件の fact の sources（どのマスタのどの項目と比べるか）が分からない。参考実装のテストには patient_record という取得元が出てくるが、本書の from の語彙（action_request／master／literal）にない | 空のまま sources_undefined を付ける（D33）。一致プリミティブの実装（U4）に入るときに、あおいの fact の取得元の表を作って埋める。patient_record は master に当たると見込む |
 | U12 | 使用者の側の規範 | 「（労働に）従事させない」のように、規範の主体が使用者の側の条文を、AI エージェントにどう当てはめるかが決まっていない | 正解 IR では actor をあおいのまま評価用に残し、review.notes に記録する。扱いは別途決める |
 | U13 | 禁止の継承 | D60 で許可は子に及ばないと決めたが、親への禁止を子に及ぼすかは決めていない | 当面は階層を規則の継承に使わない（実行時は文字列一致）。及ぼす場合は安全側だが、階層の整理と合わせて決める |
+| U14 | 比べた相手が複数ある場合 | FinalLayer の compared_table_id は1つしか書けない。最終判定が複数あり、どれとも重ならない場合に、どれと比べたかの記録が弱くなる | 当面は1つだけ書く。前段のレベル判定を自動化するときに、比べた相手の一覧が要るかを決める |
 
 ## 8. 用語集
 
@@ -899,4 +927,21 @@ v1.6 は、v1.5 の実装（第24回 HANDOFF）と、Kazuhiro さんによる正
 | 7 | レビュー G-5：escalate のシナリオの値が「その他」に当たる | 境目を定義（D54） |
 | 8 | レビュー G-6・D-3：数字の表記 | 半角に統一（D56） |
 | 9 | レビュー A-2（変更）：特権操作の親をシステム操作にすると、親への許可が子に及ぶおそれ | 親は None にして人の判断に回す。許可は子に及ばない（D60）。禁止の継承は U13 |
+
+## 付録G　v1.6 から v1.7 への変更点
+
+v1.7 は、v1.6 の実装と正解 IR 5件の承認（第26回 HANDOFF、コミット 550f5db）を受けて改訂した。
+
+| # | 第26回の報告 | 扱い |
+| --- | --- | --- |
+| 1 | 逸脱1：比較型の fact の possible_values を IR に書かせない | 採用。FactDef を2つの型に分けて、型で表す（D62） |
+| 2 | 逸脱2：disjoint を intermediate の add_row とも組み合わせない | 採用（D64） |
+| 3 | 逸脱3：値の全角数字は停止 | 採用（D64） |
+| 4 | 3.8節の例の parent が D60 と食い違う | 例を直した（parent を null に、other_value_note を追加） |
+| 5 | 穴1・2：possible_values と other_value_note が型の上で全 fact の欄になっている | FactDef を2つの型に分ける（D62） |
+| 6 | 穴3：「その他」のシナリオが条文単位でしか求められていない | fact ごとに求める（D63） |
+| 7 | 穴4：初期登録の other_value_note に根拠がない | U11 と同じく、語彙の承認（U8）のときに出典付きで埋める |
+| 8 | 穴5：比べた相手を1つしか書けない | U14 として記録 |
+| 9 | human_review_status の欄名が紛らわしい | 欄名は変えず、意味を明記（D66） |
+| 10 | 正解 IR の型の充足：レベル2・no_change・値の追加・中間判定、既存の Action への寄せが実在の条文で埋まっていない | 既存の元の文書から話題ごとに候補を抜き出す（D65） |
 

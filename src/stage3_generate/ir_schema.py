@@ -77,6 +77,18 @@ v1(コミット 9e66776)との差分は同書 付録A。
   から導く。D4(表に出てくる値だけ)は passthrough の fact にだけ当てる。表に出てくる値
   だけにすると、「未提供」のような正当な値が実行時にエスカレーションになる
 
+## v1.7 で変わった点(設計書2章 D62)
+
+- **D62**: `FactDef` を2つの型に分けた。`PassthroughFact`(区分の値の fact)は
+  `possible_values` と `other_value_note`(必須)を持ち、`ComparisonFact`(比較の
+  fact)はどちらも持たない(値の集合はプリミティブの定義から決まる。D59)。
+  `FactDef` は2つの型の Union で、JSON では `primitive` が `passthrough` かどうかで
+  型が決まる(`fact_def_from_json`)。v1.6 までは1つの型が両方の欄を持ち、「比較型では
+  書いてはいけない欄」を型ではなく C4 でしか表せなかった。前段(条文 → IR)の自動化で
+  LLM にこの型を見せるため、規則をスキーマに出す
+- 層3とバインディング設定の出力は変えない。どちらの型でも、実際に使う値の一覧
+  (「その他」や導出値を含む)を出す(`effective_values_of`・各型の `to_json`)
+
 ## 引き継ぐ原則(設計書1.4)
 
 - 4点セットの同時生成、複合 fact 禁止、FIRST と行の順序、来歴の表し方、Action 正規化
@@ -86,7 +98,7 @@ v1(コミット 9e66776)との差分は同書 付録A。
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
 ColumnSetRelationKind = Literal[
     "exact_match",
@@ -282,50 +294,151 @@ def source_ref_from_json(payload: dict) -> SourceRef:
 
 
 @dataclass
-class FactDef:
-    """fact 1つ分の定義。DMN の inputData 1つに対応する(設計書3.3)。"""
+class PassthroughFact:
+    """区分の値をそのまま渡す fact(設計書3.3・D62)。
+
+    条文が挙げた区分の値(`possible_values`)と、予約語「その他」が指す状態の注記
+    (`other_value_note`)を持つ。どちらも passthrough の fact にしか意味がないので、
+    v1.7 で `ComparisonFact` と型を分けた(v1.6 までは1つの `FactDef` が両方の欄を
+    持ち、「比較型では書いてはいけない欄」を C4 でしか表せなかった)。
+
+    `possible_values` に予約語「その他」は書かない(配線ジェネレータが末尾に足す。
+    D45)。`other_value_note` は必須(D55)。
+    """
+
+    variable: str
+    possible_values: list[str]
+    # D55: 予約語「その他」が指す状態(例: 許可を得ている)。実行時に値を当てはめる
+    # 側が、何を「その他」にしてよいかを知るための注記で、必須
+    other_value_note: str
+    sources: dict[str, SourceRef]
+    # この fact の追加を承認した人。未承認なら None(D14)
+    approved_by: Optional[str] = None
+    # 型が primitive を決める。JSON の読み書きのために欄としても持つ
+    primitive: Literal["passthrough"] = "passthrough"
+
+    def to_json(self) -> dict:
+        """層3・バインディング設定に出す形(設計書4.3・4.5)。
+
+        出す欄は v1.6 と同じ。`possible_values` は条文が挙げた値のままで、
+        予約語「その他」を足すのは呼び出し側(`effective_values_of`)の役目。
+        """
+        return {
+            "variable": self.variable,
+            "primitive": "passthrough",
+            "possible_values": list(self.possible_values),
+            "sources": {k: source_ref_to_json(v) for k, v in self.sources.items()},
+            "approved_by": self.approved_by,
+            "other_value_note": self.other_value_note,
+        }
+
+
+@dataclass
+class ComparisonFact:
+    """2つの値を比べる fact(設計書3.3・D62)。
+
+    取りうる値はプリミティブの定義から決まる(D59)ので `possible_values` を持たず、
+    予約語「その他」も付かない(D45)ので `other_value_note` も持たない。
+    """
 
     variable: str
     primitive: str
-    possible_values: list[str]
     sources: dict[str, SourceRef]
     # 語彙登録時に人が付ける比較の種類の注釈(任意)
     comparison_kind: Optional[str] = None
-    # この fact の追加を承認した人。未承認なら None(D14)
     approved_by: Optional[str] = None
-    # passthrough の fact で、予約語「その他」が指す状態(D55)。実行時に値を
-    # 当てはめる側が、何を「その他」にしてよいかを知るための注記。new_facts では
-    # 必須で、C4 が確かめる。比較型の fact は値の集合が決まっているので None
-    other_value_note: Optional[str] = None
 
     def to_json(self) -> dict:
+        """層3・バインディング設定に出す形(設計書4.3・4.5)。
+
+        `possible_values` には、プリミティブの定義から導いた値を出す(D59・D62。
+        「どちらの型でも、実際に使う値の一覧を出力する」)。未知のプリミティブは
+        空で出し、C4 が止める。
+        """
         out: dict = {
             "variable": self.variable,
             "primitive": self.primitive,
-            "possible_values": list(self.possible_values),
+            "possible_values": list(derived_possible_values(self.primitive) or ()),
             "sources": {k: source_ref_to_json(v) for k, v in self.sources.items()},
         }
         if self.comparison_kind is not None:
             out["comparison_kind"] = self.comparison_kind
         out["approved_by"] = self.approved_by
-        # D55: passthrough の fact だけが持つ欄。比較型には出さない
-        if has_other_value(self.primitive) or self.other_value_note is not None:
-            out["other_value_note"] = self.other_value_note
         return out
 
-    @classmethod
-    def from_json(cls, payload: dict) -> "FactDef":
-        return cls(
+
+# D62: fact は2つの型のどちらか。JSON では primitive が passthrough かどうかで決まる
+FactDef = Union[PassthroughFact, ComparisonFact]
+
+
+class IRTypeError(ValueError):
+    """JSON から IR の型を作るときに、型で表した規則が破れていた(D62)。
+
+    v1.6 までは C4 が止めていた「比較型の fact に possible_values を書く」が、
+    v1.7 では型の上で表せない(`ComparisonFact` にその欄が無い)。黙って捨てると
+    その値を参照する行が C5 をすり抜けるので、読み込みの時点で止める。
+    """
+
+
+def is_passthrough_fact(fact: FactDef) -> bool:
+    """この fact が区分の値の fact か(D62)。"""
+    return isinstance(fact, PassthroughFact)
+
+
+def effective_values_of(fact: FactDef) -> list[str]:
+    """この fact が実行時に受け取れる値の一覧(D45・D59・D62)。
+
+    passthrough なら条文の値 ＋ 予約語「その他」、比較型ならプリミティブの定義から
+    導いた値。層3・バインディング設定・C5・C12 はすべてこれを通す。
+    """
+    if isinstance(fact, PassthroughFact):
+        return effective_possible_values("passthrough", fact.possible_values)
+    return effective_possible_values(fact.primitive, [])
+
+
+def fact_def_from_json(payload: dict, *, origin: str = "ir") -> FactDef:
+    """JSON から fact を復元する(D62。primitive が passthrough なら区分の値の型)。
+
+    `origin` は読み込み元。`"ir"`(既定)は IR の `new_facts` で、型で表した規則を
+    ここで確かめる。`"registry"` は登録簿の層3で、比較型にも導出した
+    `possible_values` が入っている(設計書4.5の出力の形)ため、その欄は読み捨てる。
+    """
+    primitive = payload["primitive"]
+    sources = {
+        k: source_ref_from_json(v) for k, v in payload.get("sources", {}).items()
+    }
+    if primitive == "passthrough":
+        return PassthroughFact(
             variable=payload["variable"],
-            primitive=payload["primitive"],
             possible_values=list(payload.get("possible_values", [])),
-            sources={
-                k: source_ref_from_json(v) for k, v in payload.get("sources", {}).items()
-            },
-            comparison_kind=payload.get("comparison_kind"),
-            approved_by=payload.get("approved_by"),
+            # D55 の必須は C4 が確かめる(無い場合も読み込んで、停止の理由を
+            # C4 のメッセージで出す)
             other_value_note=payload.get("other_value_note"),
+            sources=sources,
+            approved_by=payload.get("approved_by"),
         )
+    if origin == "ir":
+        declared = payload.get("possible_values") or []
+        if declared:
+            raise IRTypeError(
+                f"fact {payload['variable']!r}(primitive={primitive!r})は比較型なので "
+                f"possible_values を持ちません(D59・D62)。書かれていた値: "
+                f"{list(declared)}。比較型の値はプリミティブの定義 "
+                f"{list(derived_possible_values(primitive) or ())} から導きます。"
+            )
+        if payload.get("other_value_note") is not None:
+            raise IRTypeError(
+                f"fact {payload['variable']!r}(primitive={primitive!r})は比較型なので "
+                "other_value_note を持ちません(D55・D62)。予約語「その他」が付くのは "
+                "passthrough の fact だけです。"
+            )
+    return ComparisonFact(
+        variable=payload["variable"],
+        primitive=primitive,
+        sources=sources,
+        comparison_kind=payload.get("comparison_kind"),
+        approved_by=payload.get("approved_by"),
+    )
 
 
 @dataclass
@@ -822,7 +935,9 @@ def clause_ir_from_json(payload: dict) -> ClauseIR:
     )
     facts_payload = payload.get("facts", {})
     facts = FactUsage(
-        new_facts=[FactDef.from_json(f) for f in facts_payload.get("new_facts", [])],
+        new_facts=[
+            fact_def_from_json(f) for f in facts_payload.get("new_facts", [])
+        ],
         referenced_facts=list(facts_payload.get("referenced_facts", [])),
         value_additions={
             name: [ValueAddition.from_json(v) for v in values]

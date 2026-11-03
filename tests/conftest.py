@@ -36,7 +36,7 @@ from src.stage3_generate.ir_schema import (  # noqa: E402
     ClauseIR,
     CompoundFactApplication,
     DecisionTarget,
-    FactDef,
+    PassthroughFact,
     FactUsage,
     FinalLayer,
     LevelDetermination,
@@ -79,15 +79,15 @@ def passthrough_fact(
     path: str,
     *,
     other_value_note: str | None = "(テスト)条文の値に当たらない状態",
-) -> FactDef:
-    """passthrough の fact。`other_value_note` は D55 で必須なので既定値を入れる。
+) -> PassthroughFact:
+    """passthrough の fact(D62 で型が分かれた)。
 
-    注記が無い場合に C4 が止まることは `test_c4_passthrough_without_other_value_note`
-    が確かめるので、そちらでは `other_value_note=None` を渡す。
+    `other_value_note` は D55 で必須なので既定値を入れる。注記が無い場合に C4 が
+    止まることは `test_c4_passthrough_without_other_value_note` が確かめるので、
+    そちらでは `other_value_note=None` を渡す。
     """
-    return FactDef(
+    return PassthroughFact(
         variable=variable,
-        primitive="passthrough",
         possible_values=list(values),
         sources={"value": SourceRef(from_="action_request", path=path)},
         other_value_note=other_value_note,

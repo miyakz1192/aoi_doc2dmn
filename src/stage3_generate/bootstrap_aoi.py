@@ -506,6 +506,10 @@ def build_registry(
     for variable in _fact_order(decisions):
         values = _values_of_column(decisions, variable)
         primitive = FACT_PRIMITIVES.get(variable)
+        # D62: 層3のエントリは「区分の値の fact か、比較の fact か」で持つ欄が
+        # 変わる(possible_values の決め方・other_value_note の有無)。初期登録は
+        # 元の DMN XML から直接エントリを組むので、型ではなくこの印で分ける
+        is_passthrough = primitive == "passthrough"
         derived = derived_possible_values(primitive or "")
         if derived is not None:
             # D59: 比較型の値はプリミティブの定義で決まる。表に出てくる値が定義の
@@ -534,9 +538,7 @@ def build_registry(
                 "approved_by": REGISTERED_BY,
                 # D55: passthrough の fact だけが持つ
                 "other_value_note": (
-                    OTHER_VALUE_NOTE_BOOTSTRAP
-                    if primitive == "passthrough"
-                    else None
+                    OTHER_VALUE_NOTE_BOOTSTRAP if is_passthrough else None
                 ),
                 "defined_by": CLAUSE_REF,
                 "used_by": sorted(
@@ -548,11 +550,7 @@ def build_registry(
                 ),
                 "provenance": _provenance(
                     SOURCE_GAP_NOTE
-                    + (
-                        f"／{OTHER_VALUE_NOTE_GAP}"
-                        if primitive == "passthrough"
-                        else ""
-                    )
+                    + (f"／{OTHER_VALUE_NOTE_GAP}" if is_passthrough else "")
                 ),
                 "history": [],
             }

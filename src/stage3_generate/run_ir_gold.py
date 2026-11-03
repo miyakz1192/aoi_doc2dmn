@@ -18,7 +18,7 @@
 | クロス検証 C1〜C12 を通過する | 設計書6.2 手順3 |
 | シナリオがすべて期待どおりになる | 設計書6.2 手順4 |
 | 既定の行(ワイルドカード)に落ちるシナリオが1件以上ある | 同上 |
-| 「その他」が既定の行に落ちるシナリオが1件以上ある(passthrough の fact を持つ場合) | 同上・D45 |
+| 「その他」が既定の行に落ちるシナリオが、決定表で使う passthrough の fact ごとに1件以上ある | 同上・D45・D63 |
 | 知らない値がエスカレーションになるシナリオが1件以上ある | 同上・D46 |
 | evidence の根拠が「逐語」か「正規化」で、**根拠なしが無い** | D44・D47 |
 | 値に全角数字が無い | D56 |
@@ -63,7 +63,14 @@ from typing import Optional
 
 from ..stage2_classify.vocab_flags import check_vocab_flag
 from .dmn_engine import DmnModel
-from .ir_schema import OTHER_VALUE, ClauseIR, clause_ir_from_json, has_other_value
+from .ir_schema import (
+    OTHER_VALUE,
+    ClauseIR,
+    IRTypeError,
+    PassthroughFact,
+    clause_ir_from_json,
+    has_other_value,
+)
 from .registry import Registry, dmn_path
 from .scenario_eval import evaluate_scenario
 from .wiring_generator import (
@@ -79,11 +86,11 @@ DMN_DIR_DEFAULT = "registry/dmn"
 REQUIRED_KEYS = ("gold_id", "source", "ir", "evidence", "scenarios", "review")
 # シナリオの種類(`kind` に含まれる語で判定する)
 WILDCARD_KINDS = ("既定の行", "ワイルドカード")
-OTHER_KINDS = (OTHER_VALUE,)
 ESCALATE_KINDS = ("エスカレーション", "escalate")
 BASIS_KINDS = ("verbatim", "normalized", "default_row")
 # D56: 値の正規化では数字を半角に統一する。全角数字(U+FF10〜FF19)を見つけたら
-# 止める(警告だと残り続け、実行時の文字列一致で当たらない行ができる)
+# 止める(警告だと残り続け、実行時の文字列一致で当たらない行ができる)。
+# 停止にすることは v1.7 の D64 で採用された
 FULLWIDTH_DIGITS = "０１２３４５６７８９"
 # D53: 正解IR の承認は review に記録する。IR の中の approved_by は None のまま残す
 REVIEW_STATUSES = ("draft", "approved", "rejected")
@@ -113,12 +120,12 @@ def load_manifest(gold_dir: str | Path) -> list[dict]:
         return json.load(f)["order"]
 
 
-def _check_envelope(gold: dict, ir: ClauseIR, *, passthrough: bool) -> list[str]:
+def _check_envelope(gold: dict, ir: ClauseIR, *, passthrough_facts: list[str]) -> list[str]:
     """正解IR のファイルそのものを確かめる(クロス検証に入る前)。
 
-    `passthrough` は、この IR が passthrough の fact を使うか。使う場合だけ
-    「その他」のシナリオを要求する(比較型の fact しか使わない条文には「その他」が
-    存在しない。D45)。
+    `passthrough_facts` は、この IR の決定表が列に使う passthrough の fact の一覧。
+    その fact ごとに「その他」が既定の行に落ちるシナリオを要求する(D63)。比較型の
+    fact しか使わない条文には「その他」が存在しないので要求しない(D45)。
     """
     problems: list[str] = []
     for key in REQUIRED_KEYS:
@@ -174,7 +181,7 @@ def _check_envelope(gold: dict, ir: ClauseIR, *, passthrough: bool) -> list[str]
             problems.append(f"fact {fact.variable} の approved_by が入っています")
         # D55: passthrough の fact は「その他」が指す状態の注記を持つ(C4 も止めるが、
         # 報告のためにここでも見る)
-        if has_other_value(fact.primitive) and not fact.other_value_note:
+        if isinstance(fact, PassthroughFact) and not fact.other_value_note:
             problems.append(
                 f"fact {fact.variable} に other_value_note がありません(D55)"
             )
@@ -211,12 +218,21 @@ def _check_envelope(gold: dict, ir: ClauseIR, *, passthrough: bool) -> list[str]
             problems.append(
                 "知らない値がエスカレーションになるシナリオがありません(D46)"
             )
-        if passthrough and not any(
-            any(k in kind for k in OTHER_KINDS) for kind in kinds
-        ):
-            problems.append(
-                f"予約語「{OTHER_VALUE}」が既定の行に落ちるシナリオがありません(D45)"
+        # D63: 「その他」が既定の行に落ちるシナリオを、passthrough の fact ごとに
+        # 1件以上。other_value_note(D55)が指す状態を fact ごとに確かめる手段が
+        # ほかにないため、条文単位ではなく fact 単位で見る
+        default_outputs = _default_row_outputs(ir)
+        for variable in passthrough_facts:
+            covered = any(
+                (s.get("facts") or {}).get(variable) == OTHER_VALUE
+                and _falls_to_default_row(s, default_outputs)
+                for s in scenarios
             )
+            if not covered:
+                problems.append(
+                    f"fact {variable} が「{OTHER_VALUE}」で既定の行に落ちるシナリオが"
+                    "ありません(D63)"
+                )
     return problems
 
 
@@ -239,6 +255,9 @@ def _check_halfwidth_digits(gold: dict, ir: ClauseIR) -> list[str]:
             )
 
     for fact in ir.facts.new_facts:
+        # 比較型の値はプリミティブの定義から導くので、IR には値が無い(D62)
+        if not isinstance(fact, PassthroughFact):
+            continue
         for value in fact.possible_values:
             check(f"fact {fact.variable} の possible_values", value)
     for variable, additions in ir.facts.value_additions.items():
@@ -277,22 +296,82 @@ def _count_evidence_basis(evidence: dict) -> dict[str, int]:
     return counts
 
 
-def _has_passthrough_fact(ir: ClauseIR, registry: Registry) -> bool:
-    """この IR が passthrough の fact を使うか(「その他」のシナリオを要るかの判定)。"""
-    if any(has_other_value(f.primitive) for f in ir.facts.new_facts):
-        return True
-    for variable in ir.facts.referenced_facts:
-        entry = registry.find_fact(variable)
+def _passthrough_facts_in_tables(ir: ClauseIR, registry: Registry) -> list[str]:
+    """この IR の決定表が列に使う passthrough の fact(宣言順。D63)。
+
+    「その他」のシナリオを fact ごとに要求するための一覧である。新しく定義した
+    fact と、層3から引いた既存の fact の両方を見る。ドット参照の列は fact では
+    ないので対象外。
+    """
+    columns: list[str] = []
+    rows = list(ir.rule_row_additions)
+    for table in ir.new_decision_tables:
+        rows.extend(table.rule_rows)
+    for row in rows:
+        for column in row.conditions:
+            if "." not in column and column not in columns:
+                columns.append(column)
+
+    new_facts = {f.variable: f for f in ir.facts.new_facts}
+    passthrough: list[str] = []
+    for column in columns:
+        fact = new_facts.get(column)
+        if fact is not None:
+            if isinstance(fact, PassthroughFact):
+                passthrough.append(column)
+            continue
+        entry = registry.find_fact(column)
         if entry is not None and has_other_value(entry.get("primitive", "")):
+            passthrough.append(column)
+    return passthrough
+
+
+def _default_row_outputs(ir: ClauseIR) -> list[dict]:
+    """既定の行(条件がすべて「-」)の出力(D63 の判定に使う)。"""
+    rows = list(ir.rule_row_additions)
+    for table in ir.new_decision_tables:
+        rows.extend(table.rule_rows)
+    return [
+        dict(row.outputs)
+        for row in rows
+        if row.conditions and all(cell == "-" for cell in row.conditions.values())
+    ]
+
+
+def _falls_to_default_row(scenario: dict, default_outputs: list[dict]) -> bool:
+    """このシナリオが既定の行に落ちることを期待しているか(D63)。
+
+    IR の中に既定の行があれば、期待する出力がその行の出力と一致するかで見る。
+    既存の表に行を足す IR では既定の行が IR の外にあるので、`kind` の書き方
+    (「その他」と「既定の行」の両方を含む)で代わりに見る。
+    """
+    expected = scenario.get("expected") or {}
+    for outputs in default_outputs:
+        if expected and all(outputs.get(k) == v for k, v in expected.items()):
             return True
-    return False
+    if default_outputs:
+        return False
+    kind = scenario.get("kind", "")
+    return OTHER_VALUE in kind and any(k in kind for k in WILDCARD_KINDS)
 
 
 def run_one(
     gold: dict, registry: Registry, dmn_dir: Path, *, verbose: bool = True
 ) -> tuple[GoldResult, Registry]:
     """正解IR 1件を配線ジェネレータへ通し、シナリオを評価する。"""
-    ir = clause_ir_from_json(gold["ir"])
+    try:
+        ir = clause_ir_from_json(gold["ir"])
+    except IRTypeError as exc:
+        # D62: 型で表した規則(比較型に possible_values を書かない等)の破れは
+        # 読み込みの時点で止まる。1件分の失敗として報告する
+        result = GoldResult(
+            gold_id=gold.get("gold_id", "(gold_id なし)"),
+            ok=False,
+            problems=[f"IR の読み込みで停止: {exc}"],
+        )
+        if verbose:
+            _print_one(result)
+        return result, registry
     result = GoldResult(
         gold_id=gold.get("gold_id", "(gold_id なし)"),
         ok=True,
@@ -310,7 +389,9 @@ def run_one(
             "default_row を書く)"
         )
     result.problems.extend(
-        _check_envelope(gold, ir, passthrough=_has_passthrough_fact(ir, registry))
+        _check_envelope(
+            gold, ir, passthrough_facts=_passthrough_facts_in_tables(ir, registry)
+        )
     )
     result.problems.extend(_check_halfwidth_digits(gold, ir))
 

@@ -38,7 +38,8 @@ aoi_doc2dmn/
 │   ├── clauses/clauses_v1.json  # オラクル付きテストデータ（28件。厚労省モデル就業規則16件＋
 │   │                             IPA情報セキュリティ関連規程等12件）
 │   ├── ir_gold/                 # 承認済みの正解IR（5件＋manifest.json。review.status=approved）
-│   ├── candidates/              # テストデータ拡張時の候補・レビュー記録
+│   ├── candidates/              # テストデータ拡張時の候補・レビュー記録（round3は37件・話題7件。
+│   │                             #   正解ラベル未付与。clauses_v1.jsonには未統合）
 │   └── schema.md                # オラクルのスキーマ定義・カバレッジ表・①関連判定の基準
 ├── registry/
 │   ├── registry.json     # 永続化した登録簿（③の入力。既存の決定表とfact台帳）
@@ -76,7 +77,7 @@ aoi_doc2dmn/
   パイプライン）への移行フェーズに入った。詳細は`testdata/schema.md`「軸1・軸2分類の精度改善
   フェーズの区切り」節、「gold label判定の方針」節を参照
 - `src/stage3_generate/`: ③a（宣言的×ハード制約）の**後半**（IR → 4点セット）は
-  IR v2（`docs/design/aoi_doc2dmn_IRv2_design.md` v1.6）で実装済み。fact の定義がIRに入り
+  IR v2（`docs/design/aoi_doc2dmn_IRv2_design.md` v1.7）で実装済み。fact の定義がIRに入り
   （`facts.new_facts`）、4点すべてをIRと登録簿から生成する。クロス検証はC1〜C12で、
   それぞれの失敗テストが`tests/`にある
 - v1.2 で**受け入れ経路**を実装した。新しい表を作るだけ（レベル1）でなく、既存のDMN
@@ -104,6 +105,9 @@ aoi_doc2dmn/
   比較型のfactの`possible_values`はプリミティブの定義から導く（D59）。既存のDMNモデルを
   指す IR は、新しい表だけを足す場合も既存ファイルに追記する（D57）。`ColumnSetRelationKind`
   に`disjoint`を足し（D58）、値の数字は半角に統一する（D56）
+- v1.7 では、factの型を2つに分けた（D62。`PassthroughFact`は区分の値と「その他」の注記を
+  持ち、`ComparisonFact`はどちらも持たない。JSONの形は変えていない）。「その他」が既定の行に
+  落ちるシナリオは、条文単位ではなく**passthroughのfactごと**に1件以上要る（D63）
 - `testdata/ir_gold/`に**承認済みの正解IR**が5件ある（`review.status = "approved"`・
   `reviewed_by`・`reviewed_at`・`decisions`。D53。IRの中の`approved_by`はNoneのまま）。
   `run_ir_gold.py`が`manifest.json`の順に配線ジェネレータへ通し、C1〜C12とDMN評価
@@ -208,7 +212,8 @@ Ollamaは不要。5つのファイルに分かれている。
   修正の前後で評価結果が変わらないこと
 - `test_ir_gold.py`：正解IRが全件C1〜C12を通りシナリオが一致すること、evidenceの根拠が
   逐語か正規化であること、値の数字が半角であること（D56）、承認がreviewに記録され
-  IRの中の`approved_by`はNoneのままであること（D53）、`registry/`を書き換えないこと
+  IRの中の`approved_by`はNoneのままであること（D53）、「その他」が既定の行に落ちる
+  シナリオがpassthroughのfactごとにあること（D63）、`registry/`を書き換えないこと
 
 元のDMNと第14条の条文本文は`tests/fixtures/`にコミットしてあるため（D42）、
 `reference/`が無い環境でも全件が動く（skipは0件）。

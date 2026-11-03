@@ -23,12 +23,21 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.stage3_generate.ir_schema import clause_ir_from_json  # noqa: E402
+from src.stage3_generate.ir_schema import (  # noqa: E402
+    OTHER_VALUE,
+    PassthroughFact,
+    clause_ir_from_json,
+)
 from src.stage3_generate.run_ir_gold import (  # noqa: E402
     REQUIRED_KEYS,
+    _check_envelope,
+    _default_row_outputs,
+    _falls_to_default_row,
+    _passthrough_facts_in_tables,
     load_manifest,
     run_all,
 )
+from src.stage3_generate.registry import Registry  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 GOLD_DIR = REPO_ROOT / "testdata" / "ir_gold"
@@ -137,14 +146,64 @@ def test_gold_file_shape(path):
 
 @pytest.mark.parametrize("path", _gold_files(), ids=lambda p: p.stem)
 def test_passthrough_facts_have_an_other_value_note(path):
-    """D55: passthrough の fact は「その他」が指す状態の注記を持つ。"""
+    """D55・D62: 区分の値の fact は「その他」が指す状態の注記を持つ。
+
+    注記を持つのは `PassthroughFact` だけである(比較の fact は型の上で欄を
+    持たない)。
+    """
     gold = json.loads(path.read_text(encoding="utf-8"))
     ir = clause_ir_from_json(gold["ir"])
     for fact in ir.facts.new_facts:
-        if fact.primitive == "passthrough":
+        if isinstance(fact, PassthroughFact):
             assert fact.other_value_note, fact.variable
         else:
-            assert fact.other_value_note is None, fact.variable
+            assert not hasattr(fact, "other_value_note"), fact.variable
+
+
+@pytest.mark.parametrize("path", _gold_files(), ids=lambda p: p.stem)
+def test_other_value_scenario_exists_for_every_passthrough_fact(path):
+    """D63: 「その他」が既定の行に落ちるシナリオを fact ごとに1件以上持つ。
+
+    other_value_note(D55)が指す状態を fact ごとに確かめる手段がほかにない。
+    条文単位の要求では、passthrough の fact が3つある条文で1つ分しか無くても
+    通っていた(第26回の穴3)。
+    """
+    gold = json.loads(path.read_text(encoding="utf-8"))
+    ir = clause_ir_from_json(gold["ir"])
+    registry = Registry.load(REGISTRY_PATH)
+    default_outputs = _default_row_outputs(ir)
+    for variable in _passthrough_facts_in_tables(ir, registry):
+        assert any(
+            (s.get("facts") or {}).get(variable) == OTHER_VALUE
+            and _falls_to_default_row(s, default_outputs)
+            for s in gold["scenarios"]
+        ), variable
+
+
+def test_the_d63_check_catches_a_missing_other_value_scenario():
+    """D63 の確認そのものの失敗テスト(fact 1つ分のシナリオを外すと落ちる)。
+
+    条文単位の要求だったときは、ゴールデンパスから「その他」のシナリオを2件
+    外しても通っていた。
+    """
+    path = GOLD_DIR / "ipa_secguide_v4_6_7_1.json"
+    gold = json.loads(path.read_text(encoding="utf-8"))
+    ir = clause_ir_from_json(gold["ir"])
+    registry = Registry.load(REGISTRY_PATH)
+    facts = _passthrough_facts_in_tables(ir, registry)
+    assert len(facts) == 3
+
+    gold["scenarios"] = [
+        s
+        for s in gold["scenarios"]
+        if (s.get("facts") or {}).get("target_environment") != OTHER_VALUE
+    ]
+    problems = _check_envelope(gold, ir, passthrough_facts=facts)
+    assert any(
+        "target_environment" in p and "D63" in p for p in problems
+    ), problems
+    # 残りの2件は足りているので、その分は報告されない
+    assert not any("operator_role" in p and "D63" in p for p in problems), problems
 
 
 @pytest.mark.parametrize("path", _gold_files(), ids=lambda p: p.stem)
@@ -165,6 +224,9 @@ def test_evidence_covers_every_possible_value(path):
 
     documented = {(e["fact"], e["value"]) for e in evidence.get("possible_values", [])}
     for fact in ir.facts.new_facts:
+        # 比較型の値はプリミティブの定義から導くので、条文側の根拠は要らない(D62)
+        if not isinstance(fact, PassthroughFact):
+            continue
         for value in fact.possible_values:
             assert (fact.variable, value) in documented, (fact.variable, value)
 

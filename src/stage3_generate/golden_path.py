@@ -53,7 +53,7 @@ from .ir_schema import (
     ClauseIR,
     CompoundFactApplication,
     DecisionTarget,
-    FactDef,
+    PassthroughFact,
     FactUsage,
     FinalLayer,
     LevelDetermination,
@@ -80,20 +80,19 @@ KS_ACTION_REQUEST = "ks_action_request"
 INPUT_COLUMNS = ["operator_role", "target_environment", "requested_privilege"]
 
 
-def _new_facts(approved_by: str | None = None) -> list[FactDef]:
+def _new_facts(approved_by: str | None = None) -> list[PassthroughFact]:
     """この条文で新しく定義する fact(設計書3.8)。
 
-    3つとも「区分の値をそのまま渡す」用途なので primitive は passthrough、
-    sources の引数名は `value` 1つ(設計書3.5)。possible_values は条文に
-    出てくる値だけに限る(D4)。
+    3つとも「区分の値をそのまま渡す」用途なので型は `PassthroughFact`(primitive は
+    passthrough。D62)、sources の引数名は `value` 1つ(設計書3.5)。possible_values は
+    条文に出てくる値だけに限る(D4)。
 
     `approved_by` は新しい fact の語彙を承認した人(D14)。既定は None で、
     `new_fact_unapproved` ゲートが立つ。承認後は名前を入れるとゲートが下りる。
     """
     return [
-        FactDef(
+        PassthroughFact(
             variable="operator_role",
-            primitive="passthrough",
             possible_values=["システム開発担当"],
             sources={
                 "value": SourceRef(from_="action_request", path="operator.role"),
@@ -102,9 +101,8 @@ def _new_facts(approved_by: str | None = None) -> list[FactDef]:
             # D55: 予約語「その他」が指す状態。正解IR(ipa_secguide_v4_6_7_1)と同じ文
             other_value_note="システム開発担当以外の担当",
         ),
-        FactDef(
+        PassthroughFact(
             variable="target_environment",
-            primitive="passthrough",
             possible_values=["本番環境"],
             sources={
                 "value": SourceRef(from_="action_request", path="target.environment"),
@@ -112,9 +110,8 @@ def _new_facts(approved_by: str | None = None) -> list[FactDef]:
             approved_by=approved_by,
             other_value_note="本番環境以外の環境",
         ),
-        FactDef(
+        PassthroughFact(
             variable="requested_privilege",
-            primitive="passthrough",
             possible_values=["特権"],
             sources={
                 "value": SourceRef(from_="action_request", path="requested_privilege"),

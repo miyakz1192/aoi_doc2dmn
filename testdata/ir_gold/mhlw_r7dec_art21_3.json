@@ -323,6 +323,20 @@
       "note": "条文は「であって請求した者」と限っている。請求していない状態(その他)は既定の行に落ちる"
     },
     {
+      "name": "労働者の区分が条文の挙げる区分でない → 許可",
+      "kind": "予約語「その他」が既定の行(ワイルドカード)に落ちる(D45)",
+      "facts": {
+        "worker_category": "その他",
+        "exemption_request": "請求した者",
+        "work_type": "時間外労働"
+      },
+      "expected": {
+        "decision": "許可",
+        "reason_code": "not_prohibited_combination"
+      },
+      "note": "worker_category の other_value_note(妊産婦・18歳未満の者のどれにも当たらない労働者)が指す状態。D63 に合わせて第27回に足した"
+    },
+    {
       "name": "労働の種別の当てはめができなかった(「判定不能」) → 人の確認に回す",
       "kind": "知らない値がエスカレーションになる(D46)",
       "facts": {
@@ -416,6 +430,18 @@
         "id": "D-4",
         "point": "第2項・深夜の時間帯を表さない",
         "result": "推奨どおり(evidence.not_modeled)"
+      }
+    ],
+    "history": [
+      {
+        "change": "scenario_added",
+        "reason": "D63",
+        "at": "2026-11-03",
+        "by": "claude_code",
+        "scenarios": [
+          "労働者の区分が条文の挙げる区分でない → 許可"
+        ],
+        "note": "「その他」が既定の行に落ちるシナリオを passthrough の fact ごとに求めるようにした(D63)ため、worker_category の分を足した。IR の本体(ir)は変えていないので review.status は approved のまま"
       }
     ]
   }

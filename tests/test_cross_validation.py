@@ -18,15 +18,19 @@ from tests.conftest import make_provenance, passthrough_fact
 
 from src.stage3_generate.ir_schema import (
     AtomicFactLayer,
-    build_review_gates,
+    ComparisonFact,
     DecisionTarget,
-    FactDef,
     FinalLayer,
     IntermediateChange,
+    IRTypeError,
     LevelDetermination,
     RuleRowDraft,
     SourceRef,
     ValueAddition,
+    PassthroughFact,
+    build_review_gates,
+    effective_values_of,
+    fact_def_from_json,
 )
 from src.stage3_generate.wiring_generator import (
     SchemaWiringError,
@@ -480,10 +484,9 @@ def test_c4_identifiability_classifier_rejected_in_new_facts(
     あおいの情報分類判定の初期登録分(provenance.origin=bootstrap)だけで使える
     境界事例なので、新規の条文では複合fact禁止原則に従わせる。
     """
-    simple_ir.facts.new_facts[0] = FactDef(
+    simple_ir.facts.new_facts[0] = ComparisonFact(
         variable="role",
         primitive="identifiability_classifier",
-        possible_values=["開発担当"],
         sources={
             "data_category": SourceRef(from_="action_request", path="a"),
             "care_setting": SourceRef(from_="action_request", path="b"),
@@ -1184,41 +1187,51 @@ def test_c4_passthrough_without_other_value_note(simple_ir, empty_registry):
         generate_wiring_bundle(simple_ir, registry=empty_registry)
 
 
-def test_c4_comparison_fact_must_not_declare_possible_values(simple_ir, empty_registry):
-    """D59: 比較型の fact に possible_values を書いたら止まる。
+def test_comparison_fact_cannot_declare_possible_values(simple_ir, empty_registry):
+    """D62: 比較型の fact は possible_values の欄を持たない(型で表す)。
 
-    比較型の値の集合はプリミティブの定義で決まる(3.5節)ので、IR に書かせると
-    「書く／書かない」「どこまで書くか」の揺れが残る(「その他」と同じ扱い)。
+    v1.6 までは1つの `FactDef` が両方の欄を持ち、「比較型には書かない」(D59)を
+    C4 で確かめていた。v1.7 では型に欄が無いので、残るのは JSON から読む経路だけ
+    である。黙って捨てるとその値を参照する行が C5 をすり抜けるので、読み込みの
+    時点で止める。
     """
-    fact = simple_ir.facts.new_facts[0]
-    fact.primitive = "exact_match"
-    fact.possible_values = ["一致", "不一致"]
-    fact.sources = {
-        "claimed": SourceRef(from_="action_request", path="claimed"),
-        "registered": SourceRef(from_="master", path="registered"),
+    payload = {
+        "variable": "role",
+        "primitive": "exact_match",
+        "possible_values": ["一致", "不一致"],
+        "sources": {
+            "claimed": {"from": "action_request", "path": "claimed"},
+            "registered": {"from": "master", "path": "registered"},
+        },
     }
-    fact.other_value_note = None
-    with pytest.raises(SchemaWiringError, match="C4検証失敗.*比較型"):
-        generate_wiring_bundle(simple_ir, registry=empty_registry)
+    with pytest.raises(IRTypeError, match="比較型"):
+        fact_def_from_json(payload)
+    # 層3のエントリは導いた値を持つ(設計書4.5の出力の形)ので、登録簿から読む
+    # ときは止めない
+    fact = fact_def_from_json(payload, origin="registry")
+    assert isinstance(fact, ComparisonFact)
+    assert not hasattr(fact, "possible_values")
+    assert not hasattr(fact, "other_value_note")
 
 
 def test_comparison_fact_values_are_derived_from_the_primitive(
     simple_ir, empty_registry
 ):
-    """D59: 比較型の fact の possible_values は、プリミティブの定義から入る。
+    """D59・D62: 比較型の fact の値は、プリミティブの定義から入る。
 
-    IR には書かないが、層3とバインディング設定には一致／不一致／未提供 が入る。
+    IR には書けないが、層3とバインディング設定には一致／不一致／未提供 が入る。
     「未提供」が落ちていたために、正当な値が実行時にエスカレーションになっていた
     (第24回の穴#4)。
     """
-    fact = simple_ir.facts.new_facts[0]
-    fact.primitive = "date_match"
-    fact.possible_values = []
-    fact.sources = {
-        "claimed": SourceRef(from_="action_request", path="claimed"),
-        "registered": SourceRef(from_="master", path="registered"),
-    }
-    fact.other_value_note = None
+    fact = ComparisonFact(
+        variable=simple_ir.facts.new_facts[0].variable,
+        primitive="date_match",
+        sources={
+            "claimed": SourceRef(from_="action_request", path="claimed"),
+            "registered": SourceRef(from_="master", path="registered"),
+        },
+    )
+    simple_ir.facts.new_facts[0] = fact
     # 決定表のセルは「一致」のままにする(C5 は導いた値で照合する)
     table = simple_ir.new_decision_tables[0]
     table.rule_rows[0].conditions[fact.variable] = "一致"
@@ -1255,3 +1268,73 @@ def test_c9_disjoint_is_allowed_with_new_table(simple_ir, seeded_registry):
     bundle = generate_wiring_bundle(simple_ir, registry=seeded_registry)
     # 比べた相手を記録しただけなので、ゲートは変わらない
     assert bundle.registry["review"]["gates"] == ["new_fact_unapproved"]
+
+
+# --------------------------------------------------------------------------
+# v1.7 で分けた型のテスト(第27回 HANDOFF タスクA1)
+# --------------------------------------------------------------------------
+
+
+def test_fact_json_dispatches_on_the_primitive():
+    """D62: JSON は primitive が passthrough かどうかで型が決まる。
+
+    JSON の形は v1.6 から変えていない。読み込み側が型を選ぶ。
+    """
+    passthrough = fact_def_from_json(
+        {
+            "variable": "role",
+            "primitive": "passthrough",
+            "possible_values": ["開発担当"],
+            "sources": {"value": {"from": "action_request", "path": "role"}},
+            "other_value_note": "開発担当以外の担当",
+        }
+    )
+    assert isinstance(passthrough, PassthroughFact)
+    assert passthrough.primitive == "passthrough"
+    assert not hasattr(passthrough, "comparison_kind")
+
+    comparison = fact_def_from_json(
+        {
+            "variable": "name_match",
+            "primitive": "fuzzy_match_name",
+            "sources": {
+                "claimed": {"from": "action_request", "path": "claimed"},
+                "registered": {"from": "master", "path": "registered"},
+            },
+        }
+    )
+    assert isinstance(comparison, ComparisonFact)
+    # 層3・バインディング設定には導いた値を出す(D59・D62)
+    assert comparison.to_json()["possible_values"] == ["一致", "不一致", "未提供"]
+    assert "other_value_note" not in comparison.to_json()
+
+
+def test_comparison_fact_cannot_declare_an_other_value_note():
+    """D55・D62: 予約語「その他」が付くのは passthrough の fact だけ。"""
+    with pytest.raises(IRTypeError, match="other_value_note"):
+        fact_def_from_json(
+            {
+                "variable": "name_match",
+                "primitive": "fuzzy_match_name",
+                "sources": {
+                    "claimed": {"from": "action_request", "path": "claimed"},
+                    "registered": {"from": "master", "path": "registered"},
+                },
+                "other_value_note": "一致／不一致以外",
+            }
+        )
+
+
+def test_effective_values_follow_the_fact_type():
+    """D45・D59・D62: 実行時に受け取れる値は型で決まる。"""
+    passthrough = passthrough_fact("role", ["開発担当"], "role")
+    assert effective_values_of(passthrough) == ["開発担当", "その他"]
+    comparison = ComparisonFact(
+        variable="name_match",
+        primitive="fuzzy_match_name",
+        sources={
+            "claimed": SourceRef(from_="action_request", path="claimed"),
+            "registered": SourceRef(from_="master", path="registered"),
+        },
+    )
+    assert effective_values_of(comparison) == ["一致", "不一致", "未提供"]

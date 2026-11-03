@@ -78,10 +78,18 @@ DMN XML／バインディング設定JSON／ルーティング表JSON／Scope・
 - **D57**: `target.dmn_model` に既存のモデルのファイルがあれば、新しい表だけを足す IR も
   既存ファイルを読んで追記する(`_needs_existing_dmn`)。読まないと、既存の表に手を
   入れない IR が単体の DMN を生成して既存モデルを置き換える(第24回の穴#1)
-- **D58**: `disjoint` を使えるようにした。`add_rows`・`add_row` との組み合わせは
-  C9 で止める(列が1つも重ならない表に行は足せない)
+- **D58**(組み合わせの制限は D64): `disjoint` を使えるようにした。`add_rows`・
+  `add_row` との組み合わせは C9 で止める(列が1つも重ならない表に行は足せない)
 - **D59**: 比較型の fact の `possible_values` はプリミティブの定義から導く
   (`effective_possible_values`)。IR に書いたら C4 で止める
+
+## v1.7 で変えた点(設計書2章 D62)
+
+- **D62**: fact が `PassthroughFact`／`ComparisonFact` の2つの型になった。
+  「比較型に possible_values を書かない」「passthrough には other_value_note が要る」は
+  型で表されるので、fact の種類で分岐していた箇所を `effective_values_of` と
+  `isinstance` に寄せた。C4 は JSON を読み込むときの歯止めとして残す(層3から引いた
+  エントリと、読み込み後に書き換えられた IR を見る)
 
 ## クロス検証の実行順序(設計書5章)
 
@@ -109,9 +117,12 @@ from .ir_schema import (
     PRIMITIVE_ARGS,
     ClauseIR,
     FactDef,
+    IRTypeError,
+    PassthroughFact,
     RuleRowDraft,
-    derived_possible_values,
     effective_possible_values,
+    effective_values_of,
+    fact_def_from_json,
     has_other_value,
 )
 from .registry import Registry, dmn_path
@@ -561,8 +572,8 @@ def _check_c9_level_determination(ir: ClauseIR, registry: Registry) -> None:
         if lv.final.relation == "disjoint":
             # D58: 列が1つも重ならない相手に行は足せない(足した行は、既存の列を
             # すべて「-」にしないと当たらず、それはもう「同じ表の行」ではない)。
-            # 設計書は disjoint を new_table と組み合わせて使うと述べているので、
-            # add_rows との組み合わせはここで止める(判断を任された点。要報告)。
+            # 設計書は disjoint を new_table と組み合わせて使うと述べている。
+            # add_rows・add_row との組み合わせを止めることは v1.7 の D64 で採用された。
             raise SchemaWiringError(
                 f"C9検証失敗(条件2): final.relation=disjoint ですが action=add_rows です"
                 f"(D58)。列集合が1つも重ならない決定表 {compared!r} に行を足すことは"
@@ -793,40 +804,40 @@ def _check_c4_sources_match_primitive(ir: ClauseIR, registry: Registry) -> None:
         entry = registry.find_fact(variable)
         if entry is None:
             continue  # 実在確認は C6 の責務
-        _check_one_fact_sources(FactDef.from_json(entry), in_new_facts=False)
+        try:
+            fact = fact_def_from_json(entry, origin="registry")
+        except IRTypeError as exc:  # pragma: no cover - 層3は origin="registry"
+            raise SchemaWiringError(f"C4検証失敗: 層3のエントリが壊れています: {exc}")
+        _check_one_fact_sources(fact, in_new_facts=False)
 
 
 def _check_one_fact_sources(fact: FactDef, *, in_new_facts: bool) -> None:
-    if in_new_facts and has_other_value(fact.primitive) and not fact.other_value_note:
-        # D55: 「その他」が指す状態は fact ごとに違う(許可を得ている・請求していない)。
-        # 実行時に値を当てはめる側が、何を「その他」にしてよいかを知るための注記で、
-        # 無いと「その他」が何でもありの受け皿になる。
-        raise SchemaWiringError(
-            f"C4検証失敗: passthrough の fact {fact.variable!r} に other_value_note が"
-            f"ありません(D55)。予約語「{OTHER_VALUE}」が指す状態("
-            "例: 許可を得ている)を書いてください。"
-        )
-    if in_new_facts and derived_possible_values(fact.primitive) is not None:
-        # D59: 比較型の値の集合はプリミティブの定義で決まる。IR に書かせると
-        # 「書く／書かない」「どこまで書くか」の揺れが残り、正解IR と前段の出力の
-        # 比較でぶれる(「その他」を書かせないのと同じ扱い。D45・D61)。
-        if fact.possible_values:
+    """fact 1件分の C4(設計書5章)。
+
+    D62 で型を分けたので、「比較型に possible_values を書かない」は
+    `fact_def_from_json` が読み込みの時点で止める。ここに残すのは、型では表せない
+    規則(sources のキー・使えるプリミティブ)と、読み込んだ後に欄が空になった場合の
+    歯止め(other_value_note・予約語「その他」)である。
+    """
+    if in_new_facts and isinstance(fact, PassthroughFact):
+        if not fact.other_value_note:
+            # D55: 「その他」が指す状態は fact ごとに違う(許可を得ている・請求して
+            # いない)。実行時に値を当てはめる側が、何を「その他」にしてよいかを
+            # 知るための注記で、無いと「その他」が何でもありの受け皿になる。
             raise SchemaWiringError(
-                f"C4検証失敗: 比較型の fact {fact.variable!r}"
-                f"(primitive={fact.primitive!r})の possible_values に "
-                f"{list(fact.possible_values)} が書かれています(D59)。比較型の値は"
-                f"プリミティブの定義 {list(derived_possible_values(fact.primitive) or ())} "
-                "から導くので、IR には書かないでください。"
+                f"C4検証失敗: passthrough の fact {fact.variable!r} に other_value_note が"
+                f"ありません(D55)。予約語「{OTHER_VALUE}」が指す状態("
+                "例: 許可を得ている)を書いてください。"
             )
-    if in_new_facts and OTHER_VALUE in fact.possible_values:
-        # D45: 「その他」は配線ジェネレータが自動で付ける予約語。IR に書かせると
-        # 「書く／書かない」の揺れが残り、正解IR と前段の出力の比較でぶれる。
-        # fact の定義の検査なので C4 に入れた(設計書は検証の割り当てを定めていない)。
-        raise SchemaWiringError(
-            f"C4検証失敗: fact {fact.variable!r} の possible_values に予約語 "
-            f"{OTHER_VALUE!r} が書かれています(D45)。これは passthrough の fact に"
-            "配線ジェネレータが自動で付ける語なので、IR には書かないでください。"
-        )
+        if OTHER_VALUE in fact.possible_values:
+            # D45: 「その他」は配線ジェネレータが自動で付ける予約語。IR に書かせると
+            # 「書く／書かない」の揺れが残り、正解IR と前段の出力の比較でぶれる。
+            # fact の定義の検査なので C4 に入れた(設計書は検証の割り当てを定めていない)。
+            raise SchemaWiringError(
+                f"C4検証失敗: fact {fact.variable!r} の possible_values に予約語 "
+                f"{OTHER_VALUE!r} が書かれています(D45)。これは passthrough の fact に"
+                "配線ジェネレータが自動で付ける語なので、IR には書かないでください。"
+            )
     if in_new_facts and fact.primitive in BOOTSTRAP_ONLY_PRIMITIVES:
         raise SchemaWiringError(
             f"C4検証失敗: fact {fact.variable!r} の primitive={fact.primitive!r} は"
@@ -1190,7 +1201,7 @@ def _column_value_space(ir: ClauseIR, registry: Registry, column: str) -> list[s
     values: set[str] = set()
     for fact in ir.facts.new_facts:
         if fact.variable == column:
-            values.update(effective_possible_values(fact.primitive, fact.possible_values))
+            values.update(effective_values_of(fact))
     entry = registry.find_fact(column)
     if entry is not None:
         values.update(
@@ -1313,7 +1324,7 @@ def _check_c5_cell_values(
                 )
             # D45: passthrough なら「その他」も決定表のセルに書いてよい
             allowed = set(
-                effective_possible_values(fact.primitive, fact.possible_values)
+                effective_values_of(fact)
             ) | {a.value for a in ir.facts.value_additions.get(column, [])}
             unknown = [v for v in values if v not in allowed]
             if unknown:
@@ -1823,7 +1834,7 @@ def _collect_fact_defs(
             continue
         entry = registry.find_fact(variable)
         if entry is not None:
-            defs[variable] = FactDef.from_json(entry)
+            defs[variable] = fact_def_from_json(entry, origin="registry")
     return defs
 
 
@@ -2032,9 +2043,8 @@ def _build_updated_registry(
     for fact in ir.facts.new_facts:
         entry = fact.to_json()
         # D45: passthrough の fact には予約語「その他」を入れて台帳に載せる
-        entry["possible_values"] = effective_possible_values(
-            fact.primitive, entry["possible_values"]
-        )
+        # (比較型はプリミティブの定義から導いた値がそのまま入る。D59・D62)
+        entry["possible_values"] = effective_values_of(fact)
         entry["defined_by"] = ir.clause_ref
         entry["used_by"] = sorted(set(used_by.get(fact.variable, [])))
         entry["provenance"] = provenance

@@ -45,7 +45,7 @@ from src.stage3_generate.ir_schema import (  # noqa: E402
     ClauseIR,
     CompoundFactApplication,
     DecisionTarget,
-    FactDef,
+    ComparisonFact,
     FactUsage,
     FinalLayer,
     IntermediateChange,
@@ -571,13 +571,12 @@ ADDR_TABLE_ID = "test_dt_address"
 @pytest.fixture
 def add_column_ir() -> ClauseIR:
     """本人確認判定に住所照合の列を足す IR(`intermediate.action=add_column`)。"""
-    new_fact = FactDef(
+    # D62: 比較の fact は `ComparisonFact`。possible_values は持たない(値は
+    # プリミティブの定義から導く。D59)。層3とバインディング設定には
+    # 一致／不一致／未提供 が入る
+    new_fact = ComparisonFact(
         variable="address_match",
         primitive="fuzzy_match_name",
-        # D59: 比較型の possible_values はプリミティブの定義から導くので、IR には
-        # 書かない(書くと C4 が止める)。層3とバインディング設定には
-        # 一致／不一致／未提供 が入る
-        possible_values=[],
         sources={
             "claimed": SourceRef(from_="action_request", path="claimed_address"),
             "registered": SourceRef(from_="master", path="patient.address"),
