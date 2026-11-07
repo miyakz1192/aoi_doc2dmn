@@ -603,6 +603,24 @@ def test_c9_condition6_add_column_without_new_input_columns(
         generate_wiring_bundle(simple_ir, registry=seeded_registry)
 
 
+def test_c9_disjoint_cannot_be_combined_with_add_column(simple_ir, seeded_registry):
+    """D69: 列集合が1つも重ならない表に列を足すこともできない(整合条件6)。
+
+    v1.7 では add_rows・add_row だけを止めていた。列が1つも重ならない表に列を
+    足すのは、実質的に新しい表を作るのと同じである(D64 と同じ考え方)。
+    """
+    simple_ir.level_determination.intermediate = [
+        IntermediateChange(
+            table_id="dt_identity",
+            relation="disjoint",
+            action="add_column",
+            new_input_columns=["address_match"],
+        )
+    ]
+    with pytest.raises(SchemaWiringError, match="C9検証失敗\\(条件6\\).*disjoint"):
+        generate_wiring_bundle(simple_ir, registry=seeded_registry)
+
+
 def test_c9_condition6_added_column_not_used_by_any_row(simple_ir, seeded_registry):
     """D19: 足した列が、追加する行の条件に現れなければ落ちる(整合条件6)。"""
     simple_ir.rule_row_additions = [
@@ -1207,11 +1225,39 @@ def test_comparison_fact_cannot_declare_possible_values(simple_ir, empty_registr
     with pytest.raises(IRTypeError, match="比較型"):
         fact_def_from_json(payload)
     # 層3のエントリは導いた値を持つ(設計書4.5の出力の形)ので、登録簿から読む
-    # ときは止めない
-    fact = fact_def_from_json(payload, origin="registry")
+    # ときは止めない(ただし導出値と一致していること。D70)
+    fact = fact_def_from_json(
+        {**payload, "possible_values": ["一致", "不一致", "未提供"]},
+        origin="registry",
+    )
     assert isinstance(fact, ComparisonFact)
     assert not hasattr(fact, "possible_values")
     assert not hasattr(fact, "other_value_note")
+
+
+def test_layer3_comparison_fact_values_must_match_the_primitive():
+    """D70: 層3の比較型の値が導出値とずれていたら、読み込みで止める。
+
+    v1.7 までは読み捨てていたので、IR を経由して層3に入った値のずれ(ここでは
+    「未提供」が落ちている)に気付けなかった。気付けないと、その値を参照する行が
+    C5 をすり抜ける。初期登録のときだけ確かめていた。
+    """
+    entry = {
+        "variable": "birth_match",
+        "primitive": "date_match",
+        "possible_values": ["一致", "不一致"],
+        "sources": {
+            "claimed": {"from": "action_request", "path": "claimed"},
+            "registered": {"from": "master", "path": "registered"},
+        },
+    }
+    with pytest.raises(IRTypeError, match="D70"):
+        fact_def_from_json(entry, origin="registry")
+    # 導出値のままなら通る
+    fact = fact_def_from_json(
+        {**entry, "possible_values": ["一致", "不一致", "未提供"]}, origin="registry"
+    )
+    assert effective_values_of(fact) == ["一致", "不一致", "未提供"]
 
 
 def test_comparison_fact_values_are_derived_from_the_primitive(

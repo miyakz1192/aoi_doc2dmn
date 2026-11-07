@@ -24,10 +24,15 @@ def call_ollama_json(
     base_url: str = DEFAULT_OLLAMA_BASE_URL,
     timeout: int = 300,
     max_retries: int = 2,
+    temperature: float = 0.0,
 ) -> dict:
     """OllamaにJSON形式での応答を強制して呼び出す。
 
-    1回目はtemperature=0.0で呼び出す(再現性のため。reference/README.md方針に準拠)。
+    1回目は`temperature`(既定0.0)で呼び出す(再現性のため。reference/README.md方針に準拠)。
+    `temperature`を明示的に上げられるようにしたのは、前段のAction正規化が同じ入力を
+    k回実行して選択の一致を見る(自己一貫性。前段設計書P7)ためである。0.0は決定論的
+    デコードなので、同じ入力をk回送っても同じ答えしか返らず、一致が常に k/k になって
+    ゲートが機能しない。
     format="json"制約下でも、生成が途中で打ち切られ不正なJSON(文字列が
     閉じていない等)が返ることがまれにあるため、その場合はmax_retries回まで
     再試行する。temperature=0.0は決定論的デコードのため、同じ入力を単純に
@@ -37,7 +42,7 @@ def call_ollama_json(
     """
     last_error: Exception | None = None
     for attempt in range(max_retries + 1):
-        temperature = 0.0 if attempt == 0 else 0.3
+        attempt_temperature = temperature if attempt == 0 else max(temperature, 0.3)
         try:
             resp = requests.post(
                 f"{base_url.rstrip('/')}/api/generate",
@@ -46,7 +51,7 @@ def call_ollama_json(
                     "prompt": prompt,
                     "stream": False,
                     "format": "json",
-                    "options": {"temperature": temperature},
+                    "options": {"temperature": attempt_temperature},
                 },
                 timeout=timeout,
             )

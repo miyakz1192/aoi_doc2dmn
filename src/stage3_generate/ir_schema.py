@@ -89,6 +89,15 @@ v1(コミット 9e66776)との差分は同書 付録A。
 - 層3とバインディング設定の出力は変えない。どちらの型でも、実際に使う値の一覧
   (「その他」や導出値を含む)を出す(`effective_values_of`・各型の `to_json`)
 
+## v1.8 で変わった点(設計書2章 D67・D70)
+
+- **D67**: v1.7 の実装で読み込みの時点に置いた歯止め(比較型の `possible_values`・
+  `other_value_note` は `IRTypeError`、passthrough の `other_value_note` の欠けは
+  None で通して C4 で止める)が、設計書の記述になった
+- **D70**: 登録簿の層3を読むとき、比較型の `possible_values` がプリミティブの定義から
+  導いた値と一致するかを確かめる(`origin="registry"`)。v1.7 までは読み捨てていたので、
+  IR を経由して層3に入った値のずれに気付けなかった
+
 ## 引き継ぐ原則(設計書1.4)
 
 - 4点セットの同時生成、複合 fact 禁止、FIRST と行の順序、来歴の表し方、Action 正規化
@@ -402,6 +411,8 @@ def fact_def_from_json(payload: dict, *, origin: str = "ir") -> FactDef:
     `origin` は読み込み元。`"ir"`(既定)は IR の `new_facts` で、型で表した規則を
     ここで確かめる。`"registry"` は登録簿の層3で、比較型にも導出した
     `possible_values` が入っている(設計書4.5の出力の形)ため、その欄は読み捨てる。
+    ただし D70 により、読み捨てる前に「プリミティブの定義から導いた値と一致するか」
+    を確かめる(ずれていれば止める)。
     """
     primitive = payload["primitive"]
     sources = {
@@ -417,6 +428,19 @@ def fact_def_from_json(payload: dict, *, origin: str = "ir") -> FactDef:
             sources=sources,
             approved_by=payload.get("approved_by"),
         )
+    if origin == "registry":
+        # D70: 層3の比較型の値が、プリミティブの定義から導いた値と一致するかを
+        # 確かめる。IR を経由して層3に入った値のずれ(例: 値の追加で「未提供」が
+        # 落ちる、順序が変わる)に気付けないと、その値を参照する行が C5 をすり抜ける。
+        declared = list(payload.get("possible_values") or [])
+        derived = list(derived_possible_values(primitive) or ())
+        if declared != derived:
+            raise IRTypeError(
+                f"層3の fact {payload['variable']!r}(primitive={primitive!r})の "
+                f"possible_values {declared} が、プリミティブの定義から導いた値 "
+                f"{derived} と一致しません(D70)。比較型の値はプリミティブの定義で"
+                "決まるので、層3でも導出値のままでなければなりません。"
+            )
     if origin == "ir":
         declared = payload.get("possible_values") or []
         if declared:
@@ -699,22 +723,21 @@ class ReviewGates:
     # 新しい一致プリミティブが必要な場合(atomic_fact.covered=False)に立てる(D20)。
     # 新規プリミティブの追加は③aの範囲外なので、必ず人間レビューに回す。
     new_primitive_required: bool = False
+    # ここから下の3つは前段の Action 正規化が立てる(前段設計書4.5節)。後半の
+    # 配線ジェネレータは立てないので、既定は False のまま。
+    # 抜き出した surface が条文にない、または規範の様相の語を含む(P4)。
+    action_surface_unverified: bool = False
+    # k 回の実行で選んだ Action が一致しない(P7)。確信度の自己申告は使わない。
+    action_mapping_unstable: bool = False
+    # 新規候補の名前・定義が既存の Action に近い(P8。取りこぼしを人が拾う)。
+    action_possible_duplicate: bool = False
 
     @property
     def should_review(self) -> bool:
-        return any(
-            (
-                self.confidence_below_threshold,
-                self.quote_unverified,
-                self.vocab_flagged,
-                self.new_action_unapproved,
-                self.new_fact_unapproved,
-                self.new_primitive_required,
-            )
-        )
+        return bool(self.gate_names())
 
     def gate_names(self) -> list[str]:
-        """立っているゲートの名前を列挙する(集計用。設計書4.5)。"""
+        """立っているゲートの名前を列挙する(集計用。設計書4.5・前段設計書4.5節)。"""
         names = [
             "confidence_below_threshold",
             "quote_unverified",
@@ -722,6 +745,9 @@ class ReviewGates:
             "new_action_unapproved",
             "new_fact_unapproved",
             "new_primitive_required",
+            "action_surface_unverified",
+            "action_mapping_unstable",
+            "action_possible_duplicate",
         ]
         return [n for n in names if getattr(self, n)]
 
@@ -740,6 +766,12 @@ class ReviewGates:
             out.append("新規fact・既存factへの新規値・中間判定の新規出力値が未承認")
         if self.new_primitive_required:
             out.append("新しい一致プリミティブが必要(③aの範囲外)")
+        if self.action_surface_unverified:
+            out.append("抜き出した行為の語句が条文にない、または規範の様相を含む")
+        if self.action_mapping_unstable:
+            out.append("Action の選択が k 回の実行で一致しない")
+        if self.action_possible_duplicate:
+            out.append("新規候補の Action が既存の Action に近い(既存に寄せるべきか)")
         return out
 
 

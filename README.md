@@ -18,6 +18,11 @@ aoi_doc2dmn/
 │   ├── stage2_classify/  # ②軸1・軸2分類器
 │   │   ├── local_llm.py     # LocalLlmAxis1Classifier / LocalLlmAxis2Classifier(Ollama)
 │   │   └── vocab_flags.py   # 既知の語彙的盲点への安全網フラグ
+│   ├── stage3_frontstage/ # ③a 前段(条文→IR)。第1要素: Action 正規化
+│   │   ├── action_ledger.py     # Action 台帳(登録簿の action_ledger)と近さの判定
+│   │   ├── modality.py          # 規範の様相の語の一覧と検出(D71・P4)
+│   │   ├── action_normalizer.py # 逐語の抜き出し→閉じた選択→k回の多数決→ゲート
+│   │   └── run_action_eval.py   # 正解18件を台帳を育てながら評価する(P13)
 │   ├── stage3_generate/  # ③a 内容生成(IR→4点セット)
 │   │   ├── ir_schema.py        # ClauseIR v2 / FactDef / ReviewGates
 │   │   ├── registry.py         # Scope/Decision登録簿(層1・2・3)の読み書き
@@ -37,18 +42,21 @@ aoi_doc2dmn/
 ├── testdata/
 │   ├── clauses/clauses_v1.json  # オラクル付きテストデータ（28件。厚労省モデル就業規則16件＋
 │   │                             IPA情報セキュリティ関連規程等12件）
+│   ├── clauses/clauses_frontstage_v1.json # 前段の評価用の13件（ハード制約×宣言的。
+│   │                             #   ②の評価の分布を変えないため clauses_v1.json と分けた）
 │   ├── ir_gold/                 # 承認済みの正解IR（5件＋manifest.json。review.status=approved）
+│   ├── action_gold/             # Action 正規化の正解（18件＋台帳の出発点。P13）
 │   ├── candidates/              # テストデータ拡張時の候補・レビュー記録（round3は37件・話題7件。
-│   │                             #   正解ラベル未付与。clauses_v1.jsonには未統合）
+│   │                             #   ②の分類器の参考値つき。正解ラベルは13件だけ付与）
 │   └── schema.md                # オラクルのスキーマ定義・カバレッジ表・①関連判定の基準
 ├── registry/
-│   ├── registry.json     # 永続化した登録簿（③の入力。既存の決定表とfact台帳）
+│   ├── registry.json     # 永続化した登録簿（③の入力。既存の決定表・fact台帳・Action台帳）
 │   └── dmn/              # 既存のDMNモデル（<dmn_model>.dmn。行・列の追加先）
 ├── tests/                # pytest（クロス検証C1〜C12の失敗テスト・ゴールデンパス固定・
 │   │                     #         受け入れ経路（レベル2/行追加/列追加/no_change）・
 │   │                     #         初期登録した DMN の修正（D34）・正解IRのテスト）
 │   └── fixtures/         # あおいの元のDMN（初期登録の入力。D42）
-├── docs/design/          # ③aの設計書（IR v2設計書・9e66776時点のAsIs仕様書）
+├── docs/design/          # ③aの設計書（IR v2設計書・前段設計書・9e66776時点のAsIs仕様書）
 ├── out/                  # ③の4点セット生成物（gitignore対象。再生成可能）
 └── reference/
     └── README.md         # 既存実装（Claude Code生成コード）を参考にする際の置き場・方針
@@ -77,7 +85,7 @@ aoi_doc2dmn/
   パイプライン）への移行フェーズに入った。詳細は`testdata/schema.md`「軸1・軸2分類の精度改善
   フェーズの区切り」節、「gold label判定の方針」節を参照
 - `src/stage3_generate/`: ③a（宣言的×ハード制約）の**後半**（IR → 4点セット）は
-  IR v2（`docs/design/aoi_doc2dmn_IRv2_design.md` v1.7）で実装済み。fact の定義がIRに入り
+  IR v2（`docs/design/aoi_doc2dmn_IRv2_design.md` v1.8）で実装済み。fact の定義がIRに入り
   （`facts.new_facts`）、4点すべてをIRと登録簿から生成する。クロス検証はC1〜C12で、
   それぞれの失敗テストが`tests/`にある
 - v1.2 で**受け入れ経路**を実装した。新しい表を作るだけ（レベル1）でなく、既存のDMN
@@ -113,8 +121,19 @@ aoi_doc2dmn/
   `run_ir_gold.py`が`manifest.json`の順に配線ジェネレータへ通し、C1〜C12とDMN評価
   シナリオを確かめる（登録簿はメモリ上で持ち回り、`registry/`には反映しない。D43）。
   型で表しきれなかった条文は`testdata/ir_gold/NOT_EXPRESSIBLE.md`に記録してある
-- ③aの**前段**（条文 → IR）は未実装。現状は`golden_path.py`がゴールデンパス1件のIRを
-  手で組み立てている。これが③の本丸であり次の作業対象
+- v1.8 では、`disjoint`と`add_column`の組み合わせをC9で止め（D69）、登録簿の層3の比較型の
+  factの値がプリミティブの定義から導いた値と一致するかを読み込み時に確かめる（D70）。
+  `action.surface`は規範の様相（してはならない・しないこと・禁止する、「させない」の
+  「ない」）を含めない（D71）。承認済みの正解IR 4件のsurfaceをこの規則で直した
+- ③aの**前段**（条文 → IR）は`docs/design/aoi_doc2dmn_frontstage_design.md`（前段設計書
+  v0.3）で設計し、4つの要素（Action正規化 → 事実の抽出 → 行の構成 → レベル判定）に分けて
+  1つずつ自動化する（P1）。**第1要素のAction正規化を`src/stage3_frontstage/`に実装済み**。
+  残り3要素は未実装で、`golden_path.py`がゴールデンパス1件のIRを手で組み立てている
+- Action正規化は、Action台帳（`registry.json`の`action_ledger`。エージェントの職務記述書に
+  当たる。P2・P3）の中から1つ選ぶか「該当なし」を選ぶ**閉じた選択**にする（P5）。
+  不確かさは確信度の自己申告ではなく、同じ入力をk=3回実行して選択が一致するかで測る
+  （P7。`action_mapping_unstable`）。抜き出した語句は条文の部分文字列か・様相の語を
+  含まないかをプログラムで確かめる（P4。`action_surface_unverified`）
 
 ## 評価指標の見方
 
@@ -193,13 +212,32 @@ C1〜C12を通過すること・DMN評価シナリオが一致することを確
 次のIRの入力にするので、既存のfactや決定表を使う条文も確かめられる（D43）。
 `registry/`は書き換えない。
 
+### Action 正規化の評価（前段の第1要素）
+
+```bash
+.venv/bin/python3 -m src.stage3_frontstage.run_action_eval              # Ollamaで実際に流す
+.venv/bin/python3 -m src.stage3_frontstage.run_action_eval --use-oracle # Ollama不要。評価の筋だけ
+```
+
+`testdata/action_gold/action_gold_v1.json`の18件（承認済みの正解IR 5件＋候補13件）を、
+Action台帳を育てながら順に正規化して正解と比べる。台帳の出発点は初期登録の登録簿にある
+Action 1件（あおいの外部送信）だけで、1件を正規化したら**前段の出力ではなく正解の
+Action**を台帳に足してから次へ進む（教師あり。P13）。前段が1件誤ったとき、その誤りが後の
+条文の選択肢に持ち越されると後の誤りの原因が分からなくなるためである。
+
+測るのは、**誤った既存のActionへの寄せ（誤統合。0件が合格の条件。P9）**・取りこぼし・
+既存か新規かの正解率・surfaceの3条件・`action_mapping_unstable`が立った件数。結果は
+`out/action_eval/result.json`に出る（1件ごとに`partial.json`も書くので、途中で落ちても
+結果は残る）。LLM呼び出しは1件あたり6〜7回（k=3回×2呼び出し＋「該当なし」なら候補の案）で、
+1件あたり十数分かかる。
+
 ### テスト
 
 ```bash
 .venv/bin/python3 -m pytest tests/ -v
 ```
 
-Ollamaは不要。5つのファイルに分かれている。
+Ollamaは不要。6つのファイルに分かれている。
 
 - `test_cross_validation.py`：クロス検証C1〜C12の失敗テスト（わざと違反させたIRで
   `SchemaWiringError`になること）
@@ -213,7 +251,11 @@ Ollamaは不要。5つのファイルに分かれている。
 - `test_ir_gold.py`：正解IRが全件C1〜C12を通りシナリオが一致すること、evidenceの根拠が
   逐語か正規化であること、値の数字が半角であること（D56）、承認がreviewに記録され
   IRの中の`approved_by`はNoneのままであること（D53）、「その他」が既定の行に落ちる
-  シナリオがpassthroughのfactごとにあること（D63）、`registry/`を書き換えないこと
+  シナリオがpassthroughのfactごとにあること（D63）、`registry/`を書き換えないこと、
+  `action.surface`が条文の部分文字列で様相を含まないこと（D71）
+- `test_action_normalizer.py`：前段のAction正規化。**LLMは固定の応答を返す偽物に差し替える**
+  （逐語の確認・様相の検出・k回の多数決・4つのゲート・教師ありの台帳の更新・誤統合と
+  取りこぼしの集計）
 
 元のDMNと第14条の条文本文は`tests/fixtures/`にコミットしてあるため（D42）、
 `reference/`が無い環境でも全件が動く（skipは0件）。

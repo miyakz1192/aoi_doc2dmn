@@ -47,7 +47,7 @@
     },
     "actor": "あおい",
     "action": {
-      "surface": "口頭で伝達してはならない",
+      "surface": "口頭で伝達",
       "normalized": "口頭伝達",
       "parent": "情報開示",
       "is_new": true,
@@ -133,8 +133,8 @@
   },
   "evidence": {
     "action_surface": {
-      "value": "口頭で伝達してはならない",
-      "quote": "口頭で伝達してはならない",
+      "value": "口頭で伝達",
+      "quote": "口頭で伝達",
       "basis": "verbatim"
     },
     "possible_values": [],
@@ -250,7 +250,7 @@
       "「検査結果その他の医療情報」を列にしていない(evidence.not_modeled)。あおいには情報分類判定があるので、それを参照すべきかの判断をお願いしたい",
       "knowledge_sources は空にした。この判定の入力は2つの fact だけで、条文に知識源の根拠がない(D22)。参照先の知識源は引き継がない(設計書 付録E #10)"
     ],
-    "reviewed_at": "2026-11-02",
+    "reviewed_at": "2026-11-06",
     "decisions": [
       {
         "id": "G-1",
@@ -306,6 +306,25 @@
         "id": "E-5",
         "point": "Action「口頭伝達」と親「情報開示」",
         "result": "推奨どおり"
+      }
+    ],
+    "history": [
+      {
+        "change": "action_revised",
+        "fields": [
+          "ir.action.surface",
+          "evidence.action_surface"
+        ],
+        "before": {
+          "surface": "口頭で伝達してはならない"
+        },
+        "after": {
+          "surface": "口頭で伝達"
+        },
+        "reason": "D71",
+        "approved_by": "Kazuhiro",
+        "at": "2026-11-06",
+        "note": "規範の様相(「してはならない」)を surface から外した。決定表・事実・シナリオは変えていない"
       }
     ]
   }

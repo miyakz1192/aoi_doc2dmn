@@ -134,7 +134,14 @@ def test_gold_file_shape(path):
     review = gold["review"]
     assert review["status"] == "approved"
     assert review["reviewed_by"] == "Kazuhiro"
-    assert review["reviewed_at"] == "2026-11-02"
+    # 初回の承認は 2026-11-02。あとで本体を直して承認を記録し直したものは、
+    # その日付が review.history に残っている(D53・D71)
+    reviewed_at = review["reviewed_at"]
+    if reviewed_at != "2026-11-02":
+        assert any(
+            entry.get("at") == reviewed_at and entry.get("approved_by") == "Kazuhiro"
+            for entry in review.get("history", [])
+        ), (path.stem, reviewed_at)
     assert review["decisions"], "レビューの判断点の結果を書く(D53)"
     assert review["notes"], "レビューで見てほしい点を書く"
     # 語彙の承認者はすべて None のまま(D53)
@@ -246,6 +253,27 @@ def test_evidence_covers_every_possible_value(path):
                 assert (name, addition.value) in documented_outputs
 
     assert evidence["action_surface"]["value"] == ir.action.surface
+
+
+@pytest.mark.parametrize("path", _gold_files(), ids=lambda p: p.stem)
+def test_action_surface_is_verbatim_and_free_of_modality(path):
+    """D71: action.surface は条文の部分文字列で、規範の様相を含まない。
+
+    様相(してはならない・しないこと・禁止する、「させない」の「ない」)は決定表の
+    結論の側の情報である。第29回で5件中4件の surface を直した。「させ」は使役で
+    様相ではないので残す(前段設計書6.1節)。
+    """
+    from src.stage3_frontstage.modality import check_surface  # noqa: PLC0415
+
+    gold = json.loads(path.read_text(encoding="utf-8"))
+    surface = gold["ir"]["action"]["surface"]
+    check = check_surface(surface, gold["ir"]["clause_text"])
+    assert check.ok, (path.stem, surface, check.reasons())
+    # evidence も同じ語句で、逐語として記録されている
+    evidence = gold["evidence"]["action_surface"]
+    assert evidence["value"] == surface
+    assert evidence["quote"] == surface
+    assert evidence["basis"] == "verbatim"
 
 
 def test_not_expressible_clauses_are_recorded():

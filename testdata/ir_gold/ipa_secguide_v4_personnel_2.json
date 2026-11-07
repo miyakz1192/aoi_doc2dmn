@@ -30,7 +30,7 @@
     },
     "actor": "あおい",
     "action": {
-      "surface": "提供してはならない",
+      "surface": "組織、人に提供",
       "normalized": "情報提供",
       "parent": null,
       "is_new": true,
@@ -147,8 +147,8 @@
   },
   "evidence": {
     "action_surface": {
-      "value": "提供してはならない",
-      "quote": "提供してはならない",
+      "value": "組織、人に提供",
+      "quote": "組織、人に提供",
       "basis": "verbatim"
     },
     "possible_values": [
@@ -276,7 +276,7 @@
       "recipient_authorization の値は、第11条と同じ「許可なし」にそろえた(D44 の体言化)。別の規程の条文だが、同じ意味の区分に別の語を使うと統制語彙が増える(U1)",
       "営業秘密該当性(何が営業秘密か)は、この IR では fact の値としてそのまま受け取る形にしている。実際の判定では「営業秘密として管理する情報」に当たるかの判断が前段に必要で、条文だけでは決まらない"
     ],
-    "reviewed_at": "2026-11-02",
+    "reviewed_at": "2026-11-06",
     "decisions": [
       {
         "id": "G-1",
@@ -327,6 +327,25 @@
         "id": "C-4",
         "point": "営業秘密を値で受け取る",
         "result": "推奨どおり"
+      }
+    ],
+    "history": [
+      {
+        "change": "action_revised",
+        "fields": [
+          "ir.action.surface",
+          "evidence.action_surface"
+        ],
+        "before": {
+          "surface": "提供してはならない"
+        },
+        "after": {
+          "surface": "組織、人に提供"
+        },
+        "reason": "D71",
+        "approved_by": "Kazuhiro",
+        "at": "2026-11-06",
+        "note": "規範の様相(「してはならない」)を surface から外した。決定表・事実・シナリオは変えていない"
       }
     ]
   }

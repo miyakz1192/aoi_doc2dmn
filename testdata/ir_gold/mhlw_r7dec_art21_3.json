@@ -30,9 +30,9 @@
     },
     "actor": "あおい",
     "action": {
-      "surface": "労働に従事させない",
-      "normalized": "時間外労働等指示",
-      "parent": "労働時間管理",
+      "surface": "労働に従事させ",
+      "normalized": "労働指示",
+      "parent": null,
       "is_new": true,
       "approved_by": null
     },
@@ -182,8 +182,8 @@
   },
   "evidence": {
     "action_surface": {
-      "value": "労働に従事させない",
-      "quote": "労働に従事させない",
+      "value": "労働に従事させ",
+      "quote": "労働に従事させ",
       "basis": "verbatim"
     },
     "possible_values": [
@@ -379,7 +379,7 @@
       "possible_values は6値で、4件の中では最も値の種類が多い(設計書6.1の「値の種類が多い条文」に当たる)",
       "**「産後１年」を半角の「産後1年」にした(D56・レビュー D-3)。** 「１８歳未満の者」と表記をそろえた。値は実行時に文字列一致で引くので、表記の規則を1つにする。evidence の引用(quote)は逐語のまま残し、basis は normalized(半角化)にした"
     ],
-    "reviewed_at": "2026-11-02",
+    "reviewed_at": "2026-11-08",
     "decisions": [
       {
         "id": "G-1",
@@ -442,6 +442,42 @@
           "労働者の区分が条文の挙げる区分でない → 許可"
         ],
         "note": "「その他」が既定の行に落ちるシナリオを passthrough の fact ごとに求めるようにした(D63)ため、worker_category の分を足した。IR の本体(ir)は変えていないので review.status は approved のまま"
+      },
+      {
+        "change": "action_revised",
+        "fields": [
+          "ir.action.surface",
+          "evidence.action_surface"
+        ],
+        "before": {
+          "surface": "労働に従事させない"
+        },
+        "after": {
+          "surface": "労働に従事させ"
+        },
+        "reason": "D71",
+        "approved_by": "Kazuhiro",
+        "at": "2026-11-06",
+        "note": "規範の様相の「ない」だけを外した。使役の「させ」は「就業する(労働者)」と「就業させる(使用者)」を区別するので残す(前段設計書 6.1節)"
+      },
+      {
+        "change": "action_revised",
+        "fields": [
+          "ir.action.normalized",
+          "ir.action.parent"
+        ],
+        "before": {
+          "normalized": "時間外労働等指示",
+          "parent": "労働時間管理"
+        },
+        "after": {
+          "normalized": "労働指示",
+          "parent": null
+        },
+        "reason": "前段設計書 6.4節",
+        "approved_by": "Kazuhiro",
+        "at": "2026-11-08",
+        "note": "時間外・休日・深夜・産後などの条件は Action の名前に入れず、決定表の列(worker_category・work_type)で判定する。名前が変わったので親の案(労働時間管理)は外し、改めて人の判断に回す(D60)"
       }
     ]
   }

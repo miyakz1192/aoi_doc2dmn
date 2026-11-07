@@ -30,7 +30,7 @@
     },
     "actor": "あおい",
     "action": {
-      "surface": "使用しないこと",
+      "surface": "会社の施設、物品等を使用",
       "normalized": "施設物品使用",
       "parent": "会社資源利用",
       "is_new": true,
@@ -165,8 +165,8 @@
   },
   "evidence": {
     "action_surface": {
-      "value": "使用しないこと",
-      "quote": "使用しないこと",
+      "value": "会社の施設、物品等を使用",
+      "quote": "会社の施設、物品等を使用",
       "basis": "verbatim"
     },
     "possible_values": [
@@ -310,7 +310,7 @@
       "「物品等」の「等」に当たるものは、条文に書かれていないので値にしていない。実行時は「その他」として既定の行(許可)に落ちる。知らない値(社員の私物など)はエスカレーションになる(D46)。「等」の範囲を条文の外から足すかは判断をお願いしたい",
       "usage_target の other_value_note には、「等」の扱いが当てはめる側の判断になることを書いた(レビュー B-2・D55)。「等」に当たるものを値として足すことはしていない"
     ],
-    "reviewed_at": "2026-11-02",
+    "reviewed_at": "2026-11-06",
     "decisions": [
       {
         "id": "G-1",
@@ -361,6 +361,25 @@
         "id": "B-4",
         "point": "Action「施設物品使用」と親「会社資源利用」",
         "result": "推奨どおり"
+      }
+    ],
+    "history": [
+      {
+        "change": "action_revised",
+        "fields": [
+          "ir.action.surface",
+          "evidence.action_surface"
+        ],
+        "before": {
+          "surface": "使用しないこと"
+        },
+        "after": {
+          "surface": "会社の施設、物品等を使用"
+        },
+        "reason": "D71",
+        "approved_by": "Kazuhiro",
+        "at": "2026-11-06",
+        "note": "規範の様相(「しないこと」)を surface から外した。決定表・事実・シナリオは変えていない"
       }
     ]
   }

@@ -78,8 +78,9 @@ DMN XML／バインディング設定JSON／ルーティング表JSON／Scope・
 - **D57**: `target.dmn_model` に既存のモデルのファイルがあれば、新しい表だけを足す IR も
   既存ファイルを読んで追記する(`_needs_existing_dmn`)。読まないと、既存の表に手を
   入れない IR が単体の DMN を生成して既存モデルを置き換える(第24回の穴#1)
-- **D58**(組み合わせの制限は D64): `disjoint` を使えるようにした。`add_rows`・
-  `add_row` との組み合わせは C9 で止める(列が1つも重ならない表に行は足せない)
+- **D58**(組み合わせの制限は D64・D69): `disjoint` を使えるようにした。`add_rows`・
+  `add_row`・`add_column` との組み合わせは C9 で止める(列が1つも重ならない表に行も
+  列も足せない)
 - **D59**: 比較型の fact の `possible_values` はプリミティブの定義から導く
   (`effective_possible_values`)。IR に書いたら C4 で止める
 
@@ -90,6 +91,15 @@ DMN XML／バインディング設定JSON／ルーティング表JSON／Scope・
   型で表されるので、fact の種類で分岐していた箇所を `effective_values_of` と
   `isinstance` に寄せた。C4 は JSON を読み込むときの歯止めとして残す(層3から引いた
   エントリと、読み込み後に書き換えられた IR を見る)
+
+## v1.8 で変えた点(設計書2章 D69・D70)
+
+- **D69**: `disjoint` と `intermediate.action = add_column` の組み合わせを C9(条件6)で
+  止める。列が1つも重ならない表に列を足すのは、実質的に新しい表を作るのと同じ
+- **D70**: 登録簿を読み込むとき、層3の比較型の fact の `possible_values` が
+  プリミティブの定義から導いた値と一致するかを確かめる(`fact_def_from_json` の
+  `origin="registry"`)。初期登録のときだけ確かめていたので、IR を経由して層3に
+  入った値のずれに気付けなかった
 
 ## クロス検証の実行順序(設計書5章)
 
@@ -708,6 +718,15 @@ def _check_c9_level_determination(ir: ClauseIR, registry: Registry) -> None:
     for change in lv.intermediate:
         if change.action != "add_column":
             continue
+        if change.relation == "disjoint":
+            # D69: 列が1つも重ならない表に列を足すのは、実質的に新しい表を作るのと
+            # 同じである(add_row を止めるのと同じ考え方。条件3・D64)。
+            raise SchemaWiringError(
+                f"C9検証失敗(条件6): intermediate の relation=disjoint ですが "
+                f"action=add_column です(D69)。列集合が1つも重ならない決定表 "
+                f"{change.table_id!r} に列を足すことはできません"
+                "(新しい表を作ってください)。"
+            )
         if not change.new_input_columns:
             raise SchemaWiringError(
                 f"C9検証失敗(条件6): intermediate.action=add_column ですが、決定表 "

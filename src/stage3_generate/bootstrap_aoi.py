@@ -21,6 +21,7 @@
 | 層1 entry_points | **DMN には無い**(`ENTRY_POINTS`。出典は設計書 D32) |
 | 層3 sources | **DMN には無く、補わない**(`SOURCE_GAP_NOTE`・D33) |
 | 層3 other_value_note | **DMN には無い**。passthrough の fact に固定の文を入れる(`OTHER_VALUE_NOTE_BOOTSTRAP`・D55) |
+| Action 台帳 | **DMN にも登録簿にも定義は無い**。名前だけが entry_points と行の結論に現れる(`ACTION_LEDGER_SEED`・前段設計書3.3節) |
 
 DMN に無いものを勝手に埋めないのが原則(設計書1.4・HANDOFF 4節)。埋めずに空にしたもの、
 出典を付けて入れたものは、どちらも下の定数のところに理由を書いてある。
@@ -117,6 +118,33 @@ ENTRY_POINTS: dict[str, list[dict[str, str]]] = {
 ENTRY_POINTS_SOURCE = (
     "reference/gijinka-extraction-pipeline/docs/diagrams/"
     "sequence_diagram_explained.md:278 (existing_routes)"
+)
+
+# Action 台帳の出発点(前段設計書3.3節・P10)。初期登録の登録簿にある Action は
+# 「あおい × 外部送信」の1件だけで、これが前段の Action 正規化の最初の選択肢になる。
+#
+# **定義は DMN にも登録簿にも書かれていない。** 出典は次の2つで、どちらも「外部送信」
+# という行為の名前が使われていることしか示さない。定義の文は、この2つの出典と、
+# 送信可否判定の入力(本人確認判定・情報分類判定・連絡同意)から作った案であり、
+# 人が承認するまで provisional とする(PU4・D53)。
+#   - registry/registry.json 層1 dt_transmission の entry_points
+#   - registry/dmn/aoi_transmission.dmn 送信可否判定の行の reason_code「外部送信対象外」
+ACTION_LEDGER_SEED: list[dict] = [
+    {
+        "name": "外部送信",
+        "definition": "患者に関する情報を、患者・代理人などの外部に送ること",
+        "parent": None,
+        "surfaces": [],
+        "actors": ["あおい"],
+        "status": "provisional",
+        "approved_by": None,
+    }
+]
+ACTION_LEDGER_SOURCE = (
+    "定義の出典: registry/dmn/aoi_transmission.dmn 送信可否判定の reason_code"
+    "「外部送信対象外」と、層1 dt_transmission の entry_points"
+    "(あおい × 外部送信)。定義の文そのものは DMN にも登録簿にも無いので "
+    "provisional(PU4)"
 )
 
 # 層3の sources(一致プリミティブの引数の取得元)は DMN XML に書かれていない。
@@ -556,8 +584,18 @@ def build_registry(
             }
         )
 
+    action_ledger = [
+        {
+            **dict(entry),
+            "provenance": _provenance(ACTION_LEDGER_SOURCE),
+        }
+        for entry in ACTION_LEDGER_SEED
+    ]
     registry = Registry(
-        decision_tables=layer1, rule_rows=layer2, fact_registry=layer3
+        decision_tables=layer1,
+        rule_rows=layer2,
+        fact_registry=layer3,
+        action_ledger=action_ledger,
     )
     _record_fixes(registry, applied)
     # D34: 修正後の登録簿に C5・C11 を当てる。元の DMN の矛盾を抱えたまま

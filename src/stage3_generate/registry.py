@@ -11,7 +11,16 @@
 | 層1 `decision_tables` | 決定表ごとのメタ情報 | `dmn_model`(D8)・`output_columns`(D12)・`entry_points`(D16) を追加 |
 | 層2 `rule_rows` | ルール行1本ずつの台帳 | なし |
 | 層3 `fact_registry` | fact 台帳 | **新設**(D2) |
+| `action_ledger` | Action 台帳 | **新設**(前段設計書3章・P2) |
 | `review` | 条文単位のレビュー状態 | `gates`(ゲート名の一覧)を追加 |
+
+## Action 台帳(前段設計書3章)
+
+前段(条文 → IR)の Action 正規化は、Action 台帳の中から1つ選ぶか「該当なし」を選ぶ
+閉じた選択である(P5)。台帳はエージェントが実行時に要求する行為の一覧(職務記述書)で、
+層1の `entry_points` の action と同じ名前空間にあるため、別ファイルにせず登録簿の中に
+置いた(`src/stage3_frontstage/action_ledger.py` の docstring に理由)。項目の読み書きは
+`ActionLedger` が行い、この層は dict のまま保持する(層1〜3と同じ扱い)。
 
 ## 永続化の方針
 
@@ -49,6 +58,8 @@ class Registry:
     decision_tables: list[dict] = field(default_factory=list)
     rule_rows: list[dict] = field(default_factory=list)
     fact_registry: list[dict] = field(default_factory=list)
+    # Action 台帳(前段設計書3章)。前段の Action 正規化が選択肢として読む
+    action_ledger: list[dict] = field(default_factory=list)
     review: Optional[dict] = None
 
     # ---- 生成・入出力 ----
@@ -63,6 +74,7 @@ class Registry:
             decision_tables=list(payload.get("decision_tables", [])),
             rule_rows=list(payload.get("rule_rows", [])),
             fact_registry=list(payload.get("fact_registry", [])),
+            action_ledger=list(payload.get("action_ledger", [])),
             review=payload.get("review"),
         )
 
@@ -81,6 +93,8 @@ class Registry:
             "rule_rows": self.rule_rows,
             "fact_registry": self.fact_registry,
         }
+        if self.action_ledger:
+            out["action_ledger"] = self.action_ledger
         if self.review is not None:
             out["review"] = self.review
         return out
@@ -103,6 +117,7 @@ class Registry:
             decision_tables=[dict(d) for d in self.decision_tables],
             rule_rows=[dict(r) for r in self.rule_rows],
             fact_registry=[dict(f) for f in self.fact_registry],
+            action_ledger=[dict(a) for a in self.action_ledger],
             review=dict(self.review) if self.review else None,
         )
 
@@ -130,6 +145,13 @@ class Registry:
                 decision_table_id is not None
                 and entry.get("decision_table_id") == decision_table_id
             ):
+                return entry
+        return None
+
+    def find_action(self, name: str) -> Optional[dict]:
+        """Action 台帳のエントリを名前で引く(前段設計書3章)。"""
+        for entry in self.action_ledger:
+            if entry.get("name") == name:
                 return entry
         return None
 

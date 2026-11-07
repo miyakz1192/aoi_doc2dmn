@@ -1,0 +1,712 @@
+{
+  "_meta": {
+    "purpose": "Action 正規化の正解(前段設計書 P13・第29回 HANDOFF 4.2節)。承認済みの正解IR 5件と候補13件を、評価の順に並べた。",
+    "supervised": "教師あり。1件を正規化したら、前段の出力ではなく expected の Action(名前と definition)を台帳に足してから次へ進む(P13)。",
+    "ledger_start": "台帳の出発点は ledger_seed の1件(あおいの「外部送信」)だけ。",
+    "definition_note": "definition は条文の語句から作った案で、Kazuhiro さんがレビュー済みの Action に付けた暫定のもの(status=provisional)。basis に定義の根拠の語句を逐語で記録し、条文に無い語は beyond_clause に挙げた(PU4)。",
+    "surface_note": "expected.surface は条文の部分文字列で、規範の様相を含まない(D71・P4)。core_verb は評価の3条件のうち「正解の surface と共通する中心の動詞を含む」の判定に使う(前段設計書 5.1節)。",
+    "review": {
+      "approved_by": "Kazuhiro",
+      "reviewed_at": "2026-11-08"
+    },
+    "counts": {
+      "items": 18,
+      "ir_gold": 5,
+      "candidates": 13
+    }
+  },
+  "ledger_seed": [
+    {
+      "name": "外部送信",
+      "definition": "患者に関する情報を、患者・代理人などの外部に送ること",
+      "parent": null,
+      "surfaces": [],
+      "actors": [
+        "あおい"
+      ],
+      "status": "provisional",
+      "approved_by": null,
+      "definition_basis": [
+        {
+          "quote": "{\"actor\": \"あおい\", \"action\": \"外部送信\"}",
+          "where": "registry/registry.json 層1 dt_transmission の entry_points",
+          "basis": "verbatim"
+        },
+        {
+          "quote": "外部送信対象外",
+          "where": "registry/dmn/aoi_transmission.dmn 送信可否判定の行の reason_code(出力値)",
+          "basis": "verbatim",
+          "note": "DMN には「外部送信」という Action 名そのものは無く、行の結論の語としてだけ現れる"
+        },
+        {
+          "quote": "患者又はその代理人からの電話等による問い合わせ",
+          "where": "tests/fixtures/article14_clause.json の clause_text(情報管理規程 第14条)",
+          "basis": "verbatim",
+          "note": "「患者・代理人などの外部」の語の出どころ。この条文自体は口頭伝達の条文である"
+        }
+      ],
+      "definition_beyond_source": [
+        "送ること"
+      ],
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00",
+        "note": "D32 と同じ扱い。出典は registry/registry.json 層1 dt_transmission の entry_points と registry/dmn/aoi_transmission.dmn。entry_points の付与の出典は reference/gijinka-extraction-pipeline/docs/diagrams/sequence_diagram_explained.md:278 (existing_routes)"
+      }
+    }
+  ],
+  "items": [
+    {
+      "order": 1,
+      "clause_id": "ipa_secguide_v4_6_7_1",
+      "group": "正解IR",
+      "clause_ref": "IPA情報セキュリティ関連規程 6.7 特権アカウント(第3項)",
+      "source": {
+        "kind": "ir_gold",
+        "file": "testdata/ir_gold/ipa_secguide_v4_6_7_1.json",
+        "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程",
+        "article": "6.7 特権アカウント(第3項)"
+      },
+      "text": "システム開発を担当する者が本番環境において特権/管理者権限で操作を行うことを禁止する。",
+      "expected": {
+        "surface": "特権/管理者権限で操作を行う",
+        "normalized": "特権操作",
+        "is_new": true,
+        "core_verb": "操作"
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-08"
+      },
+      "note": "承認済みの正解IR。surface は D71 の規則どおり様相を含まない",
+      "definition": {
+        "text": "特権/管理者権限で情報システムを操作すること",
+        "status": "provisional",
+        "basis": [
+          {
+            "quote": "特権/管理者権限で操作を行う",
+            "basis": "verbatim"
+          }
+        ],
+        "beyond_clause": [
+          "情報システム（条文の語は「システム開発」で、操作の対象としての「情報システム」は条文に無い）"
+        ]
+      }
+    },
+    {
+      "order": 2,
+      "clause_id": "mhlw_r7dec_art11_1",
+      "group": "正解IR",
+      "clause_ref": "厚生労働省モデル就業規則 第11条(遵守事項)第1号",
+      "source": {
+        "kind": "ir_gold",
+        "file": "testdata/ir_gold/mhlw_r7dec_art11_1.json",
+        "document": "厚生労働省 モデル就業規則(令和7年12月版)",
+        "article": "第11条 遵守事項(第1号)"
+      },
+      "text": "許可なく職務以外の目的で会社の施設、物品等を使用しないこと。",
+      "expected": {
+        "surface": "会社の施設、物品等を使用",
+        "normalized": "施設物品使用",
+        "is_new": true,
+        "core_verb": "使用"
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-08"
+      },
+      "note": "第29回で surface を D71 の規則に直した",
+      "definition": {
+        "text": "会社の施設や物品等を使用すること",
+        "status": "provisional",
+        "basis": [
+          {
+            "quote": "会社の施設、物品等を使用",
+            "basis": "verbatim"
+          }
+        ],
+        "beyond_clause": [
+          "「、」を「や」に変えた（語の追加はない）"
+        ]
+      }
+    },
+    {
+      "order": 3,
+      "clause_id": "ipa_secguide_v4_personnel_2",
+      "group": "正解IR",
+      "clause_ref": "IPA情報セキュリティ関連規程 人的対策-2(従業員の責務)",
+      "source": {
+        "kind": "ir_gold",
+        "file": "testdata/ir_gold/ipa_secguide_v4_personnel_2.json",
+        "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程",
+        "article": "人的対策-2 従業員の責務"
+      },
+      "text": "従業員は、当社が営業秘密として管理する情報及びその複製物の一切を許可されていない組織、人に提供してはならない。",
+      "expected": {
+        "surface": "組織、人に提供",
+        "normalized": "情報提供",
+        "is_new": true,
+        "core_verb": "提供"
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-08"
+      },
+      "note": "第29回で surface を D71 の規則に直した",
+      "definition": {
+        "text": "情報を、他の組織や人に提供すること",
+        "status": "provisional",
+        "basis": [
+          {
+            "quote": "組織、人に提供",
+            "basis": "verbatim"
+          },
+          {
+            "quote": "当社が営業秘密として管理する情報",
+            "basis": "verbatim",
+            "note": "「情報を」の出どころ"
+          }
+        ],
+        "beyond_clause": [
+          "他の（条文に「他の」の語は無い）"
+        ]
+      }
+    },
+    {
+      "order": 4,
+      "clause_id": "mhlw_r7dec_art21_3",
+      "group": "正解IR",
+      "clause_ref": "厚生労働省モデル就業規則 第21条(時間外及び休日労働等)第3項",
+      "source": {
+        "kind": "ir_gold",
+        "file": "testdata/ir_gold/mhlw_r7dec_art21_3.json",
+        "document": "厚生労働省 モデル就業規則(令和7年12月版)",
+        "article": "第21条 時間外及び休日労働等(第3項)"
+      },
+      "text": "妊娠中の女性、産後１年を経過しない女性労働者（以下「妊産婦」という。）であって請求した者及び１８歳未満の者については、第２項による時間外労働又は休日若しくは深夜（午後１０時から午前５時まで）労働に従事させない。",
+      "expected": {
+        "surface": "労働に従事させ",
+        "normalized": "労働指示",
+        "is_new": true,
+        "core_verb": "従事"
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-08"
+      },
+      "note": "第29回で surface を D71 の規則に直し、Action を「時間外労働等指示」から「労働指示」に変えた(前段設計書 6.4節)",
+      "definition": {
+        "text": "使用者が労働者を労働に従事させること（時間外・休日・深夜などの区分は問わない）",
+        "status": "provisional",
+        "basis": [
+          {
+            "quote": "労働に従事させ",
+            "basis": "verbatim"
+          },
+          {
+            "quote": "時間外労働又は休日若しくは深夜",
+            "basis": "verbatim",
+            "note": "「区分は問わない」が指す区分の語"
+          }
+        ],
+        "beyond_clause": [
+          "使用者（条文に「使用者」の語は無い。主語が使用者の側であることは「従事させない」の使役から読んでいる。U12）",
+          "労働者（条文の語は「女性労働者」「１８歳未満の者」）"
+        ]
+      }
+    },
+    {
+      "order": 5,
+      "clause_id": "aoi_johokanri_art14",
+      "group": "正解IR",
+      "clause_ref": "情報管理規程 第14条",
+      "source": {
+        "kind": "ir_gold",
+        "file": "testdata/ir_gold/aoi_johokanri_art14.json",
+        "document": "情報管理規程(あおいの既存実装のゴールデンパス条文)",
+        "article": "第14条 口頭による情報提供の制限"
+      },
+      "text": "当法人の職員は、患者又はその代理人からの電話等による問い合わせに対し、当該患者の生年月日及び連絡先の一致が確認できない場合、検査結果その他の医療情報を口頭で伝達してはならない。",
+      "expected": {
+        "surface": "口頭で伝達",
+        "normalized": "口頭伝達",
+        "is_new": true,
+        "core_verb": "伝達"
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-08"
+      },
+      "note": "**外部送信に寄せないことを確かめる項目**。手段(口頭)が違うので別の Action になる(前段設計書 4.3節)",
+      "definition": {
+        "text": "情報を口頭で相手に伝えること",
+        "status": "provisional",
+        "basis": [
+          {
+            "quote": "口頭で伝達",
+            "basis": "verbatim"
+          },
+          {
+            "quote": "検査結果その他の医療情報",
+            "basis": "verbatim",
+            "note": "「情報を」の出どころ"
+          }
+        ],
+        "beyond_clause": [
+          "相手（条文の語は「患者又はその代理人」）",
+          "伝える（条文の語は「伝達」）"
+        ]
+      }
+    },
+    {
+      "order": 6,
+      "clause_id": "ipa_secguide_v4_6_1_5",
+      "group": "特権",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.1 アクセス制御方針（箇条書き第5項）",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/clauses/clauses_frontstage_v1.json",
+        "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "article": "1.組織的対策 6.1 アクセス制御方針（箇条書き第5項）",
+        "locator": "P0130.1"
+      },
+      "text": "特権操作は多要素認証を用い、社有機器及び指定経路（VPN等）からのみ実施し、私有機器を使用しないこと。",
+      "expected": {
+        "surface": "特権操作",
+        "normalized": "特権操作",
+        "is_new": false,
+        "core_verb": "操作"
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-08"
+      },
+      "note": "既存に寄せるべき条文。直前に登録した「特権操作」に寄せられるか"
+    },
+    {
+      "order": 7,
+      "clause_id": "ipa_secguide_v4_6_10_priv_name",
+      "group": "特権",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.10 利用者アカウント・パスワードの条件（表・特権アカウント列／アカウント名行）",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/clauses/clauses_frontstage_v1.json",
+        "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "article": "1.組織的対策 6.10 利用者アカウント・パスワードの条件（表・特権アカウント列／アカウント名行）",
+        "locator": "T6.R2.C2.L5"
+      },
+      "text": "1つの特権アカウント名を2名以上で共用しない",
+      "expected": {
+        "surface": "特権アカウント名を2名以上で共用",
+        "normalized": "アカウント共用",
+        "is_new": true,
+        "core_verb": "共用"
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-08"
+      },
+      "note": "紛らわしい条文。「特権」の語を含むが、行為は共用であって特権操作ではない",
+      "context": [
+        {
+          "text": "特権アカウント",
+          "where": "6.10 の表の列の見出し",
+          "locator": "T6.R1.C2.L1",
+          "basis": "verbatim"
+        },
+        {
+          "text": "アカウント名",
+          "where": "6.10 の表の行の見出し",
+          "locator": "T6.R2.C1.L1",
+          "basis": "verbatim"
+        }
+      ],
+      "definition": {
+        "text": "1つのアカウントを2人以上で使うこと",
+        "status": "provisional",
+        "basis": [
+          {
+            "quote": "1つの特権アカウント名を2名以上で共用しない",
+            "basis": "verbatim"
+          }
+        ],
+        "beyond_clause": [
+          "2人以上（条文の語は「2名以上」）",
+          "使う（条文の語は「共用」）"
+        ]
+      }
+    },
+    {
+      "order": 8,
+      "clause_id": "mhlw_r7dec_art11_5",
+      "group": "情報提供",
+      "clause_ref": "厚生労働省「モデル就業規則」解説版 第11条（遵守事項）第5号",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/clauses/clauses_frontstage_v1.json",
+        "document": "厚生労働省「モデル就業規則」解説版",
+        "article": "第11条（遵守事項）第5号",
+        "locator": "T14.R1.C1.L7"
+      },
+      "text": "在職中及び退職後においても、業務上知り得た会社、取引先等の機密を漏洩しないこと。",
+      "expected": {
+        "surface": "機密を漏洩",
+        "normalized": "情報提供",
+        "is_new": false,
+        "core_verb": "漏洩"
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-08"
+      },
+      "note": "既存に寄せるべき条文。文書をまたいで(IPA の人的対策-2 で登録した)「情報提供」に寄せられるか"
+    },
+    {
+      "order": 9,
+      "clause_id": "ipa_secguide_v4_2_3_3_forward",
+      "group": "送信",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/clauses/clauses_frontstage_v1.json",
+        "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "article": "4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+        "locator": "P0705.1"
+      },
+      "text": "社用メールアドレスで受信したメールを従業員個人のアドレスに転送することを禁止する。",
+      "expected": {
+        "surface": "従業員個人のアドレスに転送",
+        "normalized": "データ送信",
+        "is_new": true,
+        "core_verb": "転送"
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-08"
+      },
+      "note": "組の起点。**あおいの「外部送信」に寄せるかを見る**(外部送信は患者情報を患者・代理人に送る行為なので、寄せたら誤統合)",
+      "definition": {
+        "text": "電子メールなどで、データを宛先に送ること（転送を含む）",
+        "status": "provisional",
+        "basis": [
+          {
+            "quote": "従業員個人のアドレスに転送",
+            "basis": "verbatim"
+          },
+          {
+            "quote": "社用メールアドレスで受信したメール",
+            "basis": "verbatim",
+            "note": "「電子メールなどで」の出どころ"
+          }
+        ],
+        "beyond_clause": [
+          "データ（この条文の語は「メール」。次の条文(2.3.3 送信)に「データ」がある）",
+          "宛先（条文の語は「従業員個人のアドレス」）"
+        ]
+      }
+    },
+    {
+      "order": 10,
+      "clause_id": "ipa_secguide_v4_2_3_3_send",
+      "group": "送信",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/clauses/clauses_frontstage_v1.json",
+        "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "article": "4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+        "locator": "P0706.1"
+      },
+      "text": "社内で利用したデータを従業員個人のアドレスに送信することを禁止する。",
+      "expected": {
+        "surface": "従業員個人のアドレスに送信",
+        "normalized": "データ送信",
+        "is_new": false,
+        "core_verb": "送信"
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-08"
+      },
+      "note": "既存に寄せるべき条文。同じ節の転送と同じ Action に寄せられるか"
+    },
+    {
+      "order": 11,
+      "clause_id": "ipa_secguide_v4_7_3_export",
+      "group": "送信",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 7.3 電子メールの利用（箇条書き・クラウド型メールの利用）",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/clauses/clauses_frontstage_v1.json",
+        "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "article": "1.組織的対策 7.3 電子メールの利用（箇条書き・クラウド型メールの利用）",
+        "locator": "P0215.1"
+      },
+      "text": "システム管理者から許可されたパソコン以外で、メールサーバーからのメールの取り出し及びエクスポートを禁止する。",
+      "expected": {
+        "surface": "メールの取り出し及びエクスポート",
+        "normalized": "データ取り出し",
+        "is_new": true,
+        "core_verb": "取り出し"
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-08"
+      },
+      "note": "紛らわしい条文。送信と向きが逆(取り出す)なので別の Action",
+      "definition": {
+        "text": "データをサーバーなどから取り出し、または書き出すこと",
+        "status": "provisional",
+        "basis": [
+          {
+            "quote": "メールサーバーからのメールの取り出し及びエクスポート",
+            "basis": "verbatim"
+          }
+        ],
+        "beyond_clause": [
+          "データ（条文の語は「メール」）",
+          "書き出す（条文の語は「エクスポート」。言い換えである）"
+        ]
+      }
+    },
+    {
+      "order": 12,
+      "clause_id": "mhlw_r7dec_art11_6",
+      "group": "就業",
+      "clause_ref": "厚生労働省「モデル就業規則」解説版 第11条（遵守事項）第6号",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/clauses/clauses_frontstage_v1.json",
+        "document": "厚生労働省「モデル就業規則」解説版",
+        "article": "第11条（遵守事項）第6号",
+        "locator": "T14.R1.C1.L8"
+      },
+      "text": "酒気を帯びて就業しないこと。",
+      "expected": {
+        "surface": "就業",
+        "normalized": "就業",
+        "is_new": true,
+        "core_verb": "就業"
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-08"
+      },
+      "note": "組の起点。労働者が自ら働く行為。使用者の側の「労働指示」と主体が違う(前段設計書 6.4節)",
+      "definition": {
+        "text": "労働者が自ら業務に就くこと",
+        "status": "provisional",
+        "basis": [
+          {
+            "quote": "就業",
+            "basis": "verbatim"
+          }
+        ],
+        "beyond_clause": [
+          "労働者（条文に主語の語は無い。就業規則の遵守事項なので従業員が主語）",
+          "自ら業務に就く（「就業」の言い換え）"
+        ]
+      }
+    },
+    {
+      "order": 13,
+      "clause_id": "mhlw_r7dec_art25_2",
+      "group": "労働指示",
+      "clause_ref": "厚生労働省「モデル就業規則」解説版 第25条（産前産後の休業）第2項",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/clauses/clauses_frontstage_v1.json",
+        "document": "厚生労働省「モデル就業規則」解説版",
+        "article": "第25条（産前産後の休業）第2項",
+        "locator": "T40.R1.C1.L3"
+      },
+      "text": "産後８週間を経過していない女性労働者は、就業させない。",
+      "expected": {
+        "surface": "就業させ",
+        "normalized": "労働指示",
+        "is_new": false,
+        "core_verb": "就業"
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-08"
+      },
+      "note": "**直前の「就業」に寄せないことを確かめる項目**。使役(させ)なので使用者の側の行為で、「労働指示」に寄せる"
+    },
+    {
+      "order": 14,
+      "clause_id": "mhlw_r7dec_art21_4",
+      "group": "労働指示",
+      "clause_ref": "厚生労働省「モデル就業規則」解説版 第21条（時間外及び休日労働等）第4項",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/clauses/clauses_frontstage_v1.json",
+        "document": "厚生労働省「モデル就業規則」解説版",
+        "article": "第21条（時間外及び休日労働等）第4項",
+        "locator": "T34.R1.C1.L5"
+      },
+      "text": "災害その他避けることのできない事由によって臨時の必要がある場合には、第１項から前項までの制限を超えて、所定労働時間外又は休日に労働させることがある。ただし、この場合であっても、請求のあった妊産婦については、所定労働時間外労働又は休日労働に従事させない。",
+      "expected": {
+        "surface": "所定労働時間外労働又は休日労働に従事させ",
+        "normalized": "労働指示",
+        "is_new": false,
+        "core_verb": "従事"
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-08"
+      },
+      "note": "既存に寄せるべき条文。時間外・休日という条件は Action の名前に入れず、決定表の列で判定する(前段設計書 6.4節)"
+    },
+    {
+      "order": 15,
+      "clause_id": "ipa_secguide_v4_phys_3_printer",
+      "group": "放置",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/clauses/clauses_frontstage_v1.json",
+        "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "article": "3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+        "locator": "P0587.1"
+      },
+      "text": "複合機、プリンタに原稿、印刷物を放置しない。",
+      "expected": {
+        "surface": "原稿、印刷物を放置",
+        "normalized": "放置",
+        "is_new": true,
+        "core_verb": "放置"
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-08"
+      },
+      "note": "組の起点",
+      "definition": {
+        "text": "情報や物を、管理されない状態で置いたままにすること",
+        "status": "provisional",
+        "basis": [
+          {
+            "quote": "原稿、印刷物を放置",
+            "basis": "verbatim"
+          }
+        ],
+        "beyond_clause": [
+          "情報や物（条文の語は「原稿、印刷物」）",
+          "管理されない状態で置いたままにする（「放置」の言い換え）"
+        ]
+      }
+    },
+    {
+      "order": 16,
+      "clause_id": "ipa_secguide_v4_phys_1_2_level1",
+      "group": "放置",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 1.2 セキュリティ領域の設定（レベル1領域の表・制限事項）",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/clauses/clauses_frontstage_v1.json",
+        "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "article": "3.物理的対策 1.2 セキュリティ領域の設定（レベル1領域の表・制限事項）",
+        "locator": "T23.R5.C2.L1"
+      },
+      "text": "未使用時に社外秘又は極秘の情報資産の放置禁止",
+      "expected": {
+        "surface": "情報資産の放置",
+        "normalized": "放置",
+        "is_new": false,
+        "core_verb": "放置"
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-08"
+      },
+      "note": "既存に寄せるべき条文。同じ文書の「放置」に寄せられるか。表のセルなので、どの領域の制限かは context に入れた",
+      "context": [
+        {
+          "text": "レベル1領域",
+          "where": "物理的対策 1.2 の表の行(領域)の見出し",
+          "locator": "T23.R1.C1.L1",
+          "basis": "verbatim"
+        },
+        {
+          "text": "本社受付・応接スペース・商談室・倉庫",
+          "where": "同じ表の「レベル1領域」の対象",
+          "locator": "T23.R1.C2.L1",
+          "basis": "verbatim"
+        },
+        {
+          "text": "制限事項",
+          "where": "同じ表の、このセルが属する行の見出し",
+          "locator": "T23.R5.C1.L1",
+          "basis": "verbatim"
+        }
+      ]
+    },
+    {
+      "order": 17,
+      "clause_id": "mhlw_r7dec_art58_3_6",
+      "group": "立入り",
+      "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第6号",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/clauses/clauses_frontstage_v1.json",
+        "document": "厚生労働省「モデル就業規則」解説版",
+        "article": "第58条（遵守事項）第3項第6号",
+        "locator": "T81.R1.C1.L10"
+      },
+      "text": "立入禁止又は通行禁止区域には立ち入らないこと。",
+      "expected": {
+        "surface": "区域には立ち入ら",
+        "normalized": "立入り",
+        "is_new": true,
+        "core_verb": "立ち入"
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-08"
+      },
+      "note": "組の起点",
+      "definition": {
+        "text": "区域や場所に入ること",
+        "status": "provisional",
+        "basis": [
+          {
+            "quote": "区域には立ち入ら",
+            "basis": "verbatim"
+          }
+        ],
+        "beyond_clause": [
+          "場所（この条文の語は「区域」。組のもう一方(第58条③④)に「場所」がある）",
+          "入る（条文の語は「立ち入る」）"
+        ]
+      }
+    },
+    {
+      "order": 18,
+      "clause_id": "mhlw_r7dec_art58_3_4",
+      "group": "立入り",
+      "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第4号",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/clauses/clauses_frontstage_v1.json",
+        "document": "厚生労働省「モデル就業規則」解説版",
+        "article": "第58条（遵守事項）第3項第4号",
+        "locator": "T81.R1.C1.L8"
+      },
+      "text": "２０歳未満の者は、喫煙可能な場所には立ち入らないこと。",
+      "expected": {
+        "surface": "喫煙可能な場所には立ち入ら",
+        "normalized": "立入り",
+        "is_new": false,
+        "core_verb": "立ち入"
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-08"
+      },
+      "note": "既存に寄せるべき条文。同じ条の「立入り」に寄せられるか"
+    }
+  ]
+}

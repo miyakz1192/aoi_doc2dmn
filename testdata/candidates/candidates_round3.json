@@ -1,7 +1,10 @@
 {
   "_meta": {
     "purpose": "HANDOFF_20261103_round27_to_claudecode.md パートB(D65)に基づく候補データ。正式なオラクル(testdata/clauses/clauses_v1.json)には未統合。④人間レビュー(Kazuhiroさん)を経てから統合する。",
-    "classifier_note": "classifier_result が空の候補は、②の分類器にまだかけていない(実行中)。かけ終わったら別のコミットで埋める。",
+    "classifier_note": "classifier_result は37件すべてを②の分類器にかけた結果(第29回のコミットで埋めた)。1件あたり約5分かかった。",
+    "selection_note": "このうち13件を、前段(条文 → IR)の Action 正規化の評価に選んだ(前段設計書 5.2節・P12)。正解ラベルは testdata/clauses/clauses_frontstage_v1.json、正解の Action は testdata/action_gold/action_gold_v1.json にある。",
+    "id_note": "候補の ID は改名しない(D72)。ipa_secguide_v4_6_7_1 は 6.7 の第3項、ipa_secguide_v4_6_7_5 は第5項だが、正解IR と履歴が参照しているためそのままにする。",
+    "excluded_from_labels": "原典に「/」で並んだ選択肢が残っている3件(ipa_secguide_v4_2_3_1・ipa_secguide_v4_7_3_attach・ipa_secguide_v4_2_3_3_wifi)は、条文が確定していないので正解ラベルの対象から外した(D72)。",
     "labeling_note": "**軸1・軸2の正解ラベルは付けていない**(第27回 HANDOFF 3.2節)。classifier_result は②の分類器(src/stage2_classify/local_llm.py、qwen2.5:14b-instruct)にかけた参考値で、正解ラベルではない。正解ラベルは Kazuhiroさんが確認する(第9〜11回と同じ手順)。",
     "hypothesis_note": "ir_type_hypothesis は「どの IR の型を確かめるのに使えそうか」という選ぶための目安であり、正解ではない。IR の中身(fact や値)は、正解IR を作るときに条文本文と出典付きの context だけから決める(設計書1.4節)。",
     "status": "pending_human_review",
@@ -57,7 +60,20 @@
       },
       "task": "round27_partB",
       "text_raw": "特権操作は多要素認証を用い、社有機器及び指定経路（VPN等）からのみ実施し、私有機器を使用しないこと。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "既存の Action「特権操作」に寄せる判断を試せる。ゴールデンパスの最終判定(dt_privileged_operation)と列を比べるレベル判定が出る見込み",
       "note": "1文に「多要素認証を用いる」「社有機器及び指定経路からのみ実施する」「私有機器を使用しない」の3つの規範が入っている。原典が1文で書いているので、文を切らずに1件とした"
     },
@@ -73,7 +89,20 @@
       },
       "task": "round27_partB",
       "text_raw": "付与対象を業務上必要な従業員および従業員以外の者に限定し、役割に応じた必要最低限の権限のみを付与する。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 0.95,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "付与の対象を限る型。「必要最低限」が評価の判断に当たるか(D51 で正解IR から外すか)の線引きを試せる",
       "note": "「必要最低限の権限」は量の判断を含む。評価の判断を含む条文として外す可能性がある"
     },
@@ -89,7 +118,20 @@
       },
       "task": "round27_partB",
       "text_raw": "組織内で特権アカウントを保有する者を一覧化して正確に把握し、特権アカウントや、サーバーやネットワーク機器の設定変更権限を必要最低限の者に限定する。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 0.95,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "同上。前半(一覧化して把握する)は台帳の整備で、後半(必要最低限の者に限定する)が判定になりうる",
       "note": "1文に「一覧化して正確に把握する」と「設定変更権限を必要最低限の者に限定する」の2つの規範が入っている"
     },
@@ -105,7 +147,20 @@
       },
       "task": "round27_partB",
       "text_raw": "特権アカウントの付与・変更・削除は情報セキュリティ責任者及びシステム管理者の承認を必要とする。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "エスカレーション基準",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "承認を要する型。既存の許可の有無の fact(recipient_authorization・usage_authorization)と同じ形の fact になる見込み",
       "note": "承認者が2者(情報セキュリティ責任者及びシステム管理者)で、どちらも要るのか一方でよいのかは条文から読めない"
     },
@@ -121,7 +176,20 @@
       },
       "task": "round27_partB",
       "text_raw": "1つの特権アカウント名を2名以上で共用しない",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "アカウントの共有の禁止。6.2.1 の同趣旨の条文(ipa_secguide_v4_6_2_1_item2)と同じ表に行が増える形になりうる",
       "note": "表のセル。これが特権アカウントの条件であることはセルの外(列見出し)にしか書かれていないので、出典付きの context が要る(1.4節)"
     },
@@ -137,7 +205,20 @@
       },
       "task": "round27_partB",
       "text_raw": "利用者の認証に用いるアカウントは、利用者1名につき1つを発行する。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "数の規範(1名につき1つ)。数を数える判定が IR の型で表せるかを試せる",
       "note": "対象が「社外秘又は極秘の情報資産を扱う社内情報システム」に限られることは、箇条書きの親文(6.2.1 冒頭)にある"
     },
@@ -153,7 +234,20 @@
       },
       "task": "round27_partB",
       "text_raw": "同一アカウントの他者との共有および複数の利用者が共有するアカウントの発行を禁止する。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "禁止の形。6.10 の表の同趣旨のセル(ipa_secguide_v4_6_10_priv_name)と同じ fact を使う見込み",
       "note": "直後に「（やむを得ず共有IDが必要な場合は、共有IDを利用したユーザーを特定できるようにする）」という括弧書きの例外がある。別の段落なので候補には含めていないが、禁止の例外として一体で読むべきかは判断が要る"
     },
@@ -169,7 +263,20 @@
       },
       "task": "round27_partB",
       "text_raw": "利用者の認証に用いるアカウントは、代表取締役又は情報セキュリティ責任者の承認に基づき登録する。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "エスカレーション基準",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 0.95,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "承認を要する型。承認者が2者のいずれかである場合の表し方を試せる",
       "note": "他節への参照文(「アカウント名の設定条件は「6.10 利用者アカウント・パスワードの条件」を参照のこと。」)を除いて抜粋した(round1 の ipa_secguide_v4_2_1_3 と同じ扱い)"
     },
@@ -185,7 +292,20 @@
       },
       "task": "round27_partB",
       "text_raw": "利用者の認証に用いるアカウントが不要と判断した場合、代表取締役又は情報セキュリティ責任者の承認に基づき、当該アカウントの削除又は無効化を、当該アカウントが不要になった日の翌日までに実施する。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "エスカレーション基準",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "手続き的",
+          "confidence": 0.9,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "期限付きの義務(翌日までに実施する)。時刻・期限を表す層が IR にないことを確かめられる",
       "note": "「不要と判断した場合」の判断者が条文に書かれていない"
     },
@@ -201,7 +321,20 @@
       },
       "task": "round27_partB",
       "text_raw": "当社の従業員以外の者にアカウントを発行する場合は、代表取締役又は情報セキュリティ責任者の承認を得たうえで、秘密保持契約を締結する。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "エスカレーション基準",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": true
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 0.95,
+          "quote_verified": true,
+          "vocab_flagged": true
+        }
+      },
       "ir_type_hypothesis": "承認＋契約締結の2段。対象者の区分(従業員／従業員以外)という fact が、他の条文(6.7 第1項)と共有になりうる",
       "note": "なし"
     },
@@ -217,7 +350,20 @@
       },
       "task": "round27_partB",
       "text_raw": "また、私有機器への極秘情報及び社外秘情報のダウンロードは原則禁止とする。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "機密性区分(極秘・社外秘)と機器の区分(私有機器)の2列になる見込み。機密性区分の fact を 5.6・7.3 の条文と共有できるかを試せる",
       "note": "文頭の「また、」を含めて逐語で写した。「原則禁止」の「原則」は例外の余地を残す語で、ハード制約として表せるかの判断が要る"
     },
@@ -233,7 +379,20 @@
       },
       "task": "round27_partB",
       "text_raw": "従業員個人が所有するパソコン、タブレット、スマートフォン、携帯電話等のIT機器及びUSBメモリ、HDD、CD等の電子媒体を業務で利用する場合は、システム管理者の許可を得る/利用することを禁止する。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": true
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": true
+        }
+      },
       "ir_type_hypothesis": "許可を得る型と禁止の型のどちらにもなる。軸1のラベルが選択によって変わる例として使える",
       "note": "原典が「システム管理者の許可を得る/利用することを禁止する。」と2案を「/」で並べている(自社の事情に応じて選ぶ青字箇所)。どちらを採るかで判定が変わるので、選ばずに逐語で写した"
     },
@@ -249,7 +408,20 @@
       },
       "task": "round27_partB",
       "text_raw": "社用メールアドレスで受信したメールを従業員個人のアドレスに転送することを禁止する。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "宛先の区分(社用／個人)という fact が、次の条文(2_3_3_send)と共有になる見込み。既存の表に行を足す形を試せる",
       "note": "なし"
     },
@@ -265,7 +437,20 @@
       },
       "task": "round27_partB",
       "text_raw": "社内で利用したデータを従業員個人のアドレスに送信することを禁止する。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "上と同じ fact を使い、行為(転送／送信)と対象(受信メール／社内で利用したデータ)だけが違う。Action 正規化で2つを同じ Action に寄せるかの判断が出る",
       "note": "なし"
     },
@@ -281,7 +466,20 @@
       },
       "task": "round27_partB",
       "text_raw": "社外秘又は極秘の情報資産の保存を禁止する。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "機密性区分の fact を使う見込み。保存先(私有機器)が条文本文にない",
       "note": "保存先が私有のIT機器・電子媒体であることは箇条書きの親文(「利用期間中は、利用するIT機器や電子媒体に以下に該当する機能がある場合には実行する。」)にしかない。出典付きの context が要る"
     },
@@ -297,7 +495,20 @@
       },
       "task": "round27_partB",
       "text_raw": "会社で契約したサービス社外のWi-Fiサービスの利用を禁止する。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "サービスの区分(会社契約／社外)という fact。2.3.2 の同趣旨の条文と同じ表に行が増える形になりうる",
       "note": "「会社で契約したサービス社外の」は原典のままで、「以外の」の意味だと読めるが表記として整っていない。正規化(D44)の範囲の判断が要る"
     },
@@ -313,7 +524,20 @@
       },
       "task": "round27_partB",
       "text_raw": "社外秘又は極秘の情報ファイルを社外に共有する場合は、秘密保持に関する合意をした相手とのみ共有する。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "あおいの送信可否判定(dt_transmission)と同じ話題。機密性区分＋相手の合意の有無の2列で、既存 fact contact_consent に近い fact と、既存の表への行追加(レベル2)が見込める",
       "note": "既存の正解ラベル付き条文 ipa_secguide_v4_5_6 は同じ節の別の箇条(許可を得る)である。節が同じで箇条が違うので、candidate_id を _share にして区別した"
     },
@@ -329,7 +553,20 @@
       },
       "task": "round27_partB",
       "text_raw": "社外秘又は極秘の情報ファイルを社外へ転送する場合は送信履歴を残す。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 0.95,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "機密性区分の fact を上と共有する見込み。記録を残す義務は判定の出力にできるかを試せる",
       "note": "なし"
     },
@@ -345,7 +582,20 @@
       },
       "task": "round27_partB",
       "text_raw": "屋外でネットワークへ接続して極秘又は社外秘の情報資産を送受信する場合は、暗号化する。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "機密性区分＋場所(屋外)＋手段(ネットワーク接続)の3列。同じ fact の値の並びが「極秘又は社外秘」と逆順で書かれている例",
       "note": "他の箇条は「社外秘又は極秘」の順で書いているが、この箇条だけ「極秘又は社外秘」である。値の集合は同じと読めるが、表記ゆれとして記録しておく"
     },
@@ -361,7 +611,20 @@
       },
       "task": "round27_partB",
       "text_raw": "社外秘又は極秘の情報資産を送信する場合は、メール本文ではなく添付ファイルに記載し、ファイルを暗号化して送信／S/MIMEなどの暗号技術を利用／法人向けデータ転送サービスやクラウドサービスを利用する。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 0.95,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "機密性区分の fact を使い、取るべき手段が3案の選択になる。出力が複数候補になる場合の表し方を試せる",
       "note": "原典が手段を「／」で3案並べている(選択肢)。選ばずに逐語で写した"
     },
@@ -377,7 +640,20 @@
       },
       "task": "round27_partB",
       "text_raw": "システム管理者から許可されたパソコン以外で、メールサーバーからのメールの取り出し及びエクスポートを禁止する。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "機器の許可の有無という fact。私有機器の話題(2.3)の fact と共有になりうる",
       "note": "なし"
     },
@@ -393,7 +669,20 @@
       },
       "task": "round27_partB",
       "text_raw": "未使用時に社外秘又は極秘の情報資産の放置禁止",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "領域の区分という1つの fact に値が3つ付く。レベル2・レベル3の同趣旨のセルと合わせて、同じ表への行追加と既存 fact への値の追加が見込める",
       "note": "表のセル。どの領域の制限かはセルの外(行の見出し「レベル1領域」とその対象「本社受付・応接スペース・商談室・倉庫」)にある。出典付きの context が要る"
     },
@@ -409,7 +698,20 @@
       },
       "task": "round27_partB",
       "text_raw": "情報機器・設備の無断操作禁止・無断持出し禁止",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "上と同じ fact の別の値。同じ文がレベル3領域にもあるので、1つの規範が2つの値に当たる形になる",
       "note": "レベル3領域の表にも字句の同じセルがある。2件に分けるか、値を2つ持つ1件にするかの判断が要る(ここではレベル2領域の側だけを候補にした)"
     },
@@ -425,7 +727,20 @@
       },
       "task": "round27_partB",
       "text_raw": "スマートフォン、USBメモリ、HDD、CD-R、デジタルカメラその他の情報記憶媒体の無断持込み禁止",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "上と同じ fact の別の値で、禁止の対象(持込み)が違う。値の種類が多い条文(媒体の列挙)にも当たる",
       "note": "表のセル。「その他の情報記憶媒体」という包括の語が値の集合の扱いに関わる(列挙＋その他)"
     },
@@ -441,7 +756,20 @@
       },
       "task": "round27_partB",
       "text_raw": "室内での撮影、録音は禁止する。業務上必要な場合は、情報セキュリティ部門責任者の許可を得ること。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": true
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 0.95,
+          "quote_verified": true,
+          "vocab_flagged": true
+        }
+      },
       "ir_type_hypothesis": "禁止＋許可による例外。1つの条文に禁止と例外の両方が入る形を試せる",
       "note": "対象が領域の区分にかかわらないことは、箇条書きの親文(「セキュリティ領域では区分にかかわらず以下の点に注意する。」)にある"
     },
@@ -457,7 +785,20 @@
       },
       "task": "round27_partB",
       "text_raw": "外線受話時の際に相手が不審な場合は、従業員の個人情報を伝えてはならない。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "あおいの第14条(口頭伝達の制限)と同じ話題。相手の確認ができないときに口頭で伝えない型で、既存の Action「口頭伝達」に寄せる見込み",
       "note": "「相手が不審な場合」は評価の判断を含むおそれがある(D51)。あおいの第14条は「一致が確認できない場合」と機械的に書いているので、同じ話題でも表しやすさが違う"
     },
@@ -473,7 +814,20 @@
       },
       "task": "round27_partB",
       "text_raw": "複合機、プリンタに原稿、印刷物を放置しない。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "放置の禁止。レベル1領域の制限事項(放置禁止)と同じ話題で、機密性区分の有無だけが違う",
       "note": "なし"
     },
@@ -489,7 +843,20 @@
       },
       "task": "round27_partB",
       "text_raw": "職務に関連して自己の利益を図り、又は他より不当に金品を借用し、若しくは贈与を受ける等不正な行為を行わないこと。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "既存の正解IR(mhlw_r7dec_art11_1)と同じ条の別の号。既存の表 dt_facility_property_use に行を足す形になるかの判断材料になる",
       "note": "①と同じ表の行になるかは、Action(施設物品使用／不正行為)が違うので判断が要る。「不正な行為」という包括の語を含む"
     },
@@ -505,7 +872,20 @@
       },
       "task": "round27_partB",
       "text_raw": "勤務中は職務に専念し、正当な理由なく勤務場所を離れないこと。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 0.95,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "同上。「正当な理由なく」という例外の語が、許可の有無の fact と同じ形になるかを試せる",
       "note": "1文に「職務に専念する」と「勤務場所を離れない」の2つの規範が入っている"
     },
@@ -521,7 +901,20 @@
       },
       "task": "round27_partB",
       "text_raw": "在職中及び退職後においても、業務上知り得た会社、取引先等の機密を漏洩しないこと。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "IPA の営業秘密の条文(既存の正解IR ipa_secguide_v4_personnel_2、Action「情報提供」)と同じ話題。別の文書の条文を同じ Action に寄せる判断を試せる",
       "note": "「在職中及び退職後においても」という時点の条件が入っている。在職の状態を表す fact が要るかの判断が要る"
     },
@@ -537,7 +930,20 @@
       },
       "task": "round27_partB",
       "text_raw": "酒気を帯びて就業しないこと。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "条件が1つだけの最も短い禁止。値の種類が少ない条文として、4件の正解IR と対になる",
       "note": "なし"
     },
@@ -553,7 +959,20 @@
       },
       "task": "round27_partB",
       "text_raw": "労働者は、会社及び取引先等に関する情報の管理に十分注意を払うとともに、自らの業務に関係のない情報を不当に取得してはならない。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 0.95,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "第11条⑤と同じ話題(機密・情報の取扱い)。「業務に関係のない情報」という範囲の語が fact の値になるかを試せる",
       "note": "第1項は「十分注意を払う」(努力)と「不当に取得してはならない」(禁止)の2つの規範を含む。前者は評価の判断に当たるおそれがある(D51)。第2項(返却義務)は手続き的なので候補に入れていない"
     },
@@ -569,7 +988,20 @@
       },
       "task": "round27_partB",
       "text_raw": "災害その他避けることのできない事由によって臨時の必要がある場合には、第１項から前項までの制限を超えて、所定労働時間外又は休日に労働させることがある。ただし、この場合であっても、請求のあった妊産婦については、所定労働時間外労働又は休日労働に従事させない。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 0.95,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 0.95,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "既存の正解IR(mhlw_r7dec_art21_3)と同じ表 dt_overtime_assignment に行を足す形になる見込み。worker_category・exemption_request の再利用と、work_type への値の追加(所定労働時間外労働)が見込める(レベル2・値の追加)",
       "note": "第4項は「臨時の必要がある場合は制限を超えて労働させることがある」と「ただし請求のあった妊産婦については従事させない」の2つの規範を含む。原典が1つの項にしているので文を切らずに1件とした。主語は使用者の側(U12)"
     },
@@ -585,7 +1017,20 @@
       },
       "task": "round27_partB",
       "text_raw": "産後８週間を経過していない女性労働者は、就業させない。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "既存 fact worker_category に値(産後8週間を経過していない女性労働者)を足す形になる見込み。既存 fact への値の追加を試せる",
       "note": "主語は使用者の側(「就業させない」。U12)。第3項に例外(産後6週間を経過し医師が支障ないと認めた場合)があり、禁止の例外をどう表すかの判断が要る"
     },
@@ -601,7 +1046,20 @@
       },
       "task": "round27_partB",
       "text_raw": "２０歳未満の者は、喫煙可能な場所には立ち入らないこと。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "年齢の区分という fact が第21条第3項の「18歳未満の者」と近い。年齢の境界が違う値を同じ fact に足すかの判断が出る",
       "note": "主語は労働者の側で、第21条・第25条とは当てはめの向きが違う。場所の区分(喫煙可能な場所)は物理的対策の領域の話題と隣り合う"
     },
@@ -617,7 +1075,20 @@
       },
       "task": "round27_partB",
       "text_raw": "受動喫煙を望まない者を喫煙可能な場所に連れて行かないこと。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "上と同じ場所の区分の fact を使い、対象が他人になる。行為の相手を表す欄が IR にあるかを確かめられる",
       "note": "「受動喫煙を望まない者」は本人の意思に関する区分で、機械的に当てはめられるかの判断が要る"
     },
@@ -633,7 +1104,20 @@
       },
       "task": "round27_partB",
       "text_raw": "立入禁止又は通行禁止区域には立ち入らないこと。",
-      "classifier_result": {},
+      "classifier_result": {
+        "axis1": {
+          "label": "ハード制約",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        },
+        "axis2": {
+          "label": "宣言的",
+          "confidence": 1.0,
+          "quote_verified": true,
+          "vocab_flagged": false
+        }
+      },
       "ir_type_hypothesis": "区域の区分という fact。物理的対策のセキュリティ領域(レベル1〜3)と同じ fact に寄せるかの判断が出る",
       "note": "なし"
     }
