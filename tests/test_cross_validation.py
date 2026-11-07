@@ -1235,6 +1235,31 @@ def test_comparison_fact_cannot_declare_possible_values(simple_ir, empty_registr
     assert not hasattr(fact, "other_value_note")
 
 
+def test_c4_stops_when_layer3_comparison_values_drifted(simple_ir, seeded_registry):
+    """D70: 層3の比較型の値がずれた登録簿で生成しようとすると C4 で止まる。
+
+    読み込みの `IRTypeError` を配線ジェネレータが `SchemaWiringError` にして返す。
+    v1.7 までは読み捨てていたので、そのまま4点セットが作れてしまった。
+    """
+    seeded_registry.fact_registry.append(
+        {
+            "variable": "address_match",
+            "primitive": "fuzzy_match_name",
+            "possible_values": ["一致", "不一致"],  # 「未提供」が落ちている
+            "sources": {
+                "claimed": {"from": "action_request", "path": "claimed"},
+                "registered": {"from": "master", "path": "registered"},
+            },
+            "defined_by": "既存規程 第0条",
+            "used_by": ["dt_identity"],
+            "provenance": make_provenance("既存規程 第0条").to_json(),
+            "history": [],
+        }
+    )
+    with pytest.raises(SchemaWiringError, match="C4検証失敗.*D70"):
+        generate_wiring_bundle(simple_ir, registry=seeded_registry)
+
+
 def test_layer3_comparison_fact_values_must_match_the_primitive():
     """D70: 層3の比較型の値が導出値とずれていたら、読み込みで止める。
 

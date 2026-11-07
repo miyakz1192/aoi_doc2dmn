@@ -99,7 +99,8 @@ DMN XML／バインディング設定JSON／ルーティング表JSON／Scope・
 - **D70**: 登録簿を読み込むとき、層3の比較型の fact の `possible_values` が
   プリミティブの定義から導いた値と一致するかを確かめる(`fact_def_from_json` の
   `origin="registry"`)。初期登録のときだけ確かめていたので、IR を経由して層3に
-  入った値のずれに気付けなかった
+  入った値のずれに気付けなかった。この IR が参照しない fact も見るため、生成前の
+  検証の最初に層3の全件を通す(`_check_layer3_is_readable`)
 
 ## クロス検証の実行順序(設計書5章)
 
@@ -808,6 +809,25 @@ def _registry_output_values(
     return values
 
 
+def _check_layer3_is_readable(registry: Registry) -> None:
+    """D70: 層3の全エントリが型の規則どおりに読めることを、生成の前に確かめる。
+
+    設計書は「登録簿を読み込むとき...確かめ、ずれていれば止める」と述べている。
+    この IR が参照する fact だけを見ると、ずれたエントリは参照されるまで見つからない
+    (v1.7 までこれに気付けなかった)。登録簿を読むのは配線ジェネレータなので、
+    生成前の検証の最初にここで全件を通す。
+    """
+    for entry in registry.fact_registry:
+        try:
+            fact_def_from_json(entry, origin="registry")
+        except IRTypeError as exc:
+            raise SchemaWiringError(f"C4検証失敗: 層3のエントリが壊れています: {exc}")
+        except KeyError as exc:
+            raise SchemaWiringError(
+                f"C4検証失敗: 層3のエントリに必須の欄 {exc} がありません: {entry}"
+            )
+
+
 def _check_c4_sources_match_primitive(ir: ClauseIR, registry: Registry) -> None:
     """C4: sources のキーが primitive の引数名と一致する(設計書3.5)。
 
@@ -815,6 +835,7 @@ def _check_c4_sources_match_primitive(ir: ClauseIR, registry: Registry) -> None:
     新しいプリミティブを宣言する経路があり得るが、その場合も③aの範囲外なので
     エラーとして止める(要報告事項)。
     """
+    _check_layer3_is_readable(registry)
     for fact in ir.facts.new_facts:
         _check_one_fact_sources(fact, in_new_facts=True)
     # 層3から引く既存 fact も、台帳が壊れていないか同じ基準で確かめる。
@@ -825,7 +846,8 @@ def _check_c4_sources_match_primitive(ir: ClauseIR, registry: Registry) -> None:
             continue  # 実在確認は C6 の責務
         try:
             fact = fact_def_from_json(entry, origin="registry")
-        except IRTypeError as exc:  # pragma: no cover - 層3は origin="registry"
+        except IRTypeError as exc:
+            # D70: 層3の比較型の値がプリミティブの定義とずれていたら、ここに来る
             raise SchemaWiringError(f"C4検証失敗: 層3のエントリが壊れています: {exc}")
         _check_one_fact_sources(fact, in_new_facts=False)
 
@@ -834,7 +856,9 @@ def _check_one_fact_sources(fact: FactDef, *, in_new_facts: bool) -> None:
     """fact 1件分の C4(設計書5章)。
 
     D62 で型を分けたので、「比較型に possible_values を書かない」は
-    `fact_def_from_json` が読み込みの時点で止める。ここに残すのは、型では表せない
+    `fact_def_from_json` が読み込みの時点で止める(v1.8 の D67 で設計書の記述に
+    なった)。層3の比較型の値が導出値とずれていないかも読み込みで見る(D70)。
+    ここに残すのは、型では表せない
     規則(sources のキー・使えるプリミティブ)と、読み込んだ後に欄が空になった場合の
     歯止め(other_value_note・予約語「その他」)である。
     """
