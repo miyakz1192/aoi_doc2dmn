@@ -1,0 +1,2851 @@
+{
+  "_meta": {
+    "gold": "testdata/action_gold/action_gold_v1.json",
+    "registry": "registry/registry.json",
+    "llm": "ollama qwen2.5:14b-instruct",
+    "k": 3,
+    "temperatures": [
+      0.0,
+      0.3,
+      0.3
+    ],
+    "note": "誤統合0件が合格の条件(P9・5.3節)。結果を見てプロンプトを直して再実行することはしない(第29回 HANDOFF 5.4節)"
+  },
+  "summary": {
+    "items": 18,
+    "mis_merge": 6,
+    "missed": 1,
+    "is_new_correct": 11,
+    "existing_choice_total": 7,
+    "existing_choice_correct": 6,
+    "surface_ok": 8,
+    "surface_in_clause": 17,
+    "surface_no_modality": 8,
+    "surface_has_core_verb": 17,
+    "unstable": 0,
+    "surface_unverified": 10,
+    "possible_duplicate": 1,
+    "elapsed_seconds_total": 5883.5,
+    "elapsed_seconds_per_item": 326.9,
+    "llm_calls_total": 114,
+    "errors": 0
+  },
+  "errors": [],
+  "items": [
+    {
+      "order": 1,
+      "clause_id": "ipa_secguide_v4_6_7_1",
+      "group": "正解IR",
+      "expected": {
+        "surface": "特権/管理者権限で操作を行う",
+        "normalized": "特権操作",
+        "is_new": true,
+        "core_verb": "操作"
+      },
+      "actual": {
+        "surface": "本番環境において特権/管理者権限で操作を行う",
+        "normalized": "特権操作",
+        "is_new": true
+      },
+      "verdict": {
+        "mis_merge": false,
+        "missed": false,
+        "is_new_correct": true,
+        "choice_correct": false,
+        "surface_ok": true,
+        "surface_in_clause": true,
+        "surface_no_modality": true,
+        "surface_has_core_verb": true
+      },
+      "agreement": "3/3",
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "elapsed_seconds": 619.3,
+      "llm_calls": 7,
+      "trace": {
+        "runs": [
+          {
+            "index": 1,
+            "temperature": 0.0,
+            "surface": "本番環境において特権/管理者権限で操作を行う",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "該当なし",
+            "reason": "条文に記載されている行為は、台帳にある'action'と種類や手段が異なります。",
+            "definition_part": "",
+            "considered": [
+              {
+                "name": "外部送信",
+                "why_not": "条文の内容は情報の送信ではなく、特定環境での操作を禁止しているため該当しない。"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "temperature": 0.3,
+            "surface": "本番環境において特権/管理者権限で操作を行う",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "該当なし",
+            "reason": "条文の行為は台帳に記載されている外部送信とは異なる種類の行為である。",
+            "definition_part": "",
+            "considered": [
+              {
+                "name": "外部送信",
+                "why_not": "条文の行為は情報の送信ではなく、特権アカウントでの操作を禁止しているため該当しない。"
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "temperature": 0.3,
+            "surface": "本番環境において特権/管理者権限で操作を行う",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "該当なし",
+            "reason": "条文に記載されている行為は、台帳にある'action'と種類が異なります。",
+            "definition_part": "",
+            "considered": [
+              {
+                "name": "外部送信",
+                "why_not": "条文の内容は情報の送信ではなく、特定環境での操作に関する禁止事項であるため"
+              }
+            ]
+          }
+        ],
+        "agreement": "3/3",
+        "candidates_considered": [
+          {
+            "name": "外部送信",
+            "why_not": "条文の内容は情報の送信ではなく、特定環境での操作を禁止しているため該当しない。"
+          },
+          {
+            "name": "外部送信",
+            "why_not": "条文の行為は情報の送信ではなく、特権アカウントでの操作を禁止しているため該当しない。"
+          },
+          {
+            "name": "外部送信",
+            "why_not": "条文の内容は情報の送信ではなく、特定環境での操作に関する禁止事項であるため"
+          }
+        ],
+        "new_action_proposal": {
+          "name": "特権操作",
+          "definition": "本番環境において特権/管理者権限で操作を行うことを指す。",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "本番環境において特権/管理者権限で操作を行う"
+          ],
+          "basis_verified": [
+            true
+          ]
+        },
+        "duplicate_check": {
+          "closest": "外部送信",
+          "name_ratio": 0.0,
+          "definition_overlap": 0.02,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 619.3,
+        "llm_calls": 7
+      }
+    },
+    {
+      "order": 2,
+      "clause_id": "mhlw_r7dec_art11_1",
+      "group": "正解IR",
+      "expected": {
+        "surface": "会社の施設、物品等を使用",
+        "normalized": "施設物品使用",
+        "is_new": true,
+        "core_verb": "使用"
+      },
+      "actual": {
+        "surface": "会社の施設、物品等を使用",
+        "normalized": "会社物品使用",
+        "is_new": true
+      },
+      "verdict": {
+        "mis_merge": false,
+        "missed": false,
+        "is_new_correct": true,
+        "choice_correct": false,
+        "surface_ok": true,
+        "surface_in_clause": true,
+        "surface_no_modality": true,
+        "surface_has_core_verb": true
+      },
+      "agreement": "3/3",
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "elapsed_seconds": 320.7,
+      "llm_calls": 7,
+      "trace": {
+        "runs": [
+          {
+            "index": 1,
+            "temperature": 0.0,
+            "surface": "会社の施設、物品等を使用",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "該当なし",
+            "reason": "条文の行為は、会社の施設や物品を使用することであり、台帳にあるActionとは種類が異なります。",
+            "definition_part": "",
+            "considered": [
+              {
+                "name": "特権操作",
+                "why_not": "会社の施設や物品を使用する行為と情報システムを特権で操作することは異なる種類の行為であるため"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "temperature": 0.3,
+            "surface": "会社の施設、物品等を使用",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "該当なし",
+            "reason": "条文の行為は、会社の施設や物品を使用することであり、台帳にあるActionと一致するものがない。",
+            "definition_part": "",
+            "considered": [
+              {
+                "name": "外部送信",
+                "why_not": "使用している対象が患者に関する情報ではなく、会社の施設や物品であるため。"
+              },
+              {
+                "name": "特権操作",
+                "why_not": "条文は管理者権限での操作を含んでいないため。"
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "temperature": 0.3,
+            "surface": "会社の施設、物品等を使用",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "該当なし",
+            "reason": "条文の行為は、会社の施設や物品を使用することであり、台帳に記載されているActionとは種類が異なります。",
+            "definition_part": "",
+            "considered": [
+              {
+                "name": "特権操作",
+                "why_not": "条文の内容は特権操作と関連性がありません"
+              }
+            ]
+          }
+        ],
+        "agreement": "3/3",
+        "candidates_considered": [
+          {
+            "name": "特権操作",
+            "why_not": "会社の施設や物品を使用する行為と情報システムを特権で操作することは異なる種類の行為であるため"
+          },
+          {
+            "name": "外部送信",
+            "why_not": "使用している対象が患者に関する情報ではなく、会社の施設や物品であるため。"
+          },
+          {
+            "name": "特権操作",
+            "why_not": "条文は管理者権限での操作を含んでいないため。"
+          },
+          {
+            "name": "特権操作",
+            "why_not": "条文の内容は特権操作と関連性がありません"
+          }
+        ],
+        "new_action_proposal": {
+          "name": "会社物品使用",
+          "definition": "許可なく職務以外の目的で会社の施設、物品等を使用すること。",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "許可なく職務以外の目的で会社の施設、物品等を使用しないこと。"
+          ],
+          "basis_verified": [
+            true
+          ]
+        },
+        "duplicate_check": {
+          "closest": "特権操作",
+          "name_ratio": 0.0,
+          "definition_overlap": 0.065,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 320.7,
+        "llm_calls": 7
+      }
+    },
+    {
+      "order": 3,
+      "clause_id": "ipa_secguide_v4_personnel_2",
+      "group": "正解IR",
+      "expected": {
+        "surface": "組織、人に提供",
+        "normalized": "情報提供",
+        "is_new": true,
+        "core_verb": "提供"
+      },
+      "actual": {
+        "surface": "提供してはならない",
+        "normalized": "外部送信",
+        "is_new": false
+      },
+      "verdict": {
+        "mis_merge": true,
+        "missed": false,
+        "is_new_correct": false,
+        "choice_correct": false,
+        "surface_ok": false,
+        "surface_in_clause": true,
+        "surface_no_modality": false,
+        "surface_has_core_verb": true
+      },
+      "agreement": "3/3",
+      "gates": [
+        "action_surface_unverified"
+      ],
+      "elapsed_seconds": 248.5,
+      "llm_calls": 6,
+      "trace": {
+        "runs": [
+          {
+            "index": 1,
+            "temperature": 0.0,
+            "surface": "提供してはならない",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['してはならない']"
+            ],
+            "choice": "外部送信",
+            "reason": "条文では、営業秘密情報を許可されていない組織や人に提供してはならないと述べており、これは情報の外部への送信に該当します。",
+            "definition_part": "患者に関する情報を、患者・代理人などの外部に送ること",
+            "considered": [
+              {
+                "name": "特権操作",
+                "why_not": "条文には特権操作や管理者権限に関連する内容は含まれていません"
+              },
+              {
+                "name": "施設物品使用",
+                "why_not": "条文には会社の施設や物品を使用することとは関係ありません"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "temperature": 0.3,
+            "surface": "提供してはならない",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['してはならない']"
+            ],
+            "choice": "外部送信",
+            "reason": "条文は情報を外部に提供してはならないと述べており、これはAction台帳の「外部送信」に対応します。",
+            "definition_part": "患者に関する情報を、患者・代理人などの外部に送ること",
+            "considered": [
+              {
+                "name": "特権操作",
+                "why_not": "条文は情報の提供について述べており、特権操作とは関係ありません"
+              },
+              {
+                "name": "施設物品使用",
+                "why_not": "条文は情報の外部提供に関するものであり、会社の施設や物品を使用する行為ではありません"
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "temperature": 0.3,
+            "surface": "提供してはならない",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['してはならない']"
+            ],
+            "choice": "外部送信",
+            "reason": "条文は情報を外部に提供してはならないと述べているため、これは情報の外部送信に該当します。",
+            "definition_part": "患者に関する情報を、患者・代理人などの外部に送ること",
+            "considered": [
+              {
+                "name": "特権操作",
+                "why_not": "条文には特権操作に関連する内容は含まれていません"
+              },
+              {
+                "name": "施設物品使用",
+                "why_not": "条文には会社の施設や物品を使用するといった行為は関係ありません"
+              }
+            ]
+          }
+        ],
+        "agreement": "3/3",
+        "candidates_considered": [
+          {
+            "name": "特権操作",
+            "why_not": "条文には特権操作や管理者権限に関連する内容は含まれていません"
+          },
+          {
+            "name": "施設物品使用",
+            "why_not": "条文には会社の施設や物品を使用することとは関係ありません"
+          },
+          {
+            "name": "特権操作",
+            "why_not": "条文は情報の提供について述べており、特権操作とは関係ありません"
+          },
+          {
+            "name": "施設物品使用",
+            "why_not": "条文は情報の外部提供に関するものであり、会社の施設や物品を使用する行為ではありません"
+          },
+          {
+            "name": "特権操作",
+            "why_not": "条文には特権操作に関連する内容は含まれていません"
+          },
+          {
+            "name": "施設物品使用",
+            "why_not": "条文には会社の施設や物品を使用するといった行為は関係ありません"
+          }
+        ],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 248.5,
+        "llm_calls": 6
+      }
+    },
+    {
+      "order": 4,
+      "clause_id": "mhlw_r7dec_art21_3",
+      "group": "正解IR",
+      "expected": {
+        "surface": "労働に従事させ",
+        "normalized": "労働指示",
+        "is_new": true,
+        "core_verb": "従事"
+      },
+      "actual": {
+        "surface": "労働に従事させない",
+        "normalized": "労働従事禁止",
+        "is_new": true
+      },
+      "verdict": {
+        "mis_merge": false,
+        "missed": false,
+        "is_new_correct": true,
+        "choice_correct": false,
+        "surface_ok": false,
+        "surface_in_clause": true,
+        "surface_no_modality": false,
+        "surface_has_core_verb": true
+      },
+      "agreement": "3/3",
+      "gates": [
+        "new_action_unapproved",
+        "action_surface_unverified"
+      ],
+      "elapsed_seconds": 427.1,
+      "llm_calls": 7,
+      "trace": {
+        "runs": [
+          {
+            "index": 1,
+            "temperature": 0.0,
+            "surface": "労働に従事させない",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['ない']"
+            ],
+            "choice": "該当なし",
+            "reason": "条文に記載されている行為は、特定の情報操作や物品使用とは異なり、労働に関する制限であるため、台帳にあるActionには該当しない。",
+            "definition_part": "",
+            "considered": [
+              {
+                "name": "特権操作",
+                "why_not": "条文に記載されている行為は情報システムの操作に関わるものではなく、労働に関する制限であるため不適切"
+              },
+              {
+                "name": "施設物品使用",
+                "why_not": "条文に記載されている行為は会社の施設や物品を使用するものではないため該当しない"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "temperature": 0.3,
+            "surface": "時間外労働又は休日若しくは深夜労働に従事させ",
+            "surface_ok": false,
+            "surface_problems": [
+              "抜き出した語句 '時間外労働又は休日若しくは深夜労働に従事させ' が条文に逐語で実在しない"
+            ],
+            "choice": "該当なし",
+            "reason": "条文に記載されている行為は、従業員に対して労働時間を制限するものであり、台帳にあるどのActionとも対応していません。",
+            "definition_part": "",
+            "considered": [
+              {
+                "name": "特権操作",
+                "why_not": "条文の内容は労働時間に関する規則であり、情報システムを操作する行為とは関係ありません"
+              },
+              {
+                "name": "外部送信",
+                "why_not": "条文の内容は情報の送信や共有に関わる行為ではなく、労働時間の制限に関するものです"
+              },
+              {
+                "name": "施設物品使用",
+                "why_not": "条文の内容は会社の施設や物品を使用する行為とは関係ありません"
+              },
+              {
+                "name": "情報提供",
+                "why_not": "条文の内容は情報を外部に提供する行為ではなく、労働時間に関する規則です"
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "temperature": 0.3,
+            "surface": "労働に従事させない",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['ない']"
+            ],
+            "choice": "該当なし",
+            "reason": "条文に記載されている行為は、特定の情報操作や物品使用とは関連性がなく、労働に関する制限である。",
+            "definition_part": "",
+            "considered": [
+              {
+                "name": "特権操作",
+                "why_not": "条文は労働時間や労働者の種類に関わる規則であり、情報システムの管理者権限での操作とは関係がない"
+              },
+              {
+                "name": "外部送信",
+                "why_not": "条文は患者情報を外部に送ることとは無関係で、労働時間に関する制限である"
+              },
+              {
+                "name": "施設物品使用",
+                "why_not": "条文は会社の施設や物品を使用することとは関係なく、労働時間や労働者の種類に関わる規則である"
+              },
+              {
+                "name": "情報提供",
+                "why_not": "条文は情報を他の組織や人に提供することとは無関係で、労働時間に関する制限である"
+              }
+            ]
+          }
+        ],
+        "agreement": "3/3",
+        "candidates_considered": [
+          {
+            "name": "特権操作",
+            "why_not": "条文に記載されている行為は情報システムの操作に関わるものではなく、労働に関する制限であるため不適切"
+          },
+          {
+            "name": "施設物品使用",
+            "why_not": "条文に記載されている行為は会社の施設や物品を使用するものではないため該当しない"
+          },
+          {
+            "name": "特権操作",
+            "why_not": "条文の内容は労働時間に関する規則であり、情報システムを操作する行為とは関係ありません"
+          },
+          {
+            "name": "外部送信",
+            "why_not": "条文の内容は情報の送信や共有に関わる行為ではなく、労働時間の制限に関するものです"
+          },
+          {
+            "name": "施設物品使用",
+            "why_not": "条文の内容は会社の施設や物品を使用する行為とは関係ありません"
+          },
+          {
+            "name": "情報提供",
+            "why_not": "条文の内容は情報を外部に提供する行為ではなく、労働時間に関する規則です"
+          },
+          {
+            "name": "特権操作",
+            "why_not": "条文は労働時間や労働者の種類に関わる規則であり、情報システムの管理者権限での操作とは関係がない"
+          },
+          {
+            "name": "外部送信",
+            "why_not": "条文は患者情報を外部に送ることとは無関係で、労働時間に関する制限である"
+          },
+          {
+            "name": "施設物品使用",
+            "why_not": "条文は会社の施設や物品を使用することとは関係なく、労働時間や労働者の種類に関わる規則である"
+          },
+          {
+            "name": "情報提供",
+            "why_not": "条文は情報を他の組織や人に提供することとは無関係で、労働時間に関する制限である"
+          }
+        ],
+        "new_action_proposal": {
+          "name": "労働従事禁止",
+          "definition": "特定の条件下で時間外労働又は休日若しくは深夜労働に従事させないことを指す。",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "労働に従事させない"
+          ],
+          "basis_verified": [
+            true
+          ]
+        },
+        "duplicate_check": {
+          "closest": "施設物品使用",
+          "name_ratio": 0.0,
+          "definition_overlap": 0.02,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 427.1,
+        "llm_calls": 7
+      }
+    },
+    {
+      "order": 5,
+      "clause_id": "aoi_johokanri_art14",
+      "group": "正解IR",
+      "expected": {
+        "surface": "口頭で伝達",
+        "normalized": "口頭伝達",
+        "is_new": true,
+        "core_verb": "伝達"
+      },
+      "actual": {
+        "surface": "口頭で伝達",
+        "normalized": "情報提供",
+        "is_new": false
+      },
+      "verdict": {
+        "mis_merge": true,
+        "missed": false,
+        "is_new_correct": false,
+        "choice_correct": false,
+        "surface_ok": true,
+        "surface_in_clause": true,
+        "surface_no_modality": true,
+        "surface_has_core_verb": true
+      },
+      "agreement": "3/3",
+      "gates": [],
+      "elapsed_seconds": 186.5,
+      "llm_calls": 6,
+      "trace": {
+        "runs": [
+          {
+            "index": 1,
+            "temperature": 0.0,
+            "surface": "口頭で伝達",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "情報提供",
+            "reason": "口頭で伝達は情報を外部に伝える行為であり、情報提供と定義が一致します。",
+            "definition_part": "情報を、他の組織や人に提供すること",
+            "considered": [
+              {
+                "name": "外部送信",
+                "why_not": "口頭での伝達は電子メールなどの形式的な送信とは異なる"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "temperature": 0.3,
+            "surface": "口頭で伝達",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "情報提供",
+            "reason": "口頭で伝達する行為は、情報を外部に提供することに該当します。",
+            "definition_part": "情報に関する情報を、他の組織や人に提供すること",
+            "considered": [
+              {
+                "name": "外部送信",
+                "why_not": "情報の送信という手段が異なるため"
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "temperature": 0.3,
+            "surface": "口頭で伝達",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "情報提供",
+            "reason": "口頭で伝達は情報を他の人に提供することに該当します。",
+            "definition_part": "情報に関する情報を、他の組織や人に提供すること",
+            "considered": [
+              {
+                "name": "外部送信",
+                "why_not": "情報の送り先が外部である必要があり、口頭での伝達は直接的な対話なので該当しない"
+              }
+            ]
+          }
+        ],
+        "agreement": "3/3",
+        "candidates_considered": [
+          {
+            "name": "外部送信",
+            "why_not": "口頭での伝達は電子メールなどの形式的な送信とは異なる"
+          },
+          {
+            "name": "外部送信",
+            "why_not": "情報の送信という手段が異なるため"
+          },
+          {
+            "name": "外部送信",
+            "why_not": "情報の送り先が外部である必要があり、口頭での伝達は直接的な対話なので該当しない"
+          }
+        ],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 186.5,
+        "llm_calls": 6
+      }
+    },
+    {
+      "order": 6,
+      "clause_id": "ipa_secguide_v4_6_1_5",
+      "group": "特権",
+      "expected": {
+        "surface": "特権操作",
+        "normalized": "特権操作",
+        "is_new": false,
+        "core_verb": "操作"
+      },
+      "actual": {
+        "surface": "私有機器を使用しないこと",
+        "normalized": "私有機器使用禁止",
+        "is_new": true
+      },
+      "verdict": {
+        "mis_merge": false,
+        "missed": true,
+        "is_new_correct": false,
+        "choice_correct": false,
+        "surface_ok": false,
+        "surface_in_clause": true,
+        "surface_no_modality": false,
+        "surface_has_core_verb": false
+      },
+      "agreement": "3/3",
+      "gates": [
+        "new_action_unapproved",
+        "action_surface_unverified"
+      ],
+      "elapsed_seconds": 277.2,
+      "llm_calls": 7,
+      "trace": {
+        "runs": [
+          {
+            "index": 1,
+            "temperature": 0.0,
+            "surface": "私有機器を使用しないこと",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['しないこと']"
+            ],
+            "choice": "該当なし",
+            "reason": "条文の行為は、私有機器を使用しないことを定めているため、台帳にあるActionには該当しません。",
+            "definition_part": "",
+            "considered": [
+              {
+                "name": "施設物品使用",
+                "why_not": "このActionは会社の施設や物品を使用することを定義しているが、条文では私有機器を使用しないことを規定しており、対象外である。"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "temperature": 0.3,
+            "surface": "私有機器を使用しないこと",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['しないこと']"
+            ],
+            "choice": "該当なし",
+            "reason": "条文の行為は、私有機器を使用しないという制約であり、台帳にあるActionには該当しません。",
+            "definition_part": "",
+            "considered": [
+              {
+                "name": "施設物品使用",
+                "why_not": "これは会社の施設や物品を使用することを定義していますが、条文は私有機器を使用しないことを制限しており、対応しません。"
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "temperature": 0.3,
+            "surface": "私有機器を使用しないこと",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['しないこと']"
+            ],
+            "choice": "該当なし",
+            "reason": "条文の行為は、私有機器を使用しないことを定めているため、台帳にあるActionと一致するものがない。",
+            "definition_part": "",
+            "considered": [
+              {
+                "name": "施設物品使用",
+                "why_not": "会社の物品を用いるのではなく、私有機器を使用しないことを禁止しているため不適切"
+              }
+            ]
+          }
+        ],
+        "agreement": "3/3",
+        "candidates_considered": [
+          {
+            "name": "施設物品使用",
+            "why_not": "このActionは会社の施設や物品を使用することを定義しているが、条文では私有機器を使用しないことを規定しており、対象外である。"
+          },
+          {
+            "name": "施設物品使用",
+            "why_not": "これは会社の施設や物品を使用することを定義していますが、条文は私有機器を使用しないことを制限しており、対応しません。"
+          },
+          {
+            "name": "施設物品使用",
+            "why_not": "会社の物品を用いるのではなく、私有機器を使用しないことを禁止しているため不適切"
+          }
+        ],
+        "new_action_proposal": {
+          "name": "私有機器使用禁止",
+          "definition": "私有機器を使用しないことを指す。",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "私有機器を使用しないこと"
+          ],
+          "basis_verified": [
+            true
+          ]
+        },
+        "duplicate_check": {
+          "closest": "施設物品使用",
+          "name_ratio": 0.286,
+          "definition_overlap": 0.111,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 277.2,
+        "llm_calls": 7
+      }
+    },
+    {
+      "order": 7,
+      "clause_id": "ipa_secguide_v4_6_10_priv_name",
+      "group": "特権",
+      "expected": {
+        "surface": "特権アカウント名を2名以上で共用",
+        "normalized": "アカウント共用",
+        "is_new": true,
+        "core_verb": "共用"
+      },
+      "actual": {
+        "surface": "1つの特権アカウント名を2名以上で共用しない",
+        "normalized": "特権操作",
+        "is_new": false
+      },
+      "verdict": {
+        "mis_merge": true,
+        "missed": false,
+        "is_new_correct": false,
+        "choice_correct": false,
+        "surface_ok": false,
+        "surface_in_clause": true,
+        "surface_no_modality": false,
+        "surface_has_core_verb": true
+      },
+      "agreement": "3/3",
+      "gates": [
+        "action_surface_unverified"
+      ],
+      "elapsed_seconds": 344.9,
+      "llm_calls": 6,
+      "trace": {
+        "runs": [
+          {
+            "index": 1,
+            "temperature": 0.0,
+            "surface": "1つの特権アカウント名を2名以上で共用しない",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['ない']"
+            ],
+            "choice": "特権操作",
+            "reason": "条文は特権アカウントの使用に関する規則であり、特権操作に関連している。",
+            "definition_part": "特権/管理者権限で情報システムを操作すること",
+            "considered": [
+              {
+                "name": "外部送信",
+                "why_not": "条文は情報を外部に送ることとは関係ない"
+              },
+              {
+                "name": "施設物品使用",
+                "why_not": "条文は会社の施設や物品を使用することとは関係ない"
+              },
+              {
+                "name": "情報提供",
+                "why_not": "条文は情報を組織や人に提供することとは関係ない"
+              },
+              {
+                "name": "労働指示",
+                "why_not": "条文は使用者が労働者を従事させることとは関係ない"
+              },
+              {
+                "name": "口頭伝達",
+                "why_not": "条文は情報の口頭での伝達とは関係ない"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "temperature": 0.3,
+            "surface": "1つの特権アカウント名を2名以上で共用しない",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['ない']"
+            ],
+            "choice": "特権操作",
+            "reason": "条文は特権アカウントの使用に関する規則であり、特権操作に関連している。",
+            "definition_part": "特権/管理者権限で情報システムを操作すること",
+            "considered": [
+              {
+                "name": "該当なし",
+                "why_not": "条文は特権アカウントの使用に関する規則であり、他のActionには当てはまらない。"
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "temperature": 0.3,
+            "surface": "1つの特権アカウント名を2名以上で共用しない",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['ない']"
+            ],
+            "choice": "特権操作",
+            "reason": "条文は特権アカウントの使用に関する規則であり、特権操作に関連している。",
+            "definition_part": "特権/管理者権限で情報システムを操作すること",
+            "considered": [
+              {
+                "name": "外部送信",
+                "why_not": "条文は患者情報を外部に送る行為とは関係ない"
+              },
+              {
+                "name": "施設物品使用",
+                "why_not": "条文は会社の施設や物品を使用する行為とは関係ない"
+              },
+              {
+                "name": "情報提供",
+                "why_not": "条文は情報を組織や人に提供する行為とは関係ない"
+              },
+              {
+                "name": "労働指示",
+                "why_not": "条文は使用者が労働者を従事させる行為とは関係ない"
+              },
+              {
+                "name": "口頭伝達",
+                "why_not": "条文は情報の口頭での伝達行為とは関係ない"
+              }
+            ]
+          }
+        ],
+        "agreement": "3/3",
+        "candidates_considered": [
+          {
+            "name": "外部送信",
+            "why_not": "条文は情報を外部に送ることとは関係ない"
+          },
+          {
+            "name": "施設物品使用",
+            "why_not": "条文は会社の施設や物品を使用することとは関係ない"
+          },
+          {
+            "name": "情報提供",
+            "why_not": "条文は情報を組織や人に提供することとは関係ない"
+          },
+          {
+            "name": "労働指示",
+            "why_not": "条文は使用者が労働者を従事させることとは関係ない"
+          },
+          {
+            "name": "口頭伝達",
+            "why_not": "条文は情報の口頭での伝達とは関係ない"
+          },
+          {
+            "name": "該当なし",
+            "why_not": "条文は特権アカウントの使用に関する規則であり、他のActionには当てはまらない。"
+          },
+          {
+            "name": "外部送信",
+            "why_not": "条文は患者情報を外部に送る行為とは関係ない"
+          },
+          {
+            "name": "施設物品使用",
+            "why_not": "条文は会社の施設や物品を使用する行為とは関係ない"
+          },
+          {
+            "name": "情報提供",
+            "why_not": "条文は情報を組織や人に提供する行為とは関係ない"
+          },
+          {
+            "name": "労働指示",
+            "why_not": "条文は使用者が労働者を従事させる行為とは関係ない"
+          },
+          {
+            "name": "口頭伝達",
+            "why_not": "条文は情報の口頭での伝達行為とは関係ない"
+          }
+        ],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 344.9,
+        "llm_calls": 6
+      }
+    },
+    {
+      "order": 8,
+      "clause_id": "mhlw_r7dec_art11_5",
+      "group": "情報提供",
+      "expected": {
+        "surface": "機密を漏洩",
+        "normalized": "情報提供",
+        "is_new": false,
+        "core_verb": "漏洩"
+      },
+      "actual": {
+        "surface": "漏洩しないこと",
+        "normalized": "情報提供",
+        "is_new": false
+      },
+      "verdict": {
+        "mis_merge": false,
+        "missed": false,
+        "is_new_correct": true,
+        "choice_correct": true,
+        "surface_ok": false,
+        "surface_in_clause": true,
+        "surface_no_modality": false,
+        "surface_has_core_verb": true
+      },
+      "agreement": "3/3",
+      "gates": [
+        "action_surface_unverified"
+      ],
+      "elapsed_seconds": 228.1,
+      "llm_calls": 6,
+      "trace": {
+        "runs": [
+          {
+            "index": 1,
+            "temperature": 0.0,
+            "surface": "漏洩しないこと",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['しないこと']"
+            ],
+            "choice": "情報提供",
+            "reason": "漏洩は情報を外部に伝える行為であり、情報提供と定義される。",
+            "definition_part": "情報の他の組織や人に提供すること",
+            "considered": [
+              {
+                "name": "外部送信",
+                "why_not": "患者に関する情報ではなく、一般的な機密情報が対象であるため。"
+              },
+              {
+                "name": "特権操作",
+                "why_not": "漏洩は情報の提供であり、特権操作とは異なる行為である。"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "temperature": 0.3,
+            "surface": "漏洩しないこと",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['しないこと']"
+            ],
+            "choice": "情報提供",
+            "reason": "漏洩とは、情報を外部に伝える行為であり、情報提供と一致します。",
+            "definition_part": "情報の他の組織や人に提供すること",
+            "considered": [
+              {
+                "name": "該当なし",
+                "why_not": "漏洩は情報提供という行動に該当するため"
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "temperature": 0.3,
+            "surface": "漏洩しないこと",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['しないこと']"
+            ],
+            "choice": "情報提供",
+            "reason": "漏洩は情報を外部に伝える行為であり、情報提供と定義される。",
+            "definition_part": "情報の他の組織や人に提供すること",
+            "considered": [
+              {
+                "name": "外部送信",
+                "why_not": "患者に関する情報に限定されており、一般的な機密情報を含まない"
+              },
+              {
+                "name": "口頭伝達",
+                "why_not": "口頭で伝える行為であり、漏洩は手段が異なるため該当しない"
+              }
+            ]
+          }
+        ],
+        "agreement": "3/3",
+        "candidates_considered": [
+          {
+            "name": "外部送信",
+            "why_not": "患者に関する情報ではなく、一般的な機密情報が対象であるため。"
+          },
+          {
+            "name": "特権操作",
+            "why_not": "漏洩は情報の提供であり、特権操作とは異なる行為である。"
+          },
+          {
+            "name": "該当なし",
+            "why_not": "漏洩は情報提供という行動に該当するため"
+          },
+          {
+            "name": "外部送信",
+            "why_not": "患者に関する情報に限定されており、一般的な機密情報を含まない"
+          },
+          {
+            "name": "口頭伝達",
+            "why_not": "口頭で伝える行為であり、漏洩は手段が異なるため該当しない"
+          }
+        ],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 228.1,
+        "llm_calls": 6
+      }
+    },
+    {
+      "order": 9,
+      "clause_id": "ipa_secguide_v4_2_3_3_forward",
+      "group": "送信",
+      "expected": {
+        "surface": "従業員個人のアドレスに転送",
+        "normalized": "データ送信",
+        "is_new": true,
+        "core_verb": "転送"
+      },
+      "actual": {
+        "surface": "社用メールアドレスで受信したメールを従業員個人のアドレスに転送すること",
+        "normalized": "情報提供",
+        "is_new": false
+      },
+      "verdict": {
+        "mis_merge": true,
+        "missed": false,
+        "is_new_correct": false,
+        "choice_correct": false,
+        "surface_ok": true,
+        "surface_in_clause": true,
+        "surface_no_modality": true,
+        "surface_has_core_verb": true
+      },
+      "agreement": "3/3",
+      "gates": [],
+      "elapsed_seconds": 294.4,
+      "llm_calls": 6,
+      "trace": {
+        "runs": [
+          {
+            "index": 1,
+            "temperature": 0.0,
+            "surface": "社用メールアドレスで受信したメールを従業員個人のアドレスに転送すること",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "情報提供",
+            "reason": "社用メールアドレスの情報を従業員個人のアドレスに転送することは、他の組織や人に情報を提供することに該当します。",
+            "definition_part": "情報を、他の組織や人に提供すること",
+            "considered": [
+              {
+                "name": "外部送信",
+                "why_not": "患者に関する情報ではなく、一般的なメールの転送であるため"
+              },
+              {
+                "name": "特権操作",
+                "why_not": "管理者権限での操作とは関係がないため"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "temperature": 0.3,
+            "surface": "社用メールアドレスで受信したメールを従業員個人のアドレスに転送すること",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "情報提供",
+            "reason": "社用メールアドレスのメールを個人アドレスに転送することは、情報を外部に提供する行為に該当します。",
+            "definition_part": "情報を、他の組織や人に提供すること",
+            "considered": [
+              {
+                "name": "外部送信",
+                "why_not": "患者に関する情報の外部送信ではなく、一般的なメールの転送であるため"
+              },
+              {
+                "name": "特権操作",
+                "why_not": "管理者権限での操作とは関係がないため"
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "temperature": 0.3,
+            "surface": "社用メールアドレスで受信したメールを従業員個人のアドレスに転送すること",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "情報提供",
+            "reason": "社用メールアドレスの情報を従業員個人のアドレスに転送することは、他の組織や人に情報を提供することに該当します。",
+            "definition_part": "情報を、他の組織や人に提供すること",
+            "considered": [
+              {
+                "name": "外部送信",
+                "why_not": "患者に関する情報が外部に送ることではなく、従業員間のメール転送であるため"
+              },
+              {
+                "name": "特権操作",
+                "why_not": "特権/管理者権限での操作とは関係がないため"
+              }
+            ]
+          }
+        ],
+        "agreement": "3/3",
+        "candidates_considered": [
+          {
+            "name": "外部送信",
+            "why_not": "患者に関する情報ではなく、一般的なメールの転送であるため"
+          },
+          {
+            "name": "特権操作",
+            "why_not": "管理者権限での操作とは関係がないため"
+          },
+          {
+            "name": "外部送信",
+            "why_not": "患者に関する情報の外部送信ではなく、一般的なメールの転送であるため"
+          },
+          {
+            "name": "外部送信",
+            "why_not": "患者に関する情報が外部に送ることではなく、従業員間のメール転送であるため"
+          },
+          {
+            "name": "特権操作",
+            "why_not": "特権/管理者権限での操作とは関係がないため"
+          }
+        ],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 294.4,
+        "llm_calls": 6
+      }
+    },
+    {
+      "order": 10,
+      "clause_id": "ipa_secguide_v4_2_3_3_send",
+      "group": "送信",
+      "expected": {
+        "surface": "従業員個人のアドレスに送信",
+        "normalized": "データ送信",
+        "is_new": false,
+        "core_verb": "送信"
+      },
+      "actual": {
+        "surface": "社内で利用したデータを従業員個人のアドレスに送信すること",
+        "normalized": "データ送信",
+        "is_new": false
+      },
+      "verdict": {
+        "mis_merge": false,
+        "missed": false,
+        "is_new_correct": true,
+        "choice_correct": true,
+        "surface_ok": true,
+        "surface_in_clause": true,
+        "surface_no_modality": true,
+        "surface_has_core_verb": true
+      },
+      "agreement": "3/3",
+      "gates": [],
+      "elapsed_seconds": 278.4,
+      "llm_calls": 6,
+      "trace": {
+        "runs": [
+          {
+            "index": 1,
+            "temperature": 0.0,
+            "surface": "社内で利用したデータを従業員個人のアドレスに送信すること",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "データ送信",
+            "reason": "条文は従業員個人のアドレスにデータを送ることを禁止しているため、データ送信が該当します。",
+            "definition_part": "電子メールなどで、データを宛先に送ること（転送を含む）",
+            "considered": [
+              {
+                "name": "情報提供",
+                "why_not": "情報提供は組織や人に情報を提供することであり、個人アドレスへのデータ送信とは異なる行為の種類であるため。"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "temperature": 0.3,
+            "surface": "社内で利用したデータを従業員個人のアドレスに送信すること",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "データ送信",
+            "reason": "条文は従業員個人のアドレスにデータを送ることを禁止しているため、これはデータ送信に該当します。",
+            "definition_part": "電子メールなどで、データを宛先に送ること（転送を含む）",
+            "considered": [
+              {
+                "name": "情報提供",
+                "why_not": "情報提供は他の組織や人に情報を提供することであり、従業員個人のアドレスへのデータ送信とは異なるため。"
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "temperature": 0.3,
+            "surface": "社内で利用したデータを従業員個人のアドレスに送信すること",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "データ送信",
+            "reason": "条文は従業員個人のアドレスにデータを送ることを禁止しており、これは台帳にある「データ送信」が該当します。",
+            "definition_part": "電子メールなどで、データを宛先に送ること（転送を含む）",
+            "considered": [
+              {
+                "name": "情報提供",
+                "why_not": "情報提供は組織や人に情報を提供することであり、個人のアドレスへのデータ送信とは異なる"
+              },
+              {
+                "name": "該当なし",
+                "why_not": "条文が禁止する行為は明確に台帳にある「データ送信」に該当するため、該当なしと判断しない"
+              }
+            ]
+          }
+        ],
+        "agreement": "3/3",
+        "candidates_considered": [
+          {
+            "name": "情報提供",
+            "why_not": "情報提供は組織や人に情報を提供することであり、個人アドレスへのデータ送信とは異なる行為の種類であるため。"
+          },
+          {
+            "name": "情報提供",
+            "why_not": "情報提供は他の組織や人に情報を提供することであり、従業員個人のアドレスへのデータ送信とは異なるため。"
+          },
+          {
+            "name": "情報提供",
+            "why_not": "情報提供は組織や人に情報を提供することであり、個人のアドレスへのデータ送信とは異なる"
+          },
+          {
+            "name": "該当なし",
+            "why_not": "条文が禁止する行為は明確に台帳にある「データ送信」に該当するため、該当なしと判断しない"
+          }
+        ],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 278.4,
+        "llm_calls": 6
+      }
+    },
+    {
+      "order": 11,
+      "clause_id": "ipa_secguide_v4_7_3_export",
+      "group": "送信",
+      "expected": {
+        "surface": "メールの取り出し及びエクスポート",
+        "normalized": "データ取り出し",
+        "is_new": true,
+        "core_verb": "取り出し"
+      },
+      "actual": {
+        "surface": "メールサーバーからのメールの取り出し及びエクスポート",
+        "normalized": "データ送信",
+        "is_new": false
+      },
+      "verdict": {
+        "mis_merge": true,
+        "missed": false,
+        "is_new_correct": false,
+        "choice_correct": false,
+        "surface_ok": true,
+        "surface_in_clause": true,
+        "surface_no_modality": true,
+        "surface_has_core_verb": true
+      },
+      "agreement": "3/3",
+      "gates": [],
+      "elapsed_seconds": 493.0,
+      "llm_calls": 6,
+      "trace": {
+        "runs": [
+          {
+            "index": 1,
+            "temperature": 0.0,
+            "surface": "メールサーバーからのメールの取り出し及びエクスポート",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "データ送信",
+            "reason": "メールサーバーからのメールの取り出し及びエクスポートは、電子メールなどを用いてデータを送る行為に該当します。",
+            "definition_part": "電子メールなどで、データを宛先に送ること（転送を含む）",
+            "considered": [
+              {
+                "name": "外部送信",
+                "why_not": "患者に関する情報を外部に送る行為ではなく、メールの取り出しやエクスポートであるため該当しない。"
+              },
+              {
+                "name": "特権操作",
+                "why_not": "管理者権限での情報システム操作とは異なる、メールの取り出しやエクスポートに関する行為であるため該当しない。"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "temperature": 0.3,
+            "surface": "メールサーバーからのメールの取り出し及びエクスポート",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "データ送信",
+            "reason": "メールサーバーからのメールの取り出し及びエクスポートは、電子メールなどを用いてデータを宛先に送る行為と解釈できる。",
+            "definition_part": "電子メールなどで、データを宛先に送ること（転送を含む）",
+            "considered": [
+              {
+                "name": "外部送信",
+                "why_not": "患者に関する情報を外部に送るという定義と条文の行為が異なる"
+              },
+              {
+                "name": "特権操作",
+                "why_not": "管理者権限での情報システム操作とは異なる"
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "temperature": 0.3,
+            "surface": "メールサーバーからのメールの取り出し及びエクスポート",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "データ送信",
+            "reason": "メールサーバーからのメールの取り出し及びエクスポートは、電子メールを通じてデータを送る行為に該当します。",
+            "definition_part": "電子メールなどで、データを宛先に送ること（転送を含む）",
+            "considered": [
+              {
+                "name": "外部送信",
+                "why_not": "患者に関する情報を外部に送るという定義と異なるため"
+              },
+              {
+                "name": "特権操作",
+                "why_not": "管理者権限での情報システムの操作とは異なるため"
+              }
+            ]
+          }
+        ],
+        "agreement": "3/3",
+        "candidates_considered": [
+          {
+            "name": "外部送信",
+            "why_not": "患者に関する情報を外部に送る行為ではなく、メールの取り出しやエクスポートであるため該当しない。"
+          },
+          {
+            "name": "特権操作",
+            "why_not": "管理者権限での情報システム操作とは異なる、メールの取り出しやエクスポートに関する行為であるため該当しない。"
+          },
+          {
+            "name": "外部送信",
+            "why_not": "患者に関する情報を外部に送るという定義と条文の行為が異なる"
+          },
+          {
+            "name": "特権操作",
+            "why_not": "管理者権限での情報システム操作とは異なる"
+          },
+          {
+            "name": "外部送信",
+            "why_not": "患者に関する情報を外部に送るという定義と異なるため"
+          },
+          {
+            "name": "特権操作",
+            "why_not": "管理者権限での情報システムの操作とは異なるため"
+          }
+        ],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 493.0,
+        "llm_calls": 6
+      }
+    },
+    {
+      "order": 12,
+      "clause_id": "mhlw_r7dec_art11_6",
+      "group": "就業",
+      "expected": {
+        "surface": "就業",
+        "normalized": "就業",
+        "is_new": true,
+        "core_verb": "就業"
+      },
+      "actual": {
+        "surface": "酒気を帯びて就業",
+        "normalized": "就業禁止状態使用",
+        "is_new": true
+      },
+      "verdict": {
+        "mis_merge": false,
+        "missed": false,
+        "is_new_correct": true,
+        "choice_correct": false,
+        "surface_ok": true,
+        "surface_in_clause": true,
+        "surface_no_modality": true,
+        "surface_has_core_verb": true
+      },
+      "agreement": "3/3",
+      "gates": [
+        "new_action_unapproved",
+        "action_possible_duplicate"
+      ],
+      "elapsed_seconds": 305.6,
+      "llm_calls": 7,
+      "trace": {
+        "runs": [
+          {
+            "index": 1,
+            "temperature": 0.0,
+            "surface": "酒気を帯びて就業",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "該当なし",
+            "reason": "条文の行為は労働者自身による行動であり、台帳にあるActionには使用者が労働者を従事させるものや情報提供など、労働者が行う具体的な業務とは異なる。",
+            "definition_part": "",
+            "considered": [
+              {
+                "name": "労働指示",
+                "why_not": "労働指示は使用者が労働者に仕事を与える行為であり、条文の「酒気を帯びて就業しないこと」は労働者が自ら行う行動であるため該当しない。"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "temperature": 0.3,
+            "surface": "酒気を帯びて就業",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "該当なし",
+            "reason": "条文の行為は労働者自身による行動であり、台帳に記載されているどのActionとも一致しません。",
+            "definition_part": "",
+            "considered": [
+              {
+                "name": "労働指示",
+                "why_not": "労働指示は使用者が労働者を従事させる行為であるのに対し、条文は労働者が自ら行うべき行動を定めています。"
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "temperature": 0.3,
+            "surface": "酒気を帯びて就業",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "該当なし",
+            "reason": "条文の行為は労働者自身による就業時の行動規範であり、台帳にあるActionには該当しない。",
+            "definition_part": "",
+            "considered": [
+              {
+                "name": "労働指示",
+                "why_not": "労働指示は使用者が労働者を従事させる行為で、条文の禁止対象とは逆の関係であるため。"
+              }
+            ]
+          }
+        ],
+        "agreement": "3/3",
+        "candidates_considered": [
+          {
+            "name": "労働指示",
+            "why_not": "労働指示は使用者が労働者に仕事を与える行為であり、条文の「酒気を帯びて就業しないこと」は労働者が自ら行う行動であるため該当しない。"
+          },
+          {
+            "name": "労働指示",
+            "why_not": "労働指示は使用者が労働者を従事させる行為であるのに対し、条文は労働者が自ら行うべき行動を定めています。"
+          },
+          {
+            "name": "労働指示",
+            "why_not": "労働指示は使用者が労働者を従事させる行為で、条文の禁止対象とは逆の関係であるため。"
+          }
+        ],
+        "new_action_proposal": {
+          "name": "就業禁止状態使用",
+          "definition": "酒気を帯びて就業すること。",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "酒気を帯びて就業しないこと。"
+          ],
+          "basis_verified": [
+            true
+          ]
+        },
+        "duplicate_check": {
+          "closest": "施設物品使用",
+          "name_ratio": 0.286,
+          "definition_overlap": 0.125,
+          "flagged": true,
+          "reason": "名前の末尾の体言が同じ('使用')",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 305.6,
+        "llm_calls": 7
+      }
+    },
+    {
+      "order": 13,
+      "clause_id": "mhlw_r7dec_art25_2",
+      "group": "労働指示",
+      "expected": {
+        "surface": "就業させ",
+        "normalized": "労働指示",
+        "is_new": false,
+        "core_verb": "就業"
+      },
+      "actual": {
+        "surface": "就業させない",
+        "normalized": "労働指示",
+        "is_new": false
+      },
+      "verdict": {
+        "mis_merge": false,
+        "missed": false,
+        "is_new_correct": true,
+        "choice_correct": true,
+        "surface_ok": false,
+        "surface_in_clause": true,
+        "surface_no_modality": false,
+        "surface_has_core_verb": true
+      },
+      "agreement": "3/3",
+      "gates": [
+        "action_surface_unverified"
+      ],
+      "elapsed_seconds": 266.7,
+      "llm_calls": 6,
+      "trace": {
+        "runs": [
+          {
+            "index": 1,
+            "temperature": 0.0,
+            "surface": "就業させない",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['ない']"
+            ],
+            "choice": "労働指示",
+            "reason": "条文は使用者が女性労働者に就業させないことを定めているため、労働指示の逆の行為である「就業させない」に該当します。",
+            "definition_part": "使用者が労働者を労働に従事させること（時間外・休日・深夜などの区分は問わない）",
+            "considered": [
+              {
+                "name": "就業",
+                "why_not": "条文の対象は使用者が女性労働者に就業を指示しない行為であり、労働者が自ら働く「就業」ではありません。"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "temperature": 0.3,
+            "surface": "就業させない",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['ない']"
+            ],
+            "choice": "労働指示",
+            "reason": "条文は使用者が女性労働者に就業させないことを規定しているため、使用者による労働者の従事させ方の規制と解釈できます。",
+            "definition_part": "使用者が労働者を労働に従事させること（時間外・休日・深夜などの区分は問わない）",
+            "considered": [
+              {
+                "name": "就業",
+                "why_not": "条文の主体は使用者であり、女性労働者が自ら働くことを禁止しているわけではありません。"
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "temperature": 0.3,
+            "surface": "就業させない",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['ない']"
+            ],
+            "choice": "労働指示",
+            "reason": "条文は使用者（会社）が女性労働者に就業させないことを定めているため、労働者を労働に従事させる行為の否定形であると解釈できます。",
+            "definition_part": "使用者が労働者を労働に従事させること",
+            "considered": [
+              {
+                "name": "就業",
+                "why_not": "条文は使用者が女性労働者に対しての指示であり、労働者が自ら働く行為ではありません。"
+              }
+            ]
+          }
+        ],
+        "agreement": "3/3",
+        "candidates_considered": [
+          {
+            "name": "就業",
+            "why_not": "条文の対象は使用者が女性労働者に就業を指示しない行為であり、労働者が自ら働く「就業」ではありません。"
+          },
+          {
+            "name": "就業",
+            "why_not": "条文の主体は使用者であり、女性労働者が自ら働くことを禁止しているわけではありません。"
+          },
+          {
+            "name": "就業",
+            "why_not": "条文は使用者が女性労働者に対しての指示であり、労働者が自ら働く行為ではありません。"
+          }
+        ],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 266.7,
+        "llm_calls": 6
+      }
+    },
+    {
+      "order": 14,
+      "clause_id": "mhlw_r7dec_art21_4",
+      "group": "労働指示",
+      "expected": {
+        "surface": "所定労働時間外労働又は休日労働に従事させ",
+        "normalized": "労働指示",
+        "is_new": false,
+        "core_verb": "従事"
+      },
+      "actual": {
+        "surface": "所定労働時間外又は休日労働に従事させない",
+        "normalized": "労働指示",
+        "is_new": false
+      },
+      "verdict": {
+        "mis_merge": false,
+        "missed": false,
+        "is_new_correct": true,
+        "choice_correct": true,
+        "surface_ok": false,
+        "surface_in_clause": false,
+        "surface_no_modality": false,
+        "surface_has_core_verb": true
+      },
+      "agreement": "3/3",
+      "gates": [
+        "action_surface_unverified"
+      ],
+      "elapsed_seconds": 391.5,
+      "llm_calls": 6,
+      "trace": {
+        "runs": [
+          {
+            "index": 1,
+            "temperature": 0.0,
+            "surface": "所定労働時間外又は休日労働に従事させない",
+            "surface_ok": false,
+            "surface_problems": [
+              "抜き出した語句 '所定労働時間外又は休日労働に従事させない' が条文に逐語で実在しない",
+              "規範の様相の語を含む: ['ない']"
+            ],
+            "choice": "労働指示",
+            "reason": "条文は使用者が労働者に特定の条件下での労働従事を禁じているため、労働指示の逆の概念である。",
+            "definition_part": "使用者が労働者を労働に従事させること（時間外・休日・深夜などの区分は問わない）",
+            "considered": [
+              {
+                "name": "就業",
+                "why_not": "条文は使用者が労働者に対して指示を行うものであり、労働者が自ら働くことを定義する「就業」には該当しない。"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "temperature": 0.3,
+            "surface": "所定労働時間外又は休日労働させる",
+            "surface_ok": false,
+            "surface_problems": [
+              "抜き出した語句 '所定労働時間外又は休日労働させる' が条文に逐語で実在しない"
+            ],
+            "choice": "労働指示",
+            "reason": "条文は使用者が労働者に時間外や休日労働をさせる行為を規定しています。",
+            "definition_part": "使用者が労働者を労働に従事させること（時間外・休日・深夜などの区分は問わない）",
+            "considered": [
+              {
+                "name": "就業",
+                "why_not": "条文は使用者が労働者を指示しているため、労働者が自ら働く行為とは異なります。"
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "temperature": 0.3,
+            "surface": "所定労働時間外又は休日に労働させる",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "労働指示",
+            "reason": "条文は使用者が労働者に時間外や休日労働をさせる行為について述べています。",
+            "definition_part": "使用者が労働者を労働に従事させること（時間外・休日・深夜などの区分は問わない）",
+            "considered": [
+              {
+                "name": "就業",
+                "why_not": "条文では使用者が労働者を働かせる行為が述べられており、労働者が自ら働く行為ではありません。"
+              }
+            ]
+          }
+        ],
+        "agreement": "3/3",
+        "candidates_considered": [
+          {
+            "name": "就業",
+            "why_not": "条文は使用者が労働者に対して指示を行うものであり、労働者が自ら働くことを定義する「就業」には該当しない。"
+          },
+          {
+            "name": "就業",
+            "why_not": "条文は使用者が労働者を指示しているため、労働者が自ら働く行為とは異なります。"
+          },
+          {
+            "name": "就業",
+            "why_not": "条文では使用者が労働者を働かせる行為が述べられており、労働者が自ら働く行為ではありません。"
+          }
+        ],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 391.5,
+        "llm_calls": 6
+      }
+    },
+    {
+      "order": 15,
+      "clause_id": "ipa_secguide_v4_phys_3_printer",
+      "group": "放置",
+      "expected": {
+        "surface": "原稿、印刷物を放置",
+        "normalized": "放置",
+        "is_new": true,
+        "core_verb": "放置"
+      },
+      "actual": {
+        "surface": "原稿、印刷物を放置しない",
+        "normalized": "施設物品使用",
+        "is_new": false
+      },
+      "verdict": {
+        "mis_merge": true,
+        "missed": false,
+        "is_new_correct": false,
+        "choice_correct": false,
+        "surface_ok": false,
+        "surface_in_clause": true,
+        "surface_no_modality": false,
+        "surface_has_core_verb": true
+      },
+      "agreement": "3/3",
+      "gates": [
+        "action_surface_unverified"
+      ],
+      "elapsed_seconds": 251.1,
+      "llm_calls": 6,
+      "trace": {
+        "runs": [
+          {
+            "index": 1,
+            "temperature": 0.0,
+            "surface": "原稿、印刷物を放置しない",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['ない']"
+            ],
+            "choice": "施設物品使用",
+            "reason": "条文は会社の設備（複合機、プリンタ）を使用する際の注意事項である。",
+            "definition_part": "会社の施設、物品等を使用",
+            "considered": [
+              {
+                "name": "該当なし",
+                "why_not": "条文が物理的な使用に関する規則であり、他のActionよりも「施設物品使用」に最も近い。"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "temperature": 0.3,
+            "surface": "原稿、印刷物を放置しない",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['ない']"
+            ],
+            "choice": "施設物品使用",
+            "reason": "条文は会社の設備（複合機、プリンタ）を使用する際の注意事項である。",
+            "definition_part": "会社の施設、物品等を使用",
+            "considered": [
+              {
+                "name": "該当なし",
+                "why_not": "条文が物理的な使用に関する規則であり、他のActionよりも「施設物品使用」に最も近い。"
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "temperature": 0.3,
+            "surface": "原稿、印刷物を放置しない",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['ない']"
+            ],
+            "choice": "施設物品使用",
+            "reason": "条文中の行為は会社の設備（複合機、プリンタ）を使用することに該当する。",
+            "definition_part": "会社の施設、物品等を使用",
+            "considered": [
+              {
+                "name": "情報提供",
+                "why_not": "条文には情報の提供や漏洩に関する記述がなく、対象外である。"
+              },
+              {
+                "name": "該当なし",
+                "why_not": "施設物品使用というActionに該当することが明確であるため、該当しないとは判断できない。"
+              }
+            ]
+          }
+        ],
+        "agreement": "3/3",
+        "candidates_considered": [
+          {
+            "name": "該当なし",
+            "why_not": "条文が物理的な使用に関する規則であり、他のActionよりも「施設物品使用」に最も近い。"
+          },
+          {
+            "name": "情報提供",
+            "why_not": "条文には情報の提供や漏洩に関する記述がなく、対象外である。"
+          },
+          {
+            "name": "該当なし",
+            "why_not": "施設物品使用というActionに該当することが明確であるため、該当しないとは判断できない。"
+          }
+        ],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 251.1,
+        "llm_calls": 6
+      }
+    },
+    {
+      "order": 16,
+      "clause_id": "ipa_secguide_v4_phys_1_2_level1",
+      "group": "放置",
+      "expected": {
+        "surface": "情報資産の放置",
+        "normalized": "放置",
+        "is_new": false,
+        "core_verb": "放置"
+      },
+      "actual": {
+        "surface": "未使用時に社外秘又は極秘の情報資産の放置",
+        "normalized": "放置",
+        "is_new": false
+      },
+      "verdict": {
+        "mis_merge": false,
+        "missed": false,
+        "is_new_correct": true,
+        "choice_correct": true,
+        "surface_ok": true,
+        "surface_in_clause": true,
+        "surface_no_modality": true,
+        "surface_has_core_verb": true
+      },
+      "agreement": "3/3",
+      "gates": [],
+      "elapsed_seconds": 305.3,
+      "llm_calls": 6,
+      "trace": {
+        "runs": [
+          {
+            "index": 1,
+            "temperature": 0.0,
+            "surface": "未使用時に社外秘又は極秘の情報資産の放置",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "放置",
+            "reason": "条文では未使用時に社外秘又は極秘の情報資産を放置することを禁止しており、これは台帳にある「放置」に該当します。",
+            "definition_part": "情報や物を、管理されない状態で置いたままにすること",
+            "considered": [
+              {
+                "name": "情報提供",
+                "why_not": "条文は情報を外部に提供する行為ではなく、未使用時の放置禁止を定めているため該当しない。"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "temperature": 0.3,
+            "surface": "未使用時に社外秘又は極秘の情報資産の放置",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "放置",
+            "reason": "条文中の「未使用時に社外秘又は極秘の情報資産の放置禁止」は、情報や物を管理されない状態で置いたままにすることを指しているため。",
+            "definition_part": "情報や物を、管理されない状態で置いたままにすること",
+            "considered": [
+              {
+                "name": "施設物品使用",
+                "why_not": "条文は物品の使用そのものではなく、放置を禁止しているため"
+              },
+              {
+                "name": "情報提供",
+                "why_not": "条文中には情報の提供行為が含まれていないため"
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "temperature": 0.3,
+            "surface": "未使用時に社外秘又は極秘の情報資産の放置",
+            "surface_ok": true,
+            "surface_problems": [],
+            "choice": "放置",
+            "reason": "条文では「未使用時に社外秘又は極秘の情報資産の放置」が禁止とされており、これは「情報や物を、管理されない状態で置いたままにすること」と定義される「放置」に該当します。",
+            "definition_part": "情報や物を、管理されない状態で置いたままにすること",
+            "considered": [
+              {
+                "name": "施設物品使用",
+                "why_not": "条文は情報を放置する行為について述べており、会社の施設や物品を使用する行為とは異なる"
+              },
+              {
+                "name": "情報提供",
+                "why_not": "条文では情報が第三者に提供されるわけではなく、単に放置禁止を規定しているため該当しない"
+              }
+            ]
+          }
+        ],
+        "agreement": "3/3",
+        "candidates_considered": [
+          {
+            "name": "情報提供",
+            "why_not": "条文は情報を外部に提供する行為ではなく、未使用時の放置禁止を定めているため該当しない。"
+          },
+          {
+            "name": "施設物品使用",
+            "why_not": "条文は物品の使用そのものではなく、放置を禁止しているため"
+          },
+          {
+            "name": "情報提供",
+            "why_not": "条文中には情報の提供行為が含まれていないため"
+          },
+          {
+            "name": "施設物品使用",
+            "why_not": "条文は情報を放置する行為について述べており、会社の施設や物品を使用する行為とは異なる"
+          },
+          {
+            "name": "情報提供",
+            "why_not": "条文では情報が第三者に提供されるわけではなく、単に放置禁止を規定しているため該当しない"
+          }
+        ],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 305.3,
+        "llm_calls": 6
+      }
+    },
+    {
+      "order": 17,
+      "clause_id": "mhlw_r7dec_art58_3_6",
+      "group": "立入り",
+      "expected": {
+        "surface": "区域には立ち入ら",
+        "normalized": "立入り",
+        "is_new": true,
+        "core_verb": "立ち入"
+      },
+      "actual": {
+        "surface": "立ち入らないこと",
+        "normalized": "区域立ち入り禁止",
+        "is_new": true
+      },
+      "verdict": {
+        "mis_merge": false,
+        "missed": false,
+        "is_new_correct": true,
+        "choice_correct": false,
+        "surface_ok": false,
+        "surface_in_clause": true,
+        "surface_no_modality": false,
+        "surface_has_core_verb": true
+      },
+      "agreement": "3/3",
+      "gates": [
+        "new_action_unapproved",
+        "action_surface_unverified"
+      ],
+      "elapsed_seconds": 317.3,
+      "llm_calls": 7,
+      "trace": {
+        "runs": [
+          {
+            "index": 1,
+            "temperature": 0.0,
+            "surface": "立ち入らないこと",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['ないこと']"
+            ],
+            "choice": "該当なし",
+            "reason": "条文の行為は、特定のAction台帳に定義されている種類や手段とは異なります。",
+            "definition_part": "",
+            "considered": [
+              {
+                "name": "施設物品使用",
+                "why_not": "条文は立ち入り禁止区域への入ることを禁じており、会社の施設を使用することとは異なる行為です。"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "temperature": 0.3,
+            "surface": "立ち入らないこと",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['ないこと']"
+            ],
+            "choice": "該当なし",
+            "reason": "条文に記載されている行為は、台帳のどのActionとも手段や向きが異なります。",
+            "definition_part": "",
+            "considered": [
+              {
+                "name": "施設物品使用",
+                "why_not": "条文では立ち入りを禁止しているため、使用とは逆の意味合いです"
+              },
+              {
+                "name": "就業",
+                "why_not": "条文は立入禁止区域への立ち入りを禁じており、自ら働く行為とは異なります"
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "temperature": 0.3,
+            "surface": "立ち入らないこと",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['ないこと']"
+            ],
+            "choice": "該当なし",
+            "reason": "条文の行為は、特定の行動（立ち入らない）であり、台帳にあるどのActionとも手段や向きが異なります。",
+            "definition_part": "",
+            "considered": [
+              {
+                "name": "施設物品使用",
+                "why_not": "施設物品使用は会社の施設や物品を使用することを定義しており、立ち入らないことは該当しません。"
+              },
+              {
+                "name": "就業",
+                "why_not": "就業は労働者が自ら業務に就くことを定義しており、立入禁止区域には立ち入らないことは該当しません。"
+              }
+            ]
+          }
+        ],
+        "agreement": "3/3",
+        "candidates_considered": [
+          {
+            "name": "施設物品使用",
+            "why_not": "条文は立ち入り禁止区域への入ることを禁じており、会社の施設を使用することとは異なる行為です。"
+          },
+          {
+            "name": "施設物品使用",
+            "why_not": "条文では立ち入りを禁止しているため、使用とは逆の意味合いです"
+          },
+          {
+            "name": "就業",
+            "why_not": "条文は立入禁止区域への立ち入りを禁じており、自ら働く行為とは異なります"
+          },
+          {
+            "name": "施設物品使用",
+            "why_not": "施設物品使用は会社の施設や物品を使用することを定義しており、立ち入らないことは該当しません。"
+          },
+          {
+            "name": "就業",
+            "why_not": "就業は労働者が自ら業務に就くことを定義しており、立入禁止区域には立ち入らないことは該当しません。"
+          }
+        ],
+        "new_action_proposal": {
+          "name": "区域立ち入り禁止",
+          "definition": "立入禁止又は通行禁止区域には立ち入らないこと。",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "立入禁止又は通行禁止区域には立ち入らないこと。"
+          ],
+          "basis_verified": [
+            true
+          ]
+        },
+        "duplicate_check": {
+          "closest": "データ取り出し",
+          "name_ratio": 0.133,
+          "definition_overlap": 0.022,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 317.3,
+        "llm_calls": 7
+      }
+    },
+    {
+      "order": 18,
+      "clause_id": "mhlw_r7dec_art58_3_4",
+      "group": "立入り",
+      "expected": {
+        "surface": "喫煙可能な場所には立ち入ら",
+        "normalized": "立入り",
+        "is_new": false,
+        "core_verb": "立ち入"
+      },
+      "actual": {
+        "surface": "喫煙可能な場所には立ち入らないこと",
+        "normalized": "立入り",
+        "is_new": false
+      },
+      "verdict": {
+        "mis_merge": false,
+        "missed": false,
+        "is_new_correct": true,
+        "choice_correct": true,
+        "surface_ok": false,
+        "surface_in_clause": true,
+        "surface_no_modality": false,
+        "surface_has_core_verb": true
+      },
+      "agreement": "3/3",
+      "gates": [
+        "action_surface_unverified"
+      ],
+      "elapsed_seconds": 327.9,
+      "llm_calls": 6,
+      "trace": {
+        "runs": [
+          {
+            "index": 1,
+            "temperature": 0.0,
+            "surface": "喫煙可能な場所には立ち入らないこと",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['ないこと']"
+            ],
+            "choice": "立入り",
+            "reason": "条文は20歳未満の者が喫煙可能な場所に入らないことを禁止しており、これは「区域や場所に入る」行為に該当します。",
+            "definition_part": "区域には立ち入ら",
+            "considered": [
+              {
+                "name": "放置",
+                "why_not": "条文は特定の物品を放置することを禁止していないため不適切"
+              },
+              {
+                "name": "就業",
+                "why_not": "条文は労働者自らが業務に従事することを規制していないため不適切"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "temperature": 0.3,
+            "surface": "立ち入らないこと",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['ないこと']"
+            ],
+            "choice": "立入り",
+            "reason": "条文は20歳未満の者が喫煙可能な場所に入らないことを禁止しており、これは「立ち入らないこと」に該当します。",
+            "definition_part": "区域には立ち入ら",
+            "considered": [
+              {
+                "name": "放置",
+                "why_not": "条文は特定の物品や情報を放置する行為を禁止していない"
+              },
+              {
+                "name": "就業",
+                "why_not": "条文は労働者自らが業務を行うことを制限しておらず、立ち入り禁止に関するもの"
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "temperature": 0.3,
+            "surface": "喫煙可能な場所には立ち入らないこと",
+            "surface_ok": false,
+            "surface_problems": [
+              "規範の様相の語を含む: ['ないこと']"
+            ],
+            "choice": "立入り",
+            "reason": "条文は20歳未満の者が喫煙可能な場所に入らないことを禁止しており、これは「区域や場所に入る」行為に該当します。",
+            "definition_part": "区域には立ち入ら",
+            "considered": [
+              {
+                "name": "放置",
+                "why_not": "条文は特定の物を放置することを禁止していないため不適切"
+              },
+              {
+                "name": "就業",
+                "why_not": "条文は労働者自らが業務に就くことを規制していないため不適切"
+              }
+            ]
+          }
+        ],
+        "agreement": "3/3",
+        "candidates_considered": [
+          {
+            "name": "放置",
+            "why_not": "条文は特定の物品を放置することを禁止していないため不適切"
+          },
+          {
+            "name": "就業",
+            "why_not": "条文は労働者自らが業務に従事することを規制していないため不適切"
+          },
+          {
+            "name": "放置",
+            "why_not": "条文は特定の物品や情報を放置する行為を禁止していない"
+          },
+          {
+            "name": "就業",
+            "why_not": "条文は労働者自らが業務を行うことを制限しておらず、立ち入り禁止に関するもの"
+          },
+          {
+            "name": "放置",
+            "why_not": "条文は特定の物を放置することを禁止していないため不適切"
+          },
+          {
+            "name": "就業",
+            "why_not": "条文は労働者自らが業務に就くことを規制していないため不適切"
+          }
+        ],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 327.9,
+        "llm_calls": 6
+      }
+    }
+  ],
+  "ledger_log": [
+    {
+      "order": 1,
+      "action": "台帳に追加: 特権操作"
+    },
+    {
+      "order": 2,
+      "action": "台帳に追加: 施設物品使用"
+    },
+    {
+      "order": 3,
+      "action": "台帳に追加: 情報提供"
+    },
+    {
+      "order": 4,
+      "action": "台帳に追加: 労働指示"
+    },
+    {
+      "order": 5,
+      "action": "台帳に追加: 口頭伝達"
+    },
+    {
+      "order": 6,
+      "action": "語句を追加: 特権操作 ← 特権操作"
+    },
+    {
+      "order": 7,
+      "action": "台帳に追加: アカウント共用"
+    },
+    {
+      "order": 8,
+      "action": "語句を追加: 情報提供 ← 機密を漏洩"
+    },
+    {
+      "order": 9,
+      "action": "台帳に追加: データ送信"
+    },
+    {
+      "order": 10,
+      "action": "語句を追加: データ送信 ← 従業員個人のアドレスに送信"
+    },
+    {
+      "order": 11,
+      "action": "台帳に追加: データ取り出し"
+    },
+    {
+      "order": 12,
+      "action": "台帳に追加: 就業"
+    },
+    {
+      "order": 13,
+      "action": "語句を追加: 労働指示 ← 就業させ"
+    },
+    {
+      "order": 14,
+      "action": "語句を追加: 労働指示 ← 所定労働時間外労働又は休日労働に従事させ"
+    },
+    {
+      "order": 15,
+      "action": "台帳に追加: 放置"
+    },
+    {
+      "order": 16,
+      "action": "語句を追加: 放置 ← 情報資産の放置"
+    },
+    {
+      "order": 17,
+      "action": "台帳に追加: 立入り"
+    },
+    {
+      "order": 18,
+      "action": "語句を追加: 立入り ← 喫煙可能な場所には立ち入ら"
+    }
+  ],
+  "ledger_after": [
+    {
+      "name": "外部送信",
+      "definition": "患者に関する情報を、患者・代理人などの外部に送ること",
+      "parent": null,
+      "surfaces": [],
+      "actors": [
+        "あおい"
+      ],
+      "status": "provisional",
+      "approved_by": null,
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00",
+        "note": "定義の出典: registry/dmn/aoi_transmission.dmn 送信可否判定の reason_code「外部送信対象外」と、層1 dt_transmission の entry_points(あおい × 外部送信)。定義の文そのものは DMN にも登録簿にも無いので provisional(PU4)"
+      }
+    },
+    {
+      "name": "特権操作",
+      "definition": "特権/管理者権限で情報システムを操作すること",
+      "parent": null,
+      "surfaces": [
+        {
+          "text": "特権/管理者権限で操作を行う",
+          "clause_ref": "IPA情報セキュリティ関連規程 6.7 特権アカウント(第3項)"
+        },
+        {
+          "text": "特権操作",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.1 アクセス制御方針（箇条書き第5項）"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "status": "approved",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA情報セキュリティ関連規程 6.7 特権アカウント(第3項)",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_status": "provisional",
+        "definition_basis": [
+          {
+            "quote": "特権/管理者権限で操作を行う",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_beyond_clause": [
+          "情報システム（条文の語は「システム開発」で、操作の対象としての「情報システム」は条文に無い）"
+        ]
+      }
+    },
+    {
+      "name": "施設物品使用",
+      "definition": "会社の施設や物品等を使用すること",
+      "parent": null,
+      "surfaces": [
+        {
+          "text": "会社の施設、物品等を使用",
+          "clause_ref": "厚生労働省モデル就業規則 第11条(遵守事項)第1号"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "status": "approved",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省モデル就業規則 第11条(遵守事項)第1号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_status": "provisional",
+        "definition_basis": [
+          {
+            "quote": "会社の施設、物品等を使用",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_beyond_clause": [
+          "「、」を「や」に変えた（語の追加はない）"
+        ]
+      }
+    },
+    {
+      "name": "情報提供",
+      "definition": "情報を、他の組織や人に提供すること",
+      "parent": null,
+      "surfaces": [
+        {
+          "text": "組織、人に提供",
+          "clause_ref": "IPA情報セキュリティ関連規程 人的対策-2(従業員の責務)"
+        },
+        {
+          "text": "機密を漏洩",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第11条（遵守事項）第5号"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "status": "approved",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA情報セキュリティ関連規程 人的対策-2(従業員の責務)",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_status": "provisional",
+        "definition_basis": [
+          {
+            "quote": "組織、人に提供",
+            "basis": "verbatim"
+          },
+          {
+            "quote": "当社が営業秘密として管理する情報",
+            "basis": "verbatim",
+            "note": "「情報を」の出どころ"
+          }
+        ],
+        "definition_beyond_clause": [
+          "他の（条文に「他の」の語は無い）"
+        ]
+      }
+    },
+    {
+      "name": "労働指示",
+      "definition": "使用者が労働者を労働に従事させること（時間外・休日・深夜などの区分は問わない）",
+      "parent": null,
+      "surfaces": [
+        {
+          "text": "労働に従事させ",
+          "clause_ref": "厚生労働省モデル就業規則 第21条(時間外及び休日労働等)第3項"
+        },
+        {
+          "text": "就業させ",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第25条（産前産後の休業）第2項"
+        },
+        {
+          "text": "所定労働時間外労働又は休日労働に従事させ",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第21条（時間外及び休日労働等）第4項"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "status": "approved",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省モデル就業規則 第21条(時間外及び休日労働等)第3項",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_status": "provisional",
+        "definition_basis": [
+          {
+            "quote": "労働に従事させ",
+            "basis": "verbatim"
+          },
+          {
+            "quote": "時間外労働又は休日若しくは深夜",
+            "basis": "verbatim",
+            "note": "「区分は問わない」が指す区分の語"
+          }
+        ],
+        "definition_beyond_clause": [
+          "使用者（条文に「使用者」の語は無い。主語が使用者の側であることは「従事させない」の使役から読んでいる。U12）",
+          "労働者（条文の語は「女性労働者」「１８歳未満の者」）"
+        ]
+      }
+    },
+    {
+      "name": "口頭伝達",
+      "definition": "情報を口頭で相手に伝えること",
+      "parent": null,
+      "surfaces": [
+        {
+          "text": "口頭で伝達",
+          "clause_ref": "情報管理規程 第14条"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "status": "approved",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "情報管理規程 第14条",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_status": "provisional",
+        "definition_basis": [
+          {
+            "quote": "口頭で伝達",
+            "basis": "verbatim"
+          },
+          {
+            "quote": "検査結果その他の医療情報",
+            "basis": "verbatim",
+            "note": "「情報を」の出どころ"
+          }
+        ],
+        "definition_beyond_clause": [
+          "相手（条文の語は「患者又はその代理人」）",
+          "伝える（条文の語は「伝達」）"
+        ]
+      }
+    },
+    {
+      "name": "アカウント共用",
+      "definition": "1つのアカウントを2人以上で使うこと",
+      "parent": null,
+      "surfaces": [
+        {
+          "text": "特権アカウント名を2名以上で共用",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.10 利用者アカウント・パスワードの条件（表・特権アカウント列／アカウント名行）"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "status": "approved",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.10 利用者アカウント・パスワードの条件（表・特権アカウント列／アカウント名行）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_status": "provisional",
+        "definition_basis": [
+          {
+            "quote": "1つの特権アカウント名を2名以上で共用しない",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_beyond_clause": [
+          "2人以上（条文の語は「2名以上」）",
+          "使う（条文の語は「共用」）"
+        ]
+      }
+    },
+    {
+      "name": "データ送信",
+      "definition": "電子メールなどで、データを宛先に送ること（転送を含む）",
+      "parent": null,
+      "surfaces": [
+        {
+          "text": "従業員個人のアドレスに転送",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）"
+        },
+        {
+          "text": "従業員個人のアドレスに送信",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "status": "approved",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_status": "provisional",
+        "definition_basis": [
+          {
+            "quote": "従業員個人のアドレスに転送",
+            "basis": "verbatim"
+          },
+          {
+            "quote": "社用メールアドレスで受信したメール",
+            "basis": "verbatim",
+            "note": "「電子メールなどで」の出どころ"
+          }
+        ],
+        "definition_beyond_clause": [
+          "データ（この条文の語は「メール」。次の条文(2.3.3 送信)に「データ」がある）",
+          "宛先（条文の語は「従業員個人のアドレス」）"
+        ]
+      }
+    },
+    {
+      "name": "データ取り出し",
+      "definition": "データをサーバーなどから取り出し、または書き出すこと",
+      "parent": null,
+      "surfaces": [
+        {
+          "text": "メールの取り出し及びエクスポート",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 7.3 電子メールの利用（箇条書き・クラウド型メールの利用）"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "status": "approved",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 7.3 電子メールの利用（箇条書き・クラウド型メールの利用）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_status": "provisional",
+        "definition_basis": [
+          {
+            "quote": "メールサーバーからのメールの取り出し及びエクスポート",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_beyond_clause": [
+          "データ（条文の語は「メール」）",
+          "書き出す（条文の語は「エクスポート」。言い換えである）"
+        ]
+      }
+    },
+    {
+      "name": "就業",
+      "definition": "労働者が自ら業務に就くこと",
+      "parent": null,
+      "surfaces": [
+        {
+          "text": "就業",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第11条（遵守事項）第6号"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "status": "approved",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省「モデル就業規則」解説版 第11条（遵守事項）第6号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_status": "provisional",
+        "definition_basis": [
+          {
+            "quote": "就業",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_beyond_clause": [
+          "労働者（条文に主語の語は無い。就業規則の遵守事項なので従業員が主語）",
+          "自ら業務に就く（「就業」の言い換え）"
+        ]
+      }
+    },
+    {
+      "name": "放置",
+      "definition": "情報や物を、管理されない状態で置いたままにすること",
+      "parent": null,
+      "surfaces": [
+        {
+          "text": "原稿、印刷物を放置",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）"
+        },
+        {
+          "text": "情報資産の放置",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 1.2 セキュリティ領域の設定（レベル1領域の表・制限事項）"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "status": "approved",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_status": "provisional",
+        "definition_basis": [
+          {
+            "quote": "原稿、印刷物を放置",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_beyond_clause": [
+          "情報や物（条文の語は「原稿、印刷物」）",
+          "管理されない状態で置いたままにする（「放置」の言い換え）"
+        ]
+      }
+    },
+    {
+      "name": "立入り",
+      "definition": "区域や場所に入ること",
+      "parent": null,
+      "surfaces": [
+        {
+          "text": "区域には立ち入ら",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第6号"
+        },
+        {
+          "text": "喫煙可能な場所には立ち入ら",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第4号"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "status": "approved",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第6号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_status": "provisional",
+        "definition_basis": [
+          {
+            "quote": "区域には立ち入ら",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_beyond_clause": [
+          "場所（この条文の語は「区域」。組のもう一方(第58条③④)に「場所」がある）",
+          "入る（条文の語は「立ち入る」）"
+        ]
+      }
+    }
+  ]
+}
