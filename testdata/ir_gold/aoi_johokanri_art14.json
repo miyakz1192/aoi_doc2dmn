@@ -233,6 +233,22 @@
         "reason_code": "unknown_fact_value"
       },
       "note": "「未照合」は、当てはめる側が照合できなかったことを表す値なので、知らない値として人に回る(D54。この条文は比較型の fact だけを使うので「その他」は存在しない)"
+    },
+    {
+      "name": "生年月日・連絡先は一致しているが、営業秘密を許可のない相手に口頭で伝える → 継承した判定で禁止",
+      "kind": "親の Action(情報提供)の判定を継承して合成する(D74・D75)",
+      "composition": true,
+      "facts": {
+        "birth_match": "一致",
+        "phone_match": "一致",
+        "provided_information": "営業秘密として管理する情報",
+        "recipient_authorization": "許可なし"
+      },
+      "expected": {
+        "decision": "禁止",
+        "reason_code": "trade_secret_to_unauthorized_recipient"
+      },
+      "note": "口頭伝達の判定は「許可」(本人確認が取れている)。親の営業秘密提供可否判定が「禁止」なので、最も厳しい結論を採って禁止になる。親の判定の事実(provided_information・recipient_authorization)がこの行の required_facts に入っていなければ、ここで評価できない(D75)"
     }
   ],
   "review": {
@@ -325,6 +341,15 @@
         "approved_by": "Kazuhiro",
         "at": "2026-11-06",
         "note": "規範の様相(「してはならない」)を surface から外した。決定表・事実・シナリオは変えていない"
+      },
+      {
+        "change": "composition_scenario_added",
+        "fields": [
+          "scenarios"
+        ],
+        "reason": "D74・D75(親の Action の判定の継承と合成)を評価で確かめるため。IR の本体は変えていない",
+        "approved_by": "Kazuhiro",
+        "at": "2026-11-08"
       }
     ]
   }

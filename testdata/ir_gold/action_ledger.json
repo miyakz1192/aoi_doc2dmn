@@ -1,0 +1,95 @@
+{
+  "_meta": {
+    "note": "正解IR 5件の評価(run_ir_gold)で使う Action 台帳の階層(第31回 HANDOFF 2章 タスクA2・前段設計書3.4節)。初期登録の登録簿(registry/registry.json)の action_ledger にこの一覧をマージしてから manifest の順に通す。registry/ には反映しない(promotion は人のレビューを経た別操作。U8)。",
+    "why_separate_file": "manifest.json は正解IR の適用順(D43)を決めるファイルで、台帳は語彙そのものである。同じファイルに混ぜると、順序を直したいときと階層を直したいときの差分が同じ場所に出る。評価のための台帳なので registry/ にも置かない。",
+    "hierarchy_approved_by": "Kazuhiro",
+    "hierarchy_approved_at": "2026-11-08",
+    "hierarchy_basis": "2026-11-08 の案X(Action の階層＋禁止の継承)。段(kind)と親(parent)は人が承認するものなので name_status=approved として記録する(D60・D73)。定義は Claude の案なので definition_status=provisional のまま(P18)。",
+    "definitions_from": "第31回 HANDOFF 4.1節(前段設計書 P16・4.6節に従って書き直した定義)"
+  },
+  "entries": [
+    {
+      "name": "情報提供",
+      "definition": "手段を問わず、情報を他の組織や人に渡すこと",
+      "kind": "abstract",
+      "parent": null,
+      "excludes": [],
+      "actors": ["あおい"],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "note": "人的対策-2(営業秘密の提供の禁止)の Action。抽象的な段なので、ルーティング表に自分の行は作らず、子の具体的な行為の行に継承される(D76)"
+    },
+    {
+      "name": "外部送信",
+      "definition": "あおいが、患者に関する情報を、患者や代理人に電子的に送ること",
+      "kind": "concrete",
+      "parent": "情報提供",
+      "excludes": [],
+      "actors": ["あおい"],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "note": "初期登録の登録簿にある Action。親は評価の中で付く(初期登録では None。タスクA2)"
+    },
+    {
+      "name": "口頭伝達",
+      "definition": "情報を、声で(電話や対面で)相手に伝えること",
+      "kind": "concrete",
+      "parent": "情報提供",
+      "excludes": [],
+      "actors": ["あおい"],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "note": "第14条の Action"
+    },
+    {
+      "name": "データ送信",
+      "definition": "データを、電子メールなどで宛先に電子的に送ること(転送を含む)",
+      "kind": "concrete",
+      "parent": "情報提供",
+      "excludes": [],
+      "actors": ["あおい"],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "note": "正解IR 5件には出てこないが、前段設計書3.4節が情報提供の子として挙げているので台帳に入れる。対応する判定が無いので、D76 で作り直す行も無い"
+    },
+    {
+      "name": "特権操作",
+      "definition": "特権/管理者権限で情報システムを操作すること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "actors": ["あおい"],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "note": "ゴールデンパスの Action。粒度は PU1 として未決"
+    },
+    {
+      "name": "施設物品使用",
+      "definition": "会社の施設や物品を使うこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "actors": ["あおい"],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro"
+    },
+    {
+      "name": "労働指示",
+      "definition": "使用者が、労働者を働かせること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "actors": ["あおい"],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "note": "主体は使用者。労働者が自ら働く「就業」とは別(6.4節)"
+    }
+  ]
+}

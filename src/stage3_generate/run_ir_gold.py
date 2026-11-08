@@ -43,6 +43,24 @@ evidence の各項目は `basis` を持つ。
 `possible_values`(「その他」を含む)に無ければ、DMN を呼ばずに `decision = escalate` に
 なる。正解IR のシナリオは、この挙動も期待値として持つ。
 
+## Action 台帳の階層(v1.9 の D73・D76。第31回で追加)
+
+`manifest.json` と並べて `testdata/ir_gold/action_ledger.json` に、評価で使う Action の
+段(concrete / abstract)と親を置く。初期登録の登録簿の `action_ledger` にこれをマージして
+から manifest の順に通す(`registry/` には反映しない)。
+
+抽象的な Action(情報提供)を target にした IR は、ルーティング表に自分の行を作らず、
+子孫の具体的な行為の行を作り直す(D76)。子の行には `inherited_decisions`(祖先の Action の
+判定)が入り、`required_facts` に継承する判定の事実も加わる(D75)。
+
+## 継承した判定の合成を確かめるシナリオ(D74・D75)
+
+シナリオに `"composition": true` を書くと、そのルートを `scenario_eval.evaluate_route`
+で評価する。自分の判定と継承する判定の両方を評価し、継承側からは禁止・条件付き許可だけを
+取り入れて、最も厳しい結論を採る。`inherited_decisions` があるルートを持つ正解IR には、
+この種のシナリオを1件以上要求する(継承が効いていることを、生成物の形だけでなく評価でも
+確かめるため)。
+
 ## DMN ファイルの持ち回り
 
 既存モデルに行を足す正解IR があるため、DMN ファイルも登録簿と同じように持ち回る。
@@ -72,7 +90,7 @@ from .ir_schema import (
     has_other_value,
 )
 from .registry import Registry, dmn_path
-from .scenario_eval import evaluate_scenario
+from .scenario_eval import evaluate_route, evaluate_scenario
 from .wiring_generator import (
     SchemaWiringError,
     existing_facts_used_by_ir,
@@ -80,6 +98,8 @@ from .wiring_generator import (
 )
 
 GOLD_DIR_DEFAULT = "testdata/ir_gold"
+# 評価で使う Action 台帳の階層(D73・タスクA2)。manifest と並べて置く
+ACTION_LEDGER_FILE = "action_ledger.json"
 REGISTRY_PATH_DEFAULT = "registry/registry.json"
 DMN_DIR_DEFAULT = "registry/dmn"
 
@@ -118,6 +138,43 @@ class GoldResult:
 def load_manifest(gold_dir: str | Path) -> list[dict]:
     with (Path(gold_dir) / "manifest.json").open(encoding="utf-8") as f:
         return json.load(f)["order"]
+
+
+def load_action_ledger(gold_dir: str | Path) -> list[dict]:
+    """評価で使う Action 台帳の階層を読む(D73・タスクA2)。無ければ空。"""
+    path = Path(gold_dir) / ACTION_LEDGER_FILE
+    if not path.exists():
+        return []
+    with path.open(encoding="utf-8") as f:
+        return json.load(f)["entries"]
+
+
+def merge_action_ledger(registry: Registry, entries: list[dict]) -> Registry:
+    """初期登録の台帳に、評価用の段・親をマージした登録簿を返す(タスクA2)。
+
+    すでにある Action(初期登録の外部送信)は、段・親・承認の状態だけを上書きする。
+    定義は初期登録の側を正とする(同じ文を2か所に持たないため。`_meta` に出どころ)。
+    """
+    merged = registry.copy()
+    for entry in entries:
+        payload = {k: v for k, v in entry.items() if k != "note"}
+        found = merged.find_action(payload["name"])
+        if found is None:
+            merged.action_ledger.append(
+                {
+                    **payload,
+                    "surfaces": [],
+                    "provenance": {
+                        "origin": "ir_gold/action_ledger.json",
+                        "registered_by": "run_ir_gold(評価用の台帳。タスクA2)",
+                    },
+                }
+            )
+            continue
+        for key in ("kind", "parent", "excludes", "name_status", "approved_by"):
+            if key in payload:
+                found[key] = payload[key]
+    return merged
 
 
 def _check_envelope(gold: dict, ir: ClauseIR, *, passthrough_facts: list[str]) -> list[str]:
@@ -411,23 +468,43 @@ def run_one(
             "actor": r["actor"],
             "action": r["action"],
             "decision_id": r["decision_id"],
+            "inherited_decisions": [d["decision_id"] for d in r["inherited_decisions"]],
             "required_facts": list(r["required_facts"]),
         }
         for r in bundle.routing_table["routes"]
     ]
+    # D75: 継承する判定があるルートには、合成を確かめるシナリオを1件以上要求する
+    if any(r["inherited_decisions"] for r in bundle.routing_table["routes"]) and not any(
+        s.get("composition") for s in gold.get("scenarios", [])
+    ):
+        result.problems.append(
+            "継承する判定(inherited_decisions)があるルートを持つのに、"
+            '`"composition": true` のシナリオがありません(D74・D75)'
+        )
 
     # 生成した DMN を持ち回り用のディレクトリに書き戻してから評価する
     target = dmn_path(ir.target.dmn_model, dmn_dir)
     target.write_text(bundle.dmn_xml, encoding="utf-8")
     model = DmnModel(str(target))
+    model_of = _model_loader(dmn_dir)
     scenarios = gold.get("scenarios", [])
     result.scenarios_total = len(scenarios)
     for scenario in scenarios:
         decision_id = scenario.get("decision_id") or ir.target.entry_decision_id
         try:
-            actual = evaluate_scenario(
-                model, decision_id, scenario["facts"], bindings=bundle.bindings
-            )
+            if scenario.get("composition"):
+                # D74・D75: ルーティング表の1行を、継承する判定も含めて評価する
+                route = _route_for(bundle.routing_table["routes"], ir, scenario)
+                actual = evaluate_route(
+                    route,
+                    scenario["facts"],
+                    model_of=model_of,
+                    bindings=bundle.bindings,
+                )
+            else:
+                actual = evaluate_scenario(
+                    model, decision_id, scenario["facts"], bindings=bundle.bindings
+                )
         except Exception as exc:  # noqa: BLE001 - 評価の失敗も報告に含める
             result.problems.append(f"シナリオ {scenario['name']!r} の評価が失敗: {exc}")
             continue
@@ -449,6 +526,39 @@ def run_one(
     return result, Registry.from_json(bundle.registry)
 
 
+def _model_loader(dmn_dir: Path):
+    """DMN モデル名から評価器を返す呼び出し可能オブジェクト(合成の評価用。D75)。
+
+    継承する判定は別の DMN モデルにあるのが普通なので(例: あおいの外部送信は
+    aoi_transmission)、持ち回り用のディレクトリから名前で読む。同じモデルは1回だけ
+    読み、キャッシュする。
+    """
+    cache: dict[str, DmnModel] = {}
+
+    def load(dmn_model: str) -> DmnModel:
+        if dmn_model not in cache:
+            cache[dmn_model] = DmnModel(str(dmn_path(dmn_model, dmn_dir)))
+        return cache[dmn_model]
+
+    return load
+
+
+def _route_for(routes: list[dict], ir: ClauseIR, scenario: dict) -> dict:
+    """合成のシナリオが指すルーティング表の行を選ぶ。
+
+    シナリオに `route_action` があればその Action の行、なければこの IR の Action の
+    行、それも無ければ先頭の行(抽象的な Action の IR では自分の行が無いので、
+    D76 で作り直した子孫の行が並ぶ)。
+    """
+    wanted = scenario.get("route_action") or ir.action.normalized
+    for route in routes:
+        if route["action"] == wanted:
+            return route
+    if not routes:
+        raise AssertionError("ルーティング表に行がありません")
+    return routes[0]
+
+
 def _print_one(result: GoldResult) -> None:
     mark = "OK" if result.ok else "FAIL"
     print(f"[{mark}] {result.gold_id}")
@@ -462,6 +572,11 @@ def _print_one(result: GoldResult) -> None:
             f"       route: {route['actor']} × {route['action']} -> "
             f"{route['decision_id']} required_facts={route['required_facts']}"
         )
+        if route.get("inherited_decisions"):
+            print(
+                f"              inherited_decisions={route['inherited_decisions']}"
+                "(D75: 禁止・条件付き許可だけを取り入れ、最も厳しい結論を採る)"
+            )
     basis = result.evidence_basis
     print(
         f"       シナリオ {result.scenarios_ok}/{result.scenarios_total} 一致"
@@ -482,7 +597,9 @@ def run_all(
 ) -> list[GoldResult]:
     """manifest の順に全件を通す。登録簿と DMN は一時ディレクトリで持ち回る。"""
     gold_dir = Path(gold_dir)
-    registry = Registry.load(registry_path)
+    registry = merge_action_ledger(
+        Registry.load(registry_path), load_action_ledger(gold_dir)
+    )
     work = Path(tempfile.mkdtemp(prefix="ir_gold_"))
     work_dmn = work / "dmn"
     source_dmn = Path(dmn_dir)

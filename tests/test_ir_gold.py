@@ -55,11 +55,38 @@ def _gold_files() -> list[Path]:
     return [GOLD_DIR / entry["file"] for entry in load_manifest(GOLD_DIR)]
 
 
+# 正解IR ではないファイル(manifest と、評価で使う Action 台帳の階層。D73)
+NOT_GOLD_FILES = {"manifest.json", "action_ledger.json"}
+
+
 def test_manifest_lists_every_gold_file():
     """manifest に載っていない正解IR のファイルが取り残されていないこと。"""
     listed = {p.name for p in _gold_files()}
-    on_disk = {p.name for p in GOLD_DIR.glob("*.json") if p.name != "manifest.json"}
+    on_disk = {
+        p.name for p in GOLD_DIR.glob("*.json") if p.name not in NOT_GOLD_FILES
+    }
     assert listed == on_disk
+
+
+def test_action_ledger_declares_the_hierarchy_used_by_the_evaluation():
+    """評価で使う Action 台帳が、段と親と承認を持つこと(D73・タスクA2)。"""
+    from src.stage3_generate.run_ir_gold import load_action_ledger
+
+    entries = load_action_ledger(GOLD_DIR)
+    by_name = {e["name"]: e for e in entries}
+    assert by_name["情報提供"]["kind"] == "abstract"
+    for child in ("外部送信", "口頭伝達", "データ送信"):
+        assert by_name[child]["kind"] == "concrete"
+        assert by_name[child]["parent"] == "情報提供"
+    for entry in entries:
+        # 親子関係は人が承認する(D60)。定義は案のまま(P18)
+        assert entry["name_status"] == "approved"
+        assert entry["approved_by"] == "Kazuhiro"
+        assert entry["definition_status"] == "provisional"
+    # 正解IR が使う Action はすべて台帳にある
+    actions = {json.loads(p.read_text(encoding="utf-8"))["ir"]["action"]["normalized"]
+               for p in _gold_files()}
+    assert actions <= set(by_name)
 
 
 def test_golden_path_is_first():

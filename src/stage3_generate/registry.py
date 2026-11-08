@@ -22,6 +22,18 @@
 置いた(`src/stage3_frontstage/action_ledger.py` の docstring に理由)。項目の読み書きは
 `ActionLedger` が行い、この層は dict のまま保持する(層1〜3と同じ扱い)。
 
+### 2段の階層(v1.9 の D73・前段設計書 P14)
+
+各 Action は `kind`(concrete / abstract)と `parent` を持つ。実行時に要求されるのは
+具体的な行為(concrete)だけで、ルーティング表の行もそれについてだけ作る(D76)。
+抽象的な行為(abstract)は、手段を問わない行為で、子を通じてだけ効く。
+
+階層をたどるのは**この層の関数**(`action_ancestors`・`action_descendants`)である。
+配線ジェネレータ(後半)と前段の両方が同じ規則で親子をたどる必要があるため、
+`ActionLedger`(前段)もここに委譲する。Action と判定の対応は層1の `entry_points` に
+あり(抽象的な Action の判定もここに登録される。行を作らないだけ)、D75 の
+`inherited_decisions` はこの対応を使って解決する。
+
 ## 永続化の方針
 
 入力(永続台帳)は `registry/registry.json` に置き、リポジトリにコミットする。
@@ -49,6 +61,68 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
+
+
+# 前段設計書 P14・D73: Action 台帳の2段。実行時に要求されるのは concrete だけ。
+ACTION_CONCRETE = "concrete"
+ACTION_ABSTRACT = "abstract"
+
+
+def action_entry(ledger: list[dict], name: str) -> Optional[dict]:
+    """Action 台帳のエントリを名前で引く。"""
+    for entry in ledger:
+        if entry.get("name") == name:
+            return entry
+    return None
+
+
+def action_kind(ledger: list[dict], name: str) -> str:
+    """その Action の段(D73)。台帳に無い Action は concrete として扱う。
+
+    台帳に無い Action を abstract と見なすと、ルーティング表の行が静かに消える
+    (D76)。行が無いことは実行時に「判定が引けない」として現れるので、知らない
+    Action は具体的な行為として行を作る側に倒す。
+    """
+    entry = action_entry(ledger, name)
+    if entry is None:
+        return ACTION_CONCRETE
+    return str(entry.get("kind") or ACTION_CONCRETE)
+
+
+def action_ancestors(ledger: list[dict], name: str) -> list[str]:
+    """その Action の祖先を、近い順に返す(D73・D75)。
+
+    親子の環(取り違えや手の記入の誤り)があっても止まるよう、一度見た名前で打ち切る。
+    """
+    out: list[str] = []
+    seen = {name}
+    current = action_entry(ledger, name)
+    while current is not None:
+        parent = current.get("parent")
+        if not parent or parent in seen:
+            break
+        out.append(parent)
+        seen.add(parent)
+        current = action_entry(ledger, parent)
+    return out
+
+
+def action_descendants(ledger: list[dict], name: str) -> list[str]:
+    """その Action の子孫を、台帳の宣言順で返す(D76)。"""
+    out: list[str] = []
+    frontier = [name]
+    seen = {name}
+    while frontier:
+        nxt: list[str] = []
+        for entry in ledger:
+            parent = entry.get("parent")
+            child = entry.get("name")
+            if parent in frontier and child not in seen:
+                seen.add(child)
+                out.append(child)
+                nxt.append(child)
+        frontier = nxt
+    return out
 
 
 @dataclass
@@ -150,10 +224,55 @@ class Registry:
 
     def find_action(self, name: str) -> Optional[dict]:
         """Action 台帳のエントリを名前で引く(前段設計書3章)。"""
-        for entry in self.action_ledger:
-            if entry.get("name") == name:
-                return entry
-        return None
+        return action_entry(self.action_ledger, name)
+
+    def action_kind(self, name: str) -> str:
+        """その Action の段(concrete / abstract。D73)。"""
+        return action_kind(self.action_ledger, name)
+
+    def action_ancestors(self, name: str) -> list[str]:
+        """その Action の祖先(近い順。D75 の継承の対象)。"""
+        return action_ancestors(self.action_ledger, name)
+
+    def action_descendants(self, name: str) -> list[str]:
+        """その Action の子孫(宣言順。D76 で行を作り直す対象)。"""
+        return action_descendants(self.action_ledger, name)
+
+    def decisions_of_action(self, name: str) -> list[dict]:
+        """その Action を呼び口に持つ判定を層1から集める(D75)。
+
+        層1の `entry_points` が Action と判定の対応である。抽象的な Action の判定も
+        層1には登録される(ルーティング表に行を作らないだけ。D76)。
+        """
+        out: list[dict] = []
+        for entry in self.decision_tables:
+            for point in entry.get("entry_points", []):
+                if point.get("action") != name:
+                    continue
+                route = {
+                    "dmn_model": entry.get("dmn_model"),
+                    "decision_id": entry.get("decision_id"),
+                }
+                if route not in out:
+                    out.append(route)
+        return out
+
+    def entry_points_of_action(self, name: str) -> list[dict]:
+        """その Action の呼び口(actor・action と判定)を層1から集める(D76)。"""
+        out: list[dict] = []
+        for entry in self.decision_tables:
+            for point in entry.get("entry_points", []):
+                if point.get("action") != name:
+                    continue
+                out.append(
+                    {
+                        "actor": point.get("actor"),
+                        "action": point.get("action"),
+                        "dmn_model": entry.get("dmn_model"),
+                        "decision_id": entry.get("decision_id"),
+                    }
+                )
+        return out
 
     def find_fact(self, variable: str) -> Optional[dict]:
         """層3のエントリを fact 名で引く。"""

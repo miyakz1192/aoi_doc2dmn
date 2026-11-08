@@ -120,6 +120,7 @@ import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 from xml.etree import ElementTree as ET
+from typing import Optional
 
 from .ir_schema import (
     BOOTSTRAP_ONLY_PRIMITIVES,
@@ -136,7 +137,7 @@ from .ir_schema import (
     fact_def_from_json,
     has_other_value,
 )
-from .registry import Registry, dmn_path
+from .registry import ACTION_ABSTRACT, ACTION_CONCRETE, Registry, dmn_path
 
 DMN_NS = "https://www.omg.org/spec/DMN/20240513/MODEL/"
 DMNDI_NS = "https://www.omg.org/spec/DMN/20230324/DMNDI/"
@@ -455,33 +456,51 @@ def _changed_existing_tables(ir: ClauseIR, registry: Registry) -> list[dict]:
 
 
 def derive_routes(ir: ClauseIR, registry: Registry) -> list[dict]:
-    """作り直すルートを洗い出す(D16・設計書4.1「影響を受ける最終判定の洗い出し」)。
+    """作り直すルートを洗い出す(D16・D76・設計書4.1「影響を受ける最終判定の洗い出し」)。
 
-    1. IR の起点(`target.entry_decision_id`)のルートは必ず作る。actor・action は
-       IR のもの(`ir.actor` / `ir.action.normalized`)を使う
+    1. IR の起点(`target.entry_decision_id`)のルートを作る。actor・action は IR の
+       もの(`ir.actor` / `ir.action.normalized`)を使う。ただし **Action 台帳の段が
+       abstract なら自分の行は作らず**、子孫の具体的な行為の行を作り直す(D76)
     2. IR が変更した既存の表を起点に、層1の `depends_on_decisions` を逆にたどる
     3. 集めた判定のうち `entry_points` を持つもの(= 最終判定)のルートも作り直す。
        actor・action は層1の `entry_points` から引く
+    4. 各ルートに `inherited_decisions`(祖先の Action の判定)を付け、
+       `required_facts` は自分の判定と継承する判定の両方から求める(D75)
 
     中間判定は `entry_points` が空なので、2で集まっても3で除かれる。これは設計の
     とおりで、エラーにはしない(設計書4.5 層1「中間判定は空」)。
-
-    `required_facts` はルートごとに、その判定を起点として求める。
 
     `final.action = no_change`(D30)では、IR 自身のルートも既存の最終判定のルートで
     ある。そのため1で作ったルートと3で作り直すルートが同じになるが、actor・action・
     dmn_model・decision_id がすべて同じ行は1つにまとめるので、ルーティング表には
     1行だけ出る(設計書4.1)。C9条件8 が、IR の actor・action が起点の判定の
     `entry_points` にあることを確かめている。
+
+    各ルートには `origin` を付ける(どの規則で作られた行か)。D17 の「モデルをまたがない」
+    検査は、`descendant`(D76 で作り直す子孫の行)には当てない。子孫の具体的な行為は
+    別の DMN モデルにあるのが普通で(例: あおいの外部送信は aoi_transmission)、
+    ルーティング表の行を作り直すことはモデル間の import ではないからである。
     """
-    routes: list[dict] = [
-        {
-            "actor": ir.actor,
-            "action": ir.action.normalized,
-            "dmn_model": ir.target.dmn_model,
-            "decision_id": ir.target.entry_decision_id,
-        }
-    ]
+    routes: list[dict] = []
+    if registry.action_kind(ir.action.normalized) == ACTION_ABSTRACT:
+        # D76: 抽象的な Action は実行時に要求されないので、自分の行は作らない。
+        # 代わりに、子孫の具体的な行為の行を作り直す(それぞれの inherited_decisions・
+        # required_facts・バインディング設定が変わる)
+        for child in registry.action_descendants(ir.action.normalized):
+            if registry.action_kind(child) != ACTION_CONCRETE:
+                continue
+            for point in registry.entry_points_of_action(child):
+                routes.append(dict(point, origin="descendant"))
+    else:
+        routes.append(
+            {
+                "actor": ir.actor,
+                "action": ir.action.normalized,
+                "dmn_model": ir.target.dmn_model,
+                "decision_id": ir.target.entry_decision_id,
+                "origin": "target",
+            }
+        )
     changed = _changed_existing_tables(ir, registry)
     if changed:
         origins = {
@@ -494,6 +513,7 @@ def derive_routes(ir: ClauseIR, registry: Registry) -> list[dict]:
                     "action": entry_point.get("action"),
                     "dmn_model": entry.get("dmn_model"),
                     "decision_id": entry.get("decision_id"),
+                    "origin": "dependent",
                 }
                 # 同じ actor・action・decision_id の行は1つにまとめる(設計書4.1)。
                 # no_change では IR 自身のルートがここで再び出てくる(D30)
@@ -506,16 +526,54 @@ def derive_routes(ir: ClauseIR, registry: Registry) -> list[dict]:
                     routes.append(route)
 
     for route in routes:
-        if route["dmn_model"] != ir.target.dmn_model:
+        if route["origin"] != "descendant" and route["dmn_model"] != ir.target.dmn_model:
             raise SchemaWiringError(
                 f"D17違反: 作り直す最終判定 {route['decision_id']!r} は DMN モデル "
                 f"{route['dmn_model']!r} にありますが、この IR の target.dmn_model は "
                 f"{ir.target.dmn_model!r} です(モデル間 import は未対応。U9)。"
             )
-        route["required_facts"] = derive_required_facts(
+        # D75: 祖先の Action の判定(継承する判定)。層1の entry_points で解決する
+        inherited: list[dict] = []
+        for ancestor in registry.action_ancestors(route["action"]):
+            for decision in _decisions_of_action(ir, registry, ancestor):
+                if decision not in inherited:
+                    inherited.append(decision)
+        route["inherited_decisions"] = inherited
+        # D75: required_facts は自分の判定と継承する判定の両方から集める。
+        # 継承する判定の事実を集めなければ、実行時にその判定を評価できない
+        facts = derive_required_facts(
             ir, registry, entry_decision_id=route["decision_id"]
         )
+        for decision in inherited:
+            for variable in derive_required_facts(
+                ir, registry, entry_decision_id=decision["decision_id"]
+            ):
+                if variable not in facts:
+                    facts.append(variable)
+        route["required_facts"] = facts
     return routes
+
+
+def _decisions_of_action(ir: ClauseIR, registry: Registry, action: str) -> list[dict]:
+    """その Action の判定(dmn_model・decision_id)を集める(D75)。
+
+    登録簿の層1の `entry_points` が Action と判定の対応である。ただし、いま生成して
+    いる IR の判定はまだ登録簿に入っていない(マージは `_build_updated_registry`)。
+    抽象的な Action の IR を通すときは、その IR 自身が祖先の判定なので、IR の
+    `target` も見る必要がある。
+    """
+    out: list[dict] = []
+    if ir.action.normalized == action:
+        out.append(
+            {
+                "dmn_model": ir.target.dmn_model,
+                "decision_id": ir.target.entry_decision_id,
+            }
+        )
+    for decision in registry.decisions_of_action(action):
+        if decision not in out:
+            out.append(decision)
+    return out
 
 
 # --------------------------------------------------------------------------
@@ -1479,18 +1537,33 @@ def _check_c7_target_exists(ir: ClauseIR, dmn_xml: str, updated: Registry) -> No
         )
 
 
-def _check_c8_routing_matches_bindings(routing_table: dict, bindings: dict) -> None:
+def _check_c8_routing_matches_bindings(
+    routing_table: dict, bindings: dict, *, extra_facts: Optional[set[str]] = None
+) -> None:
     """C8: ルーティング表の required_facts とバインディング設定の fact 集合が一致する。
 
     どちらも同じ required_facts から導出しているため構造的に保証されるが、将来の
     リファクタで片方だけ変わった場合に気付けるよう明示的に確認する。
+
+    `extra_facts` は、行を1つも作らない IR(抽象的な Action・D76)の自分の判定の
+    事実である。ルーティング表には出ないがバインディング設定には載るので、この分だけ
+    バインディング設定が多いことを許す。**ルートの事実がバインディング設定から
+    漏れること**(D75 の継承する判定の事実の漏れ)は、どちらの場合も失敗にする。
     """
     routed = {f for route in routing_table.get("routes", []) for f in route["required_facts"]}
     bound = {f["variable"] for f in bindings.get("facts", [])}
-    if routed != bound:
+    missing = routed - bound
+    if missing:
         raise SchemaWiringError(
-            f"C8検証失敗: ルーティング表の required_facts {sorted(routed)} と"
-            f"バインディング設定の fact {sorted(bound)} が一致しません。"
+            f"C8検証失敗: ルーティング表の required_facts {sorted(missing)} が"
+            f"バインディング設定にありません(バインディング設定の fact: "
+            f"{sorted(bound)})。"
+        )
+    unrouted = bound - routed - set(extra_facts or set())
+    if unrouted:
+        raise SchemaWiringError(
+            f"C8検証失敗: バインディング設定の fact {sorted(unrouted)} が"
+            f"どのルートの required_facts にもありません。"
         )
 
 
@@ -1922,7 +1995,11 @@ def _build_routing_table(routes: list[dict]) -> dict:
     """ルーティング表(設計書4.4)。
 
     v1 の `actor_action` の入れ子と `input_columns` は廃止し、actor・action・
-    dmn_model・decision_id・required_facts のフラットな1行にする(D8)。
+    dmn_model・decision_id・inherited_decisions・required_facts のフラットな1行に
+    する(D8・D75)。`inherited_decisions` は祖先の Action の判定で、実行時はこれらも
+    評価して、禁止・条件付き許可だけを取り入れ、最も厳しい結論を採る(D74・D75。
+    合成の規則は `scenario_eval.compose_decisions`)。`origin` は生成の内訳なので
+    出力には出さない(行の意味は actor・action で決まる)。
 
     D16 で複数の最終判定を作り直す場合も、**1つのファイルに複数の行**として出す
     (ファイルは分けない)。ルーティング表は「actor×action から判定を引く1枚の表」
@@ -1936,6 +2013,9 @@ def _build_routing_table(routes: list[dict]) -> dict:
                 "action": route["action"],
                 "dmn_model": route["dmn_model"],
                 "decision_id": route["decision_id"],
+                "inherited_decisions": [
+                    dict(d) for d in route.get("inherited_decisions", [])
+                ],
                 "required_facts": list(route["required_facts"]),
             }
             for route in routes
@@ -2159,7 +2239,7 @@ def generate_wiring_bundle(
     _check_c2_new_facts_used(ir)
     _check_d17_same_dmn_model(ir, registry)
 
-    # --- 作り直すルートと required_facts の導出(設計書4.1・D16) ---
+    # --- 作り直すルートと required_facts の導出(設計書4.1・D16・D75・D76) ---
     routes = derive_routes(ir, registry)
     # バインディング設定は全ルートの和集合(設計書4.3)。順序は起点のルートから
     # 現れた順にして決定的にする
@@ -2168,6 +2248,18 @@ def generate_wiring_bundle(
         for variable in route["required_facts"]:
             if variable not in required_facts:
                 required_facts.append(variable)
+    # D76: 抽象的な Action の IR は自分の行を作らない。子孫の行がまだ1つも無い場合
+    # (子の具体的な行為の条文がこれから来る場合)、この IR の事実がバインディング設定
+    # から落ちてしまうので、自分の判定の required_facts も載せる。行は作らないので
+    # C8 ではこの差分を許す
+    own_only_facts: list[str] = []
+    if not any(route["origin"] == "target" for route in routes):
+        own_only_facts = [
+            variable
+            for variable in derive_required_facts(ir, registry)
+            if variable not in required_facts
+        ]
+        required_facts.extend(own_only_facts)
     fact_defs = _collect_fact_defs(ir, registry, required_facts)
     # C1 は作り直すすべてのルートの required_facts の和集合を見る(D26)。C6 が
     # IR だけで判定できるようになった(D25)ので、IR が言及しない中間判定の fact の
@@ -2195,7 +2287,9 @@ def generate_wiring_bundle(
 
     # --- 生成後の検証(成果物を突合するもの) ---
     _check_c7_target_exists(ir, dmn_xml, updated)
-    _check_c8_routing_matches_bindings(routing_table, bindings)
+    _check_c8_routing_matches_bindings(
+        routing_table, bindings, extra_facts=set(own_only_facts)
+    )
 
     return WiringBundle(
         dmn_xml=dmn_xml,

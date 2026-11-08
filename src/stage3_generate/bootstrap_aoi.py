@@ -58,7 +58,7 @@ from pathlib import Path
 from typing import Optional
 
 from .ir_schema import derived_possible_values, effective_possible_values
-from .registry import Registry, dmn_path
+from .registry import ACTION_CONCRETE, Registry, dmn_path
 from .wiring_generator import (
     DMNDI_NS,
     SchemaWiringError,
@@ -129,14 +129,23 @@ ENTRY_POINTS_SOURCE = (
 # 人が承認するまで provisional とする(PU4・D53)。
 #   - registry/registry.json 層1 dt_transmission の entry_points
 #   - registry/dmn/aoi_transmission.dmn 送信可否判定の行の reason_code「外部送信対象外」
+#
+# 段(kind)と親(parent)は v1.9 の D73 で足した欄である。外部送信は、あおいが実行時に
+# 要求する具体的な行為なので concrete。親(情報提供)は、正解 IR の評価の中で台帳に
+# 入るので、初期登録では None のままにする(第31回 HANDOFF 2章 タスクA2)。
+# 承認の状態は名前と定義で分ける(P18)。どちらも人のレビューを経ていないので
+# provisional である。
 ACTION_LEDGER_SEED: list[dict] = [
     {
         "name": "外部送信",
-        "definition": "患者に関する情報を、患者・代理人などの外部に送ること",
+        "definition": "あおいが、患者に関する情報を、患者や代理人に電子的に送ること",
+        "kind": ACTION_CONCRETE,
         "parent": None,
+        "excludes": [],
         "surfaces": [],
         "actors": ["あおい"],
-        "status": "provisional",
+        "name_status": "provisional",
+        "definition_status": "provisional",
         "approved_by": None,
     }
 ]
@@ -144,7 +153,8 @@ ACTION_LEDGER_SOURCE = (
     "定義の出典: registry/dmn/aoi_transmission.dmn 送信可否判定の reason_code"
     "「外部送信対象外」と、層1 dt_transmission の entry_points"
     "(あおい × 外部送信)。定義の文そのものは DMN にも登録簿にも無いので "
-    "provisional(PU4)"
+    "definition_status=provisional(PU4)。定義の文は第31回 HANDOFF 4.1節の"
+    "書き直し(P16・4.6節。様相と条件を入れない)に合わせた"
 )
 
 # 層3の sources(一致プリミティブの引数の取得元)は DMN XML に書かれていない。

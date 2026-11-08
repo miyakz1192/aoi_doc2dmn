@@ -260,6 +260,28 @@
         "reason_code": "unknown_fact_value"
       },
       "note": "D54: 知らない値は、当てはめる側が判断できなかったことを表す値にする。条文の値に当たらないと判断できたものは「その他」(既定の行)に落ちる"
+    },
+    {
+      "name": "あおいが外部送信を要求 → 送信可否判定は許可だが、継承した営業秘密提供可否判定で禁止",
+      "kind": "抽象的な Action の禁止が子の具体的な行為に及ぶ(D74・D76)",
+      "composition": true,
+      "route_action": "外部送信",
+      "facts": {
+        "name_match": "一致",
+        "birth_match": "一致",
+        "phone_match": "一致",
+        "has_medical": "含まない",
+        "has_pii": "含む",
+        "identifiable": "可能",
+        "contact_consent": "同意",
+        "provided_information": "営業秘密として管理する情報",
+        "recipient_authorization": "許可なし"
+      },
+      "expected": {
+        "decision": "禁止",
+        "reason_code": "trade_secret_to_unauthorized_recipient"
+      },
+      "note": "この条文の Action「情報提供」は抽象的な段なので、ルーティング表に自分の行は作られない(D76)。子の「外部送信」の行に inherited_decisions として入り、あおいが外部送信を要求したときに効く。送信可否判定だけなら「許可」(本人確認充足)になる"
     }
   ],
   "review": {
@@ -346,6 +368,15 @@
         "approved_by": "Kazuhiro",
         "at": "2026-11-06",
         "note": "規範の様相(「してはならない」)を surface から外した。決定表・事実・シナリオは変えていない"
+      },
+      {
+        "change": "composition_scenario_added",
+        "fields": [
+          "scenarios"
+        ],
+        "reason": "D76(抽象的な Action は自分の行を作らず、子孫の行に継承される)を評価で確かめるため。IR の本体は変えていない",
+        "approved_by": "Kazuhiro",
+        "at": "2026-11-08"
       }
     ]
   }

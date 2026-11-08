@@ -98,6 +98,19 @@ v1(コミット 9e66776)との差分は同書 付録A。
   導いた値と一致するかを確かめる(`origin="registry"`)。v1.7 までは読み捨てていたので、
   IR を経由して層3に入った値のずれに気付けなかった
 
+## v1.9 で変わった点(前段設計書 v0.4 の4.5節)
+
+`ReviewGates` の前段のゲートを入れ替えた。IR の型そのもの(`ActionRef` など)は
+変わっていない。
+
+- **廃止**: `action_mapping_unstable`(k=1 にしたため。P7)
+- **追加**: `action_surface_ambiguous`(候補が2つ。P17)・`action_verb_mismatch`
+  (中心の動詞が過去の語句に無い。P15)・`action_abstract_selected`(抽象的な段を
+  選んだ。P15)・`action_name_rule`(名前・定義に様相の語がある。P16)
+- **条件の変更**: `action_surface_unverified` は「様相を削った語句が条文にない」
+  だけで立つ。様相はプログラムが削るので(P4)、様相が残っていること自体は
+  ゲートにしない(評価の surface の3条件では引き続き数える)
+
 ## 引き継ぐ原則(設計書1.4)
 
 - 4点セットの同時生成、複合 fact 禁止、FIRST と行の順序、来歴の表し方、Action 正規化
@@ -723,12 +736,19 @@ class ReviewGates:
     # 新しい一致プリミティブが必要な場合(atomic_fact.covered=False)に立てる(D20)。
     # 新規プリミティブの追加は③aの範囲外なので、必ず人間レビューに回す。
     new_primitive_required: bool = False
-    # ここから下の3つは前段の Action 正規化が立てる(前段設計書4.5節)。後半の
+    # ここから下の5つは前段の Action 正規化が立てる(前段設計書4.5節 v0.4)。後半の
     # 配線ジェネレータは立てないので、既定は False のまま。
-    # 抜き出した surface が条文にない、または規範の様相の語を含む(P4)。
+    # 様相を削った surface が条文にない(P4)。様相そのものはプログラムが削るので、
+    # 様相が残っていることではゲートを立てない(v0.4 で条件が変わった)。
     action_surface_unverified: bool = False
-    # k 回の実行で選んだ Action が一致しない(P7)。確信度の自己申告は使わない。
-    action_mapping_unstable: bool = False
+    # 行為の語句の候補が2つ出た(P17)。どちらが規制の対象かを人が見る。
+    action_surface_ambiguous: bool = False
+    # 既存に寄せたが、中心の動詞が選んだ Action の過去の語句の動詞にない(P15)。
+    action_verb_mismatch: bool = False
+    # 抽象的な段の Action を選んだ(P15)。禁止が子すべてに及ぶので人が段を確かめる。
+    action_abstract_selected: bool = False
+    # 新規候補の名前・定義に規範の様相の語がある(P16)。
+    action_name_rule: bool = False
     # 新規候補の名前・定義が既存の Action に近い(P8。取りこぼしを人が拾う)。
     action_possible_duplicate: bool = False
 
@@ -746,7 +766,10 @@ class ReviewGates:
             "new_fact_unapproved",
             "new_primitive_required",
             "action_surface_unverified",
-            "action_mapping_unstable",
+            "action_surface_ambiguous",
+            "action_verb_mismatch",
+            "action_abstract_selected",
+            "action_name_rule",
             "action_possible_duplicate",
         ]
         return [n for n in names if getattr(self, n)]
@@ -767,9 +790,17 @@ class ReviewGates:
         if self.new_primitive_required:
             out.append("新しい一致プリミティブが必要(③aの範囲外)")
         if self.action_surface_unverified:
-            out.append("抜き出した行為の語句が条文にない、または規範の様相を含む")
-        if self.action_mapping_unstable:
-            out.append("Action の選択が k 回の実行で一致しない")
+            out.append("様相を削った行為の語句が条文に逐語で実在しない")
+        if self.action_surface_ambiguous:
+            out.append("行為の語句の候補が2つ出た(どちらが規制の対象か)")
+        if self.action_verb_mismatch:
+            out.append(
+                "既存の Action に寄せたが、中心の動詞がその Action の過去の語句にない"
+            )
+        if self.action_abstract_selected:
+            out.append("抽象的な段の Action を選んだ(段は正しいか)")
+        if self.action_name_rule:
+            out.append("新規候補の名前・定義に規範の様相の語がある")
         if self.action_possible_duplicate:
             out.append("新規候補の Action が既存の Action に近い(既存に寄せるべきか)")
         return out

@@ -16,15 +16,35 @@
 
 ## 項目
 
-設計書3.1の8項目(name・definition・parent・surfaces・actors・status・approved_by・
-provenance)をそのまま持つ。定義の根拠の語句(PU4)は `provenance.definition_basis` に
-入れる(項目を増やさないため)。
+設計書3.1(v0.4)の項目をそのまま持つ。定義の根拠の語句は
+`provenance.definition_basis` に入れる(項目を増やさないため)。
+
+| 項目 | v0.4 での変更 |
+| --- | --- |
+| `kind`(concrete / abstract) | **新設**(P14・D73)。実行時に要求されるのは concrete だけ |
+| `parent` | 意味が変わった。親の禁止・条件付き許可は子に及ぶ(P19・D74) |
+| `excludes` | **新設**(P8・7.3節)。この Action に含まない別の Action の名前 |
+| `name_status`・`definition_status` | `status` を2つに分けた(P18) |
+| `surfaces` の各項目 | `core_verb`(中心の動詞)を持つ。動詞の一致の検査に使う(P15) |
+
+## 階層のたどり方
+
+親子をたどるのは `src/stage3_generate/registry.py` の `action_ancestors()` /
+`action_descendants()` である。後半の配線ジェネレータ(ルーティング表の継承。D75・D76)と
+前段(評価の分類。5.1節)が同じ規則でたどる必要があるため、こちらはそこに委譲する。
 """
 from __future__ import annotations
 
 import difflib
 from dataclasses import dataclass, field
 from typing import Optional
+
+from src.stage3_generate.registry import (
+    ACTION_ABSTRACT,
+    ACTION_CONCRETE,
+    action_ancestors,
+    action_descendants,
+)
 
 # 「該当なし」の選択(P5)。閉じた選択の中の1つの値として扱う。
 NO_MATCH = "該当なし"
@@ -81,25 +101,39 @@ def definition_overlap(a: str, b: str) -> float:
 
 @dataclass
 class ActionEntry:
-    """台帳の1件(設計書3.1)。"""
+    """台帳の1件(設計書3.1 v0.4)。"""
 
     name: str
     definition: str
+    kind: str = ACTION_CONCRETE
     parent: Optional[str] = None
+    excludes: list[str] = field(default_factory=list)
     surfaces: list[dict] = field(default_factory=list)
     actors: list[str] = field(default_factory=list)
-    status: str = "provisional"
+    name_status: str = "provisional"
+    definition_status: str = "provisional"
     approved_by: Optional[str] = None
     provenance: dict = field(default_factory=dict)
+
+    @property
+    def is_abstract(self) -> bool:
+        return self.kind == ACTION_ABSTRACT
+
+    def core_verbs(self) -> list[str]:
+        """過去の語句の中心の動詞(動詞の一致の検査に使う。P15)。"""
+        return [s["core_verb"] for s in self.surfaces if s.get("core_verb")]
 
     def to_json(self) -> dict:
         return {
             "name": self.name,
             "definition": self.definition,
+            "kind": self.kind,
             "parent": self.parent,
+            "excludes": list(self.excludes),
             "surfaces": [dict(s) for s in self.surfaces],
             "actors": list(self.actors),
-            "status": self.status,
+            "name_status": self.name_status,
+            "definition_status": self.definition_status,
             "approved_by": self.approved_by,
             "provenance": dict(self.provenance),
         }
@@ -109,10 +143,13 @@ class ActionEntry:
         return cls(
             name=payload["name"],
             definition=payload.get("definition", ""),
+            kind=payload.get("kind") or ACTION_CONCRETE,
             parent=payload.get("parent"),
+            excludes=list(payload.get("excludes", [])),
             surfaces=[dict(s) for s in payload.get("surfaces", [])],
             actors=list(payload.get("actors", [])),
-            status=payload.get("status", "provisional"),
+            name_status=payload.get("name_status", "provisional"),
+            definition_status=payload.get("definition_status", "provisional"),
             approved_by=payload.get("approved_by"),
             provenance=dict(payload.get("provenance", {})),
         )
@@ -179,21 +216,52 @@ class ActionLedger:
         self.entries.append(entry)
         return entry
 
-    def record_surface(self, name: str, surface: str, clause_ref: str) -> None:
+    def record_surface(
+        self, name: str, surface: str, clause_ref: str, core_verb: str = ""
+    ) -> None:
         """この Action に正規化された条文の語句を surfaces に足す(設計書3.1)。
 
-        LLM への例として渡すので、同じ語句は重ねない。
+        LLM への例として渡し、`core_verb` は動詞の一致の検査に使う(P15)。同じ語句は
+        重ねない。
         """
         entry = self.find(name)
         if entry is None:
             raise KeyError(name)
         if any(s.get("text") == surface for s in entry.surfaces):
             return
-        entry.surfaces.append({"text": surface, "clause_ref": clause_ref})
+        entry.surfaces.append(
+            {"text": surface, "clause_ref": clause_ref, "core_verb": core_verb}
+        )
 
     def approved(self) -> list[ActionEntry]:
-        """承認済みの Action だけ(実行時のルーティング表に載せるのはこれ。3.1節)。"""
-        return [e for e in self.entries if e.status == "approved"]
+        """名前が承認済みの Action だけ(実行時のルーティング表に載せる。3.1節)。"""
+        return [e for e in self.entries if e.name_status == "approved"]
+
+    # ---- 階層(P14・D73) ----
+
+    def ancestors(self, name: str) -> list[str]:
+        """祖先を近い順に返す(登録簿と同じ規則でたどる)。"""
+        return action_ancestors(self.to_json(), name)
+
+    def descendants(self, name: str) -> list[str]:
+        """子孫を宣言順に返す。"""
+        return action_descendants(self.to_json(), name)
+
+    def relation(self, a: str, b: str) -> str:
+        """`a` から見た `b` の関係。評価の分類に使う(5.1節)。
+
+        - `"same"`: 同じ Action
+        - `"descendant"`: `b` は `a` の子孫(抽象 → 具体の向き。適用漏れの判定に使う)
+        - `"ancestor"`: `b` は `a` の祖先(具体 → 抽象の向き。過剰適用)
+        - `"unrelated"`: 親子関係にない(誤統合)
+        """
+        if a == b:
+            return "same"
+        if b in self.descendants(a):
+            return "descendant"
+        if b in self.ancestors(a):
+            return "ancestor"
+        return "unrelated"
 
     # ---- P8: 近さの判定 ----
 
@@ -238,13 +306,28 @@ class ActionLedger:
     # ---- LLM へ渡す形 ----
 
     def prompt_block(self) -> str:
-        """プロンプトに入れる台帳の一覧(名前・定義・これまでの語句。P11)。"""
+        """プロンプトに入れる台帳の一覧(P11・P14)。
+
+        v0.4 では段(kind)・親(parent)・excludes も渡す。手順3は「動詞が手段を問わない
+        なら抽象的な段、手段が決まっているなら具体的な段」を判断するので、段が見えて
+        いなければ選べない。
+        """
         if not self.entries:
             return "（台帳は空です。既存の Action はありません）"
         lines = []
         for i, entry in enumerate(self.entries, 1):
-            examples = "、".join(s["text"] for s in entry.surfaces)
-            line = f"{i}. {entry.name}\n   定義: {entry.definition}"
+            kind = "抽象的な行為(手段を問わない)" if entry.is_abstract else "具体的な行為"
+            line = f"{i}. {entry.name}（{kind}）\n   定義: {entry.definition}"
+            if entry.parent:
+                line += f"\n   親(より抽象的な行為): {entry.parent}"
+            if entry.excludes:
+                line += f"\n   この Action に含まないもの: {'、'.join(entry.excludes)}"
+            examples = "、".join(
+                f"{s['text']}（中心の動詞: {s['core_verb']}）"
+                if s.get("core_verb")
+                else s["text"]
+                for s in entry.surfaces
+            )
             if examples:
                 line += f"\n   これまでにこの Action に正規化された条文の語句: {examples}"
             lines.append(line)

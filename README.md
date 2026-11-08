@@ -44,8 +44,9 @@ aoi_doc2dmn/
 │   │                             IPA情報セキュリティ関連規程等12件）
 │   ├── clauses/clauses_frontstage_v1.json # 前段の評価用の13件（ハード制約×宣言的。
 │   │                             #   ②の評価の分布を変えないため clauses_v1.json と分けた）
-│   ├── ir_gold/                 # 承認済みの正解IR（5件＋manifest.json。review.status=approved）
-│   ├── action_gold/             # Action 正規化の正解（18件＋台帳の出発点。P13）
+│   ├── ir_gold/                 # 承認済みの正解IR（5件＋manifest.json＋action_ledger.json
+│   │                             #   （評価で使うActionの段と親。D73）。review.status=approved）
+│   ├── action_gold/             # Action 正規化の正解（18件＋台帳の出発点。P13。v1とv2）
 │   ├── candidates/              # テストデータ拡張時の候補・レビュー記録（round3は37件・話題7件。
 │   │                             #   ②の分類器の参考値つき。正解ラベルは13件だけ付与）
 │   └── schema.md                # オラクルのスキーマ定義・カバレッジ表・①関連判定の基準
@@ -125,15 +126,31 @@ aoi_doc2dmn/
   factの値がプリミティブの定義から導いた値と一致するかを読み込み時に確かめる（D70）。
   `action.surface`は規範の様相（してはならない・しないこと・禁止する、「させない」の
   「ない」）を含めない（D71）。承認済みの正解IR 4件のsurfaceをこの規則で直した
+- v1.9 では、**Action台帳を2段にした**（D73。`kind` = concrete / abstract と`parent`）。
+  親のActionの判定の禁止・条件付き許可は子に及び、許可は及ばない（D74。U13の決着）。
+  ルーティング表の各行は祖先の判定を`inherited_decisions`に持ち、`required_facts`と
+  バインディング設定に継承する判定の事実も入る（D75）。抽象的なActionを target にした
+  IRは自分の行を作らず、子孫の具体的な行為の行を作り直す（D76）。合成の規則
+  （禁止＞条件付き許可＞許可）は`scenario_eval.compose_decisions`にあり、
+  `"composition": true`のシナリオが正解IRで確かめる
 - ③aの**前段**（条文 → IR）は`docs/design/aoi_doc2dmn_frontstage_design.md`（前段設計書
-  v0.3）で設計し、4つの要素（Action正規化 → 事実の抽出 → 行の構成 → レベル判定）に分けて
+  v0.4）で設計し、4つの要素（Action正規化 → 事実の抽出 → 行の構成 → レベル判定）に分けて
   1つずつ自動化する（P1）。**第1要素のAction正規化を`src/stage3_frontstage/`に実装済み**。
   残り3要素は未実装で、`golden_path.py`がゴールデンパス1件のIRを手で組み立てている
 - Action正規化は、Action台帳（`registry.json`の`action_ledger`。エージェントの職務記述書に
   当たる。P2・P3）の中から1つ選ぶか「該当なし」を選ぶ**閉じた選択**にする（P5）。
-  不確かさは確信度の自己申告ではなく、同じ入力をk=3回実行して選択が一致するかで測る
-  （P7。`action_mapping_unstable`）。抜き出した語句は条文の部分文字列か・様相の語を
-  含まないかをプログラムで確かめる（P4。`action_surface_unverified`）
+  台帳は2段（具体的な行為／抽象的な行為）で、条文は動詞の抽象度に合った段に寄せる（P14）
+- v0.4（第31回）で、正規化は**1回だけ実行する**（k=1。P7）。初回評価で、誤り7件が
+  すべてk=3回とも同じ答えだったため、自己一貫性を廃止した。代わりにプログラムで
+  観測できる検査を足した。
+  - 末尾の様相の語は**プログラムが削る**（P4。`modality.strip_modality`）。削った語句が
+    条文の部分文字列でなければ`action_surface_unverified`
+  - 行為の語句の候補が2つ出たら`action_surface_ambiguous`（P17）
+  - 既存に寄せたとき、語句の**中心の動詞**が、その Action の過去の語句の動詞に無ければ
+    `action_verb_mismatch`（P15）。抽象的な段を選んだら`action_abstract_selected`
+  - 新規候補の名前・定義に規範の様相があれば`action_name_rule`（P16）
+- 合格の条件は「**ゲートをすり抜けた重大な誤り（誤統合・適用漏れ）が0件**」（P9）。
+  14Bのローカルモデルに誤りを0件にさせるのではなく、疑わしいものを必ず人に回す
 
 ## 評価指標の見方
 
@@ -212,6 +229,11 @@ C1〜C12を通過すること・DMN評価シナリオが一致することを確
 次のIRの入力にするので、既存のfactや決定表を使う条文も確かめられる（D43）。
 `registry/`は書き換えない。
 
+Action台帳の段と親は`testdata/ir_gold/action_ledger.json`から読み、初期登録の登録簿に
+マージしてから始める（D73）。情報提供（抽象）を target にした人的対策-2 は自分の行を作らず、
+子の外部送信（あおい）の行に`inherited_decisions`として入る（D76）。`"composition": true`の
+シナリオが、継承した判定との合成（禁止＞条件付き許可＞許可）を確かめる（D74・D75）。
+
 ### Action 正規化の評価（前段の第1要素）
 
 ```bash
@@ -219,17 +241,17 @@ C1〜C12を通過すること・DMN評価シナリオが一致することを確
 .venv/bin/python3 -m src.stage3_frontstage.run_action_eval --use-oracle # Ollama不要。評価の筋だけ
 ```
 
-`testdata/action_gold/action_gold_v1.json`の18件（承認済みの正解IR 5件＋候補13件）を、
+`testdata/action_gold/action_gold_v2.json`の18件（承認済みの正解IR 5件＋候補13件）を、
 Action台帳を育てながら順に正規化して正解と比べる。台帳の出発点は初期登録の登録簿にある
 Action 1件（あおいの外部送信）だけで、1件を正規化したら**前段の出力ではなく正解の
 Action**を台帳に足してから次へ進む（教師あり。P13）。前段が1件誤ったとき、その誤りが後の
 条文の選択肢に持ち越されると後の誤りの原因が分からなくなるためである。
 
-測るのは、**誤った既存のActionへの寄せ（誤統合。0件が合格の条件。P9）**・取りこぼし・
-既存か新規かの正解率・surfaceの3条件・`action_mapping_unstable`が立った件数。結果は
+測るのは、誤りの4分類（**誤統合**・**適用漏れ**＝重大、過剰適用＝中、取りこぼし＝軽）と、
+**そのうちゲートが1つも立たなかった件数（すり抜け。0件が合格の条件。P9）**、
+ゲートの誤報、既存か新規かの正解率、surfaceの3条件である。結果は
 `out/action_eval/result.json`に出る（1件ごとに`partial.json`も書くので、途中で落ちても
-結果は残る）。LLM呼び出しは1件あたり6〜7回（k=3回×2呼び出し＋「該当なし」なら候補の案）で、
-1件あたり3〜10分（CPU実行。その時の負荷で3倍ほど変わる）。
+結果は残る）。LLM呼び出しは1件あたり2〜3回（k=1。抜き出し＋選択＋「該当なし」なら候補の案）。
 
 初回（2026年11月7日・qwen2.5:14b-instruct）の結果は`docs/eval/action_eval_20261107.json`に
 残してある。**誤統合6件で不合格**で、18件それぞれのTrace（k回ごとの抜き出し・選択・理由・
@@ -259,8 +281,11 @@ Ollamaは不要。6つのファイルに分かれている。
   シナリオがpassthroughのfactごとにあること（D63）、`registry/`を書き換えないこと、
   `action.surface`が条文の部分文字列で様相を含まないこと（D71）
 - `test_action_normalizer.py`：前段のAction正規化。**LLMは固定の応答を返す偽物に差し替える**
-  （逐語の確認・様相の検出・k回の多数決・4つのゲート・教師ありの台帳の更新・誤統合と
-  取りこぼしの集計）
+  （様相の削り落とし・逐語の確認・候補2つ・動詞の一致の検査・7つのゲート・名前と定義の
+  規則・教師ありの台帳の更新・誤りの4分類）
+- `test_action_hierarchy.py`：Action台帳の2段化と禁止の継承（D73〜D76）。抽象的なActionが
+  行を作らないこと、継承する判定の事実がrequired_factsに入ること、合成で継承側の許可が
+  無視されること
 
 元のDMNと第14条の条文本文は`tests/fixtures/`にコミットしてあるため（D42）、
 `reference/`が無い環境でも全件が動く（skipは0件）。

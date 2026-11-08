@@ -735,20 +735,23 @@
   "action_ledger": [
     {
       "name": "外部送信",
-      "definition": "患者に関する情報を、患者・代理人などの外部に送ること",
+      "definition": "あおいが、患者に関する情報を、患者や代理人に電子的に送ること",
+      "kind": "concrete",
       "parent": null,
+      "excludes": [],
       "surfaces": [],
       "actors": [
         "あおい"
       ],
-      "status": "provisional",
+      "name_status": "provisional",
+      "definition_status": "provisional",
       "approved_by": null,
       "provenance": {
         "origin": "bootstrap",
         "clause_ref": "あおいの既存DMN(条文由来ではない)",
         "registered_by": "bootstrap",
         "registered_at": "2026-10-23T00:00:00+00:00",
-        "note": "定義の出典: registry/dmn/aoi_transmission.dmn 送信可否判定の reason_code「外部送信対象外」と、層1 dt_transmission の entry_points(あおい × 外部送信)。定義の文そのものは DMN にも登録簿にも無いので provisional(PU4)"
+        "note": "定義の出典: registry/dmn/aoi_transmission.dmn 送信可否判定の reason_code「外部送信対象外」と、層1 dt_transmission の entry_points(あおい × 外部送信)。定義の文そのものは DMN にも登録簿にも無いので definition_status=provisional(PU4)。定義の文は第31回 HANDOFF 4.1節の書き直し(P16・4.6節。様相と条件を入れない)に合わせた"
       }
     }
   ]
