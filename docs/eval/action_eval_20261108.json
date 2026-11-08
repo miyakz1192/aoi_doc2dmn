@@ -1,0 +1,2349 @@
+{
+  "_meta": {
+    "gold": "testdata/action_gold/action_gold_v2.json",
+    "registry": "registry/registry.json",
+    "llm": "ollama qwen2.5:14b-instruct",
+    "k": 1,
+    "temperature": 0.0,
+    "note": "ゲートをすり抜けた重大な誤り(誤統合・適用漏れ)が0件なら合格(P9・5.3節 v0.4)。結果を見てプロンプトを直して再実行することはしない(第31回 HANDOFF 5章)"
+  },
+  "summary": {
+    "items": 18,
+    "slipped": 0,
+    "severe": 2,
+    "correct": 13,
+    "by_verdict": {
+      "correct": 13,
+      "mis_merge": 2,
+      "under_applied": 0,
+      "over_applied": 2,
+      "missed": 1
+    },
+    "is_new_correct": 13,
+    "existing_choice_total": 7,
+    "existing_choice_correct": 6,
+    "surface_ok": 16,
+    "surface_in_clause": 17,
+    "surface_no_modality": 18,
+    "surface_has_core_verb": 17,
+    "gates": {
+      "new_action_unapproved": 8,
+      "action_surface_unverified": 1,
+      "action_abstract_selected": 5,
+      "action_verb_mismatch": 7,
+      "action_possible_duplicate": 1
+    },
+    "false_alarm_items": 4,
+    "false_alarm_gates": {
+      "action_surface_unverified": 1,
+      "action_abstract_selected": 2,
+      "action_verb_mismatch": 3
+    },
+    "elapsed_seconds_total": 7458.1,
+    "elapsed_seconds_per_item": 414.3,
+    "llm_calls_total": 44,
+    "errors": 0
+  },
+  "errors": [],
+  "items": [
+    {
+      "order": 1,
+      "clause_id": "ipa_secguide_v4_6_7_1",
+      "group": "正解IR",
+      "expected": {
+        "surface": "特権/管理者権限で操作を行う",
+        "normalized": "特権操作",
+        "is_new": true,
+        "core_verb": "操作",
+        "kind": "concrete",
+        "parent": null
+      },
+      "actual": {
+        "surface": "特権/管理者権限で操作を行う",
+        "removed_modality": [],
+        "core_verb": "操作を行う",
+        "normalized": "特権操作",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "elapsed_seconds": 287.5,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "特権/管理者権限で操作を行う",
+              "surface": "特権/管理者権限で操作を行う",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "操作を行う"
+            }
+          ],
+          "surface": "特権/管理者権限で操作を行う",
+          "core_verb": "操作を行う",
+          "removed_modality": [],
+          "choice": "該当なし",
+          "reason": "条文の行為は操作を行うことを禁止しており、台帳にある具体的な行為や抽象的な行為と種類が異なります。",
+          "definition_part": "",
+          "considered": [
+            {
+              "name": "外部送信",
+              "why_not": "条文の行為は情報の操作を禁止しているため、情報の外部送信とは異なる。"
+            }
+          ]
+        },
+        "verb_check": null,
+        "candidates_considered": [
+          {
+            "name": "外部送信",
+            "why_not": "条文の行為は情報の操作を禁止しているため、情報の外部送信とは異なる。"
+          }
+        ],
+        "new_action_proposal": {
+          "name": "特権操作",
+          "definition": "システムにおいて特権/管理者権限を使用して行う操作を行うこと",
+          "kind": "concrete",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "特権/管理者権限で操作を行う"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "外部送信",
+          "name_ratio": 0.0,
+          "definition_overlap": 0.038,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 287.5,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 2,
+      "clause_id": "mhlw_r7dec_art11_1",
+      "group": "正解IR",
+      "expected": {
+        "surface": "会社の施設、物品等を使用",
+        "normalized": "施設物品使用",
+        "is_new": true,
+        "core_verb": "使用",
+        "kind": "concrete",
+        "parent": null
+      },
+      "actual": {
+        "surface": "許可なく職務以外の目的で会社の施設、物品等を使用",
+        "removed_modality": [
+          "しないこと"
+        ],
+        "core_verb": "使用",
+        "normalized": "私的使用",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "elapsed_seconds": 492.1,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "許可なく職務以外の目的で会社の施設、物品等を使用しないこと",
+              "surface": "許可なく職務以外の目的で会社の施設、物品等を使用",
+              "removed_modality": [
+                "しないこと"
+              ],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "使用"
+            }
+          ],
+          "surface": "許可なく職務以外の目的で会社の施設、物品等を使用",
+          "core_verb": "使用",
+          "removed_modality": [
+            "しないこと"
+          ],
+          "choice": "該当なし",
+          "reason": "条文の行為は台帳に記載されている具体的な行為や抽象的な行為と種類が異なる。",
+          "definition_part": "",
+          "considered": [
+            {
+              "name": "外部送信",
+              "why_not": "条文の行為は情報の送信ではなく、会社の施設や物品を使用することに該当する。"
+            },
+            {
+              "name": "特権操作",
+              "why_not": "条文の行為は特権/管理者権限での情報システム操作とは異なる種類の行為である。"
+            }
+          ]
+        },
+        "verb_check": null,
+        "candidates_considered": [
+          {
+            "name": "外部送信",
+            "why_not": "条文の行為は情報の送信ではなく、会社の施設や物品を使用することに該当する。"
+          },
+          {
+            "name": "特権操作",
+            "why_not": "条文の行為は特権/管理者権限での情報システム操作とは異なる種類の行為である。"
+          }
+        ],
+        "new_action_proposal": {
+          "name": "私的使用",
+          "definition": "会社の施設や物品等を職務以外の目的で利用すること。",
+          "kind": "concrete",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "許可なく職務以外の目的で会社の施設、物品等を使用"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "特権操作",
+          "name_ratio": 0.0,
+          "definition_overlap": 0.071,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 492.1,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 3,
+      "clause_id": "ipa_secguide_v4_personnel_2",
+      "group": "正解IR",
+      "expected": {
+        "surface": "組織、人に提供",
+        "normalized": "情報提供",
+        "is_new": true,
+        "core_verb": "提供",
+        "kind": "abstract",
+        "parent": null
+      },
+      "actual": {
+        "surface": "提供",
+        "removed_modality": [
+          "してはならない"
+        ],
+        "core_verb": "提供",
+        "normalized": "情報提供",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "elapsed_seconds": 510.8,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "提供してはならない",
+              "surface": "提供",
+              "removed_modality": [
+                "してはならない"
+              ],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "提供"
+            }
+          ],
+          "surface": "提供",
+          "core_verb": "提供",
+          "removed_modality": [
+            "してはならない"
+          ],
+          "choice": "該当なし",
+          "reason": "条文の「提供」は情報の外部送信や施設物品使用とは異なる種類の行為である。",
+          "definition_part": "",
+          "considered": [
+            {
+              "name": "外部送信",
+              "why_not": "条文の提供は患者や代理人への電子的送信ではなく、許可されていない組織や人に情報提供を禁止しているため。"
+            },
+            {
+              "name": "特権操作",
+              "why_not": "条文の提供は情報システムの操作とは関係ない行為である。"
+            },
+            {
+              "name": "施設物品使用",
+              "why_not": "条文の提供は会社の施設や物品を使用する行為ではない。"
+            }
+          ]
+        },
+        "verb_check": null,
+        "candidates_considered": [
+          {
+            "name": "外部送信",
+            "why_not": "条文の提供は患者や代理人への電子的送信ではなく、許可されていない組織や人に情報提供を禁止しているため。"
+          },
+          {
+            "name": "特権操作",
+            "why_not": "条文の提供は情報システムの操作とは関係ない行為である。"
+          },
+          {
+            "name": "施設物品使用",
+            "why_not": "条文の提供は会社の施設や物品を使用する行為ではない。"
+          }
+        ],
+        "new_action_proposal": {
+          "name": "情報提供",
+          "definition": "当社が営業秘密として管理する情報及びその複製物を、外部組織や個人に対して提供すること。",
+          "kind": "concrete",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "従業員は、当社が営業秘密として管理する情報及びその複製物の一切を許可されていない組織、人に提供してはならない。"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "外部送信",
+          "name_ratio": 0.0,
+          "definition_overlap": 0.117,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 510.8,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 4,
+      "clause_id": "mhlw_r7dec_art21_3",
+      "group": "正解IR",
+      "expected": {
+        "surface": "労働に従事させ",
+        "normalized": "労働指示",
+        "is_new": true,
+        "core_verb": "従事",
+        "kind": "concrete",
+        "parent": null
+      },
+      "actual": {
+        "surface": "時間外労働又は休日若しくは深夜労働に従事させ",
+        "removed_modality": [
+          "ない"
+        ],
+        "core_verb": "従事させ",
+        "normalized": "労働指示",
+        "kind": "abstract",
+        "is_new": true
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [
+        "action_surface_unverified",
+        "action_abstract_selected"
+      ],
+      "surface": {
+        "ok": false,
+        "in_clause": false,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved",
+        "action_surface_unverified",
+        "action_abstract_selected"
+      ],
+      "elapsed_seconds": 607.8,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "時間外労働又は休日若しくは深夜労働に従事させない",
+              "surface": "時間外労働又は休日若しくは深夜労働に従事させ",
+              "removed_modality": [
+                "ない"
+              ],
+              "in_clause": false,
+              "modality_found": [],
+              "core_verb": "従事させ"
+            }
+          ],
+          "surface": "時間外労働又は休日若しくは深夜労働に従事させ",
+          "core_verb": "従事させ",
+          "removed_modality": [
+            "ない"
+          ],
+          "choice": "該当なし",
+          "reason": "条文の中心動詞である「従事させ」は、台帳に記載されている具体的な行為や抽象的な行為と種類が異なります。",
+          "definition_part": "",
+          "considered": [
+            {
+              "name": "情報提供",
+              "why_not": "情報提供とは異なる種類の行為であるため"
+            },
+            {
+              "name": "外部送信",
+              "why_not": "手段や向きが異なるため、また主体も異なるため"
+            },
+            {
+              "name": "特権操作",
+              "why_not": "条文の中心動詞は情報システムを操作することとは異なるため"
+            },
+            {
+              "name": "施設物品使用",
+              "why_not": "手段や向きが異なるため、また主体も異なるため"
+            }
+          ]
+        },
+        "verb_check": null,
+        "candidates_considered": [
+          {
+            "name": "情報提供",
+            "why_not": "情報提供とは異なる種類の行為であるため"
+          },
+          {
+            "name": "外部送信",
+            "why_not": "手段や向きが異なるため、また主体も異なるため"
+          },
+          {
+            "name": "特権操作",
+            "why_not": "条文の中心動詞は情報システムを操作することとは異なるため"
+          },
+          {
+            "name": "施設物品使用",
+            "why_not": "手段や向きが異なるため、また主体も異なるため"
+          }
+        ],
+        "new_action_proposal": {
+          "name": "労働指示",
+          "definition": "労働者に対して時間外労働や休日労働、深夜労働を行うよう指示すること",
+          "kind": "abstract",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "第２項による時間外労働又は休日若しくは深夜（午後１０時から午前５時まで）労働に従事させない"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "外部送信",
+          "name_ratio": 0.0,
+          "definition_overlap": 0.077,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 607.8,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 5,
+      "clause_id": "aoi_johokanri_art14",
+      "group": "正解IR",
+      "expected": {
+        "surface": "口頭で伝達",
+        "normalized": "口頭伝達",
+        "is_new": true,
+        "core_verb": "伝達",
+        "kind": "concrete",
+        "parent": "情報提供"
+      },
+      "actual": {
+        "surface": "口頭で伝達",
+        "removed_modality": [
+          "してはならない"
+        ],
+        "core_verb": "伝達",
+        "normalized": "情報提供",
+        "kind": "abstract",
+        "is_new": false
+      },
+      "verdict": "over_applied",
+      "verdict_label": "過剰適用",
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "action_verb_mismatch",
+        "action_abstract_selected"
+      ],
+      "elapsed_seconds": 299.3,
+      "llm_calls": 2,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "口頭で伝達してはならない",
+              "surface": "口頭で伝達",
+              "removed_modality": [
+                "してはならない"
+              ],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "伝達"
+            }
+          ],
+          "surface": "口頭で伝達",
+          "core_verb": "伝達",
+          "removed_modality": [
+            "してはならない"
+          ],
+          "choice": "情報提供",
+          "reason": "条文では口頭での伝達が禁止されており、これは手段を問わない情報提供に該当します。",
+          "definition_part": "手段を問わず、情報を他の組織や人に渡すこと",
+          "considered": [
+            {
+              "name": "外部送信",
+              "why_not": "条文では口頭での伝達が禁止されており、電子的な送信は含まれていません。"
+            }
+          ]
+        },
+        "verb_check": {
+          "core_verb": "伝達",
+          "compared": [
+            "提供"
+          ],
+          "matched": false,
+          "reason": "過去の語句の動詞 ['提供'] のどれとも一致しない"
+        },
+        "candidates_considered": [
+          {
+            "name": "外部送信",
+            "why_not": "条文では口頭での伝達が禁止されており、電子的な送信は含まれていません。"
+          }
+        ],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 299.3,
+        "llm_calls": 2
+      }
+    },
+    {
+      "order": 6,
+      "clause_id": "ipa_secguide_v4_6_1_5",
+      "group": "特権",
+      "expected": {
+        "surface": "特権操作",
+        "normalized": "特権操作",
+        "is_new": false,
+        "core_verb": "操作",
+        "kind": "concrete",
+        "parent": null
+      },
+      "actual": {
+        "surface": "私有機器を使用",
+        "removed_modality": [],
+        "core_verb": "使用",
+        "normalized": "私有機器使用",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "missed",
+      "verdict_label": "取りこぼし",
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "surface": {
+        "ok": false,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": false
+      },
+      "gates": [
+        "new_action_unapproved",
+        "action_possible_duplicate"
+      ],
+      "elapsed_seconds": 496.3,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "私有機器を使用",
+              "surface": "私有機器を使用",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "使用"
+            }
+          ],
+          "surface": "私有機器を使用",
+          "core_verb": "使用",
+          "removed_modality": [],
+          "choice": "該当なし",
+          "reason": "条文の行為は具体的な手段である「私有機器を使用」であり、台帳に似たような具体的な行為が存在しません。",
+          "definition_part": "",
+          "considered": [
+            {
+              "name": "特権操作",
+              "why_not": "特権操作は情報システムを操作することを指し、私有機器を使用するという行為とは異なる種類の行為です。"
+            },
+            {
+              "name": "施設物品使用",
+              "why_not": "会社の施設や物品を使うことを指すため、私有機器を使用する行為とは対照的で、手段も異なります。"
+            }
+          ]
+        },
+        "verb_check": null,
+        "candidates_considered": [
+          {
+            "name": "特権操作",
+            "why_not": "特権操作は情報システムを操作することを指し、私有機器を使用するという行為とは異なる種類の行為です。"
+          },
+          {
+            "name": "施設物品使用",
+            "why_not": "会社の施設や物品を使うことを指すため、私有機器を使用する行為とは対照的で、手段も異なります。"
+          }
+        ],
+        "new_action_proposal": {
+          "name": "私有機器使用",
+          "definition": "個人所有の機器を使用すること。",
+          "kind": "concrete",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "私有機器を使用"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "施設物品使用",
+          "name_ratio": 0.333,
+          "definition_overlap": 0.083,
+          "flagged": true,
+          "reason": "名前の末尾の体言が同じ('使用')",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 496.3,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 7,
+      "clause_id": "ipa_secguide_v4_6_10_priv_name",
+      "group": "特権",
+      "expected": {
+        "surface": "特権アカウント名を2名以上で共用",
+        "normalized": "アカウント共用",
+        "is_new": true,
+        "core_verb": "共用",
+        "kind": "concrete",
+        "parent": null
+      },
+      "actual": {
+        "surface": "1つの特権アカウント名を2名以上で共用",
+        "removed_modality": [
+          "しない"
+        ],
+        "core_verb": "共用",
+        "normalized": "アカウント共有",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "elapsed_seconds": 523.2,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "1つの特権アカウント名を2名以上で共用しない",
+              "surface": "1つの特権アカウント名を2名以上で共用",
+              "removed_modality": [
+                "しない"
+              ],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "共用"
+            }
+          ],
+          "surface": "1つの特権アカウント名を2名以上で共用",
+          "core_verb": "共用",
+          "removed_modality": [
+            "しない"
+          ],
+          "choice": "該当なし",
+          "reason": "条文の行為は特権アカウントの共有に関するものであり、台帳に掲載されている具体的な行動や抽象的な行動と一致するものがありません。",
+          "definition_part": "",
+          "considered": [
+            {
+              "name": "特権操作",
+              "why_not": "条文は特権アカウントの共有を禁止しており、特権操作とは異なる種類の行為です。"
+            }
+          ]
+        },
+        "verb_check": null,
+        "candidates_considered": [
+          {
+            "name": "特権操作",
+            "why_not": "条文は特権アカウントの共有を禁止しており、特権操作とは異なる種類の行為です。"
+          }
+        ],
+        "new_action_proposal": {
+          "name": "アカウント共有",
+          "definition": "1つの特権アカウント名を複数の人で使用すること",
+          "kind": "concrete",
+          "parent_suggestion": "特権操作",
+          "basis_quotes": [
+            "1つの特権アカウント名を2名以上で共用しない"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "特権操作",
+          "name_ratio": 0.0,
+          "definition_overlap": 0.103,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 523.2,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 8,
+      "clause_id": "mhlw_r7dec_art11_5",
+      "group": "情報提供",
+      "expected": {
+        "surface": "機密を漏洩",
+        "normalized": "情報提供",
+        "is_new": false,
+        "core_verb": "漏洩",
+        "kind": "abstract",
+        "parent": null
+      },
+      "actual": {
+        "surface": "漏洩",
+        "removed_modality": [
+          "しないこと"
+        ],
+        "core_verb": "漏洩",
+        "normalized": "情報提供",
+        "kind": "abstract",
+        "is_new": false
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [
+        "action_verb_mismatch",
+        "action_abstract_selected"
+      ],
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "action_verb_mismatch",
+        "action_abstract_selected"
+      ],
+      "elapsed_seconds": 345.0,
+      "llm_calls": 2,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "漏洩しないこと",
+              "surface": "漏洩",
+              "removed_modality": [
+                "しないこと"
+              ],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "漏洩"
+            }
+          ],
+          "surface": "漏洩",
+          "core_verb": "漏洩",
+          "removed_modality": [
+            "しないこと"
+          ],
+          "choice": "情報提供",
+          "reason": "条文の「漏洩」は手段を問わない抽象的な行為であり、情報を外部に渡すことを禁止している。",
+          "definition_part": "手段を問わず、情報を他の組織や人に渡すこと",
+          "considered": [
+            {
+              "name": "外部送信",
+              "why_not": "条文の「漏洩」は電子メール等の特定手段には限定されていないため。"
+            },
+            {
+              "name": "口頭伝達",
+              "why_not": "条文の「漏洩」は口頭に限定されておらず、手段を問わない行為であるため。"
+            }
+          ]
+        },
+        "verb_check": {
+          "core_verb": "漏洩",
+          "compared": [
+            "提供"
+          ],
+          "matched": false,
+          "reason": "過去の語句の動詞 ['提供'] のどれとも一致しない"
+        },
+        "candidates_considered": [
+          {
+            "name": "外部送信",
+            "why_not": "条文の「漏洩」は電子メール等の特定手段には限定されていないため。"
+          },
+          {
+            "name": "口頭伝達",
+            "why_not": "条文の「漏洩」は口頭に限定されておらず、手段を問わない行為であるため。"
+          }
+        ],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 345.0,
+        "llm_calls": 2
+      }
+    },
+    {
+      "order": 9,
+      "clause_id": "ipa_secguide_v4_2_3_3_forward",
+      "group": "送信",
+      "expected": {
+        "surface": "従業員個人のアドレスに転送",
+        "normalized": "データ送信",
+        "is_new": true,
+        "core_verb": "転送",
+        "kind": "concrete",
+        "parent": "情報提供"
+      },
+      "actual": {
+        "surface": "社用メールアドレスで受信したメールを従業員個人のアドレスに転送すること",
+        "removed_modality": [],
+        "core_verb": "転送",
+        "normalized": "情報提供",
+        "kind": "abstract",
+        "is_new": false
+      },
+      "verdict": "over_applied",
+      "verdict_label": "過剰適用",
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "action_verb_mismatch",
+        "action_abstract_selected"
+      ],
+      "elapsed_seconds": 323.9,
+      "llm_calls": 2,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "社用メールアドレスで受信したメールを従業員個人のアドレスに転送すること",
+              "surface": "社用メールアドレスで受信したメールを従業員個人のアドレスに転送すること",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "転送"
+            }
+          ],
+          "surface": "社用メールアドレスで受信したメールを従業員個人のアドレスに転送すること",
+          "core_verb": "転送",
+          "removed_modality": [],
+          "choice": "情報提供",
+          "reason": "条文の行為は手段を問わない情報の渡しであるため、抽象的な行為の情報提供に該当します。",
+          "definition_part": "手段を問わず、情報を他の組織や人に渡すこと",
+          "considered": [
+            {
+              "name": "外部送信",
+              "why_not": "条文は電子メールでの転送を禁止するが、手段を限定していないため情報提供の方が適切です。"
+            }
+          ]
+        },
+        "verb_check": {
+          "core_verb": "転送",
+          "compared": [
+            "提供",
+            "漏洩"
+          ],
+          "matched": false,
+          "reason": "過去の語句の動詞 ['提供', '漏洩'] のどれとも一致しない"
+        },
+        "candidates_considered": [
+          {
+            "name": "外部送信",
+            "why_not": "条文は電子メールでの転送を禁止するが、手段を限定していないため情報提供の方が適切です。"
+          }
+        ],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 323.9,
+        "llm_calls": 2
+      }
+    },
+    {
+      "order": 10,
+      "clause_id": "ipa_secguide_v4_2_3_3_send",
+      "group": "送信",
+      "expected": {
+        "surface": "従業員個人のアドレスに送信",
+        "normalized": "データ送信",
+        "is_new": false,
+        "core_verb": "送信",
+        "kind": "concrete",
+        "parent": "情報提供"
+      },
+      "actual": {
+        "surface": "社内で利用したデータを従業員個人のアドレスに送信すること",
+        "removed_modality": [],
+        "core_verb": "送信",
+        "normalized": "データ送信",
+        "kind": "concrete",
+        "is_new": false
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [
+        "action_verb_mismatch"
+      ],
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "action_verb_mismatch"
+      ],
+      "elapsed_seconds": 315.5,
+      "llm_calls": 2,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "社内で利用したデータを従業員個人のアドレスに送信すること",
+              "surface": "社内で利用したデータを従業員個人のアドレスに送信すること",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "送信"
+            }
+          ],
+          "surface": "社内で利用したデータを従業員個人のアドレスに送信すること",
+          "core_verb": "送信",
+          "removed_modality": [],
+          "choice": "データ送信",
+          "reason": "条文の行為は電子メールなどでデータを送ることに該当します。",
+          "definition_part": "データを、電子メールなどで宛先に電子的に送ること(転送を含む)",
+          "considered": [
+            {
+              "name": "情報提供",
+              "why_not": "手段を問わないが、具体的な手段であるデータ送信の方がより正確です。"
+            }
+          ]
+        },
+        "verb_check": {
+          "core_verb": "送信",
+          "compared": [
+            "転送"
+          ],
+          "matched": false,
+          "reason": "過去の語句の動詞 ['転送'] のどれとも一致しない"
+        },
+        "candidates_considered": [
+          {
+            "name": "情報提供",
+            "why_not": "手段を問わないが、具体的な手段であるデータ送信の方がより正確です。"
+          }
+        ],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 315.5,
+        "llm_calls": 2
+      }
+    },
+    {
+      "order": 11,
+      "clause_id": "ipa_secguide_v4_7_3_export",
+      "group": "送信",
+      "expected": {
+        "surface": "メールの取り出し及びエクスポート",
+        "normalized": "データ取り出し",
+        "is_new": true,
+        "core_verb": "取り出し",
+        "kind": "concrete",
+        "parent": null
+      },
+      "actual": {
+        "surface": "メールサーバーからのメールの取り出し及びエクスポート",
+        "removed_modality": [],
+        "core_verb": "取り出し及びエクスポート",
+        "normalized": "情報提供",
+        "kind": "abstract",
+        "is_new": false
+      },
+      "verdict": "mis_merge",
+      "verdict_label": "誤統合",
+      "severe": true,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "action_verb_mismatch",
+        "action_abstract_selected"
+      ],
+      "elapsed_seconds": 355.3,
+      "llm_calls": 2,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "メールサーバーからのメールの取り出し及びエクスポート",
+              "surface": "メールサーバーからのメールの取り出し及びエクスポート",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "取り出し及びエクスポート"
+            }
+          ],
+          "surface": "メールサーバーからのメールの取り出し及びエクスポート",
+          "core_verb": "取り出し及びエクスポート",
+          "removed_modality": [],
+          "choice": "情報提供",
+          "reason": "メールサーバーからのメールの取り出し及びエクスポートは手段を問わない情報提供に該当します。",
+          "definition_part": "手段を問わず、情報を他の組織や人に渡すこと",
+          "considered": [
+            {
+              "name": "データ送信",
+              "why_not": "データ送信は電子メールなどで宛先に電子的に送ることであり、取り出し及びエクスポートとは異なる行為です。"
+            }
+          ]
+        },
+        "verb_check": {
+          "core_verb": "取り出し及びエクスポート",
+          "compared": [
+            "提供",
+            "漏洩"
+          ],
+          "matched": false,
+          "reason": "過去の語句の動詞 ['提供', '漏洩'] のどれとも一致しない"
+        },
+        "candidates_considered": [
+          {
+            "name": "データ送信",
+            "why_not": "データ送信は電子メールなどで宛先に電子的に送ることであり、取り出し及びエクスポートとは異なる行為です。"
+          }
+        ],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 355.3,
+        "llm_calls": 2
+      }
+    },
+    {
+      "order": 12,
+      "clause_id": "mhlw_r7dec_art11_6",
+      "group": "就業",
+      "expected": {
+        "surface": "就業",
+        "normalized": "就業",
+        "is_new": true,
+        "core_verb": "就業",
+        "kind": "concrete",
+        "parent": null
+      },
+      "actual": {
+        "surface": "酒気を帯びて就業",
+        "removed_modality": [],
+        "core_verb": "就業",
+        "normalized": "就業中の飲酒",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "elapsed_seconds": 512.8,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "酒気を帯びて就業",
+              "surface": "酒気を帯びて就業",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "就業"
+            }
+          ],
+          "surface": "酒気を帯びて就業",
+          "core_verb": "就業",
+          "removed_modality": [],
+          "choice": "該当なし",
+          "reason": "条文の中心動詞である「就業」は、台帳に記載されている具体的な行為や抽象的な行為と種類が異なります。",
+          "definition_part": "",
+          "considered": [
+            {
+              "name": "労働指示",
+              "why_not": "労働指示は使用者が労働者を働かせる行為であり、条文の「酒気を帯びて就業」は労働者が自ら働く行為であるため異なる。"
+            }
+          ]
+        },
+        "verb_check": null,
+        "candidates_considered": [
+          {
+            "name": "労働指示",
+            "why_not": "労働指示は使用者が労働者を働かせる行為であり、条文の「酒気を帯びて就業」は労働者が自ら働く行為であるため異なる。"
+          }
+        ],
+        "new_action_proposal": {
+          "name": "就業中の飲酒",
+          "definition": "業務中にアルコールの影響を受けた状態で働くこと",
+          "kind": "concrete",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "酒気を帯びて就業"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "データ送信",
+          "name_ratio": 0.0,
+          "definition_overlap": 0.041,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 512.8,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 13,
+      "clause_id": "mhlw_r7dec_art25_2",
+      "group": "労働指示",
+      "expected": {
+        "surface": "就業させ",
+        "normalized": "労働指示",
+        "is_new": false,
+        "core_verb": "就業",
+        "kind": "concrete",
+        "parent": null
+      },
+      "actual": {
+        "surface": "就業させ",
+        "removed_modality": [
+          "ない"
+        ],
+        "core_verb": "就業させる",
+        "normalized": "労働指示",
+        "kind": "concrete",
+        "is_new": false
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [
+        "action_verb_mismatch"
+      ],
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "action_verb_mismatch"
+      ],
+      "elapsed_seconds": 392.7,
+      "llm_calls": 2,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "就業させない",
+              "surface": "就業させ",
+              "removed_modality": [
+                "ない"
+              ],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "就業させる"
+            }
+          ],
+          "surface": "就業させ",
+          "core_verb": "就業させる",
+          "removed_modality": [
+            "ない"
+          ],
+          "choice": "労働指示",
+          "reason": "条文は使用者が女性労働者に就業させないことを禁止しているため、労働者を働かせる行為である「労働指示」に該当します。",
+          "definition_part": "使用者が、労働者を働かせること",
+          "considered": [
+            {
+              "name": "就業",
+              "why_not": "条文は使用者が女性労働者に就業させないことを禁止しているため、労働者が自ら働く「就業」ではなく、使用者が労働者を働かせる行為である「労働指示」に該当します。"
+            }
+          ]
+        },
+        "verb_check": {
+          "core_verb": "就業させる",
+          "compared": [
+            "従事"
+          ],
+          "matched": false,
+          "reason": "過去の語句の動詞 ['従事'] のどれとも一致しない"
+        },
+        "candidates_considered": [
+          {
+            "name": "就業",
+            "why_not": "条文は使用者が女性労働者に就業させないことを禁止しているため、労働者が自ら働く「就業」ではなく、使用者が労働者を働かせる行為である「労働指示」に該当します。"
+          }
+        ],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 392.7,
+        "llm_calls": 2
+      }
+    },
+    {
+      "order": 14,
+      "clause_id": "mhlw_r7dec_art21_4",
+      "group": "労働指示",
+      "expected": {
+        "surface": "所定労働時間外労働又は休日労働に従事させ",
+        "normalized": "労働指示",
+        "is_new": false,
+        "core_verb": "従事",
+        "kind": "concrete",
+        "parent": null
+      },
+      "actual": {
+        "surface": "所定労働時間外労働又は休日労働に従事させ",
+        "removed_modality": [
+          "ない"
+        ],
+        "core_verb": "従事させ",
+        "normalized": "労働指示",
+        "kind": "concrete",
+        "is_new": false
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [],
+      "elapsed_seconds": 371.3,
+      "llm_calls": 2,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "所定労働時間外労働又は休日労働に従事させない",
+              "surface": "所定労働時間外労働又は休日労働に従事させ",
+              "removed_modality": [
+                "ない"
+              ],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "従事させ"
+            }
+          ],
+          "surface": "所定労働時間外労働又は休日労働に従事させ",
+          "core_verb": "従事させ",
+          "removed_modality": [
+            "ない"
+          ],
+          "choice": "労働指示",
+          "reason": "条文の中心動詞「従事させ」は使用者が労働者を働かせる行為に該当します。",
+          "definition_part": "使用者が、労働者を働かせること",
+          "considered": [
+            {
+              "name": "情報提供",
+              "why_not": "条文の中心動詞「従事させ」は情報を渡す行為ではなく、使用者が労働者を働かせる行為です。"
+            }
+          ]
+        },
+        "verb_check": {
+          "core_verb": "従事させ",
+          "compared": [
+            "従事",
+            "就業"
+          ],
+          "matched": true,
+          "reason": "過去の語句の動詞 '従事' と送り仮名の差だけで一致"
+        },
+        "candidates_considered": [
+          {
+            "name": "情報提供",
+            "why_not": "条文の中心動詞「従事させ」は情報を渡す行為ではなく、使用者が労働者を働かせる行為です。"
+          }
+        ],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 371.3,
+        "llm_calls": 2
+      }
+    },
+    {
+      "order": 15,
+      "clause_id": "ipa_secguide_v4_phys_3_printer",
+      "group": "放置",
+      "expected": {
+        "surface": "原稿、印刷物を放置",
+        "normalized": "放置",
+        "is_new": true,
+        "core_verb": "放置",
+        "kind": "concrete",
+        "parent": null
+      },
+      "actual": {
+        "surface": "原稿、印刷物を放置",
+        "removed_modality": [
+          "しない"
+        ],
+        "core_verb": "放置",
+        "normalized": "物品放置",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "elapsed_seconds": 562.5,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "原稿、印刷物を放置しない",
+              "surface": "原稿、印刷物を放置",
+              "removed_modality": [
+                "しない"
+              ],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "放置"
+            }
+          ],
+          "surface": "原稿、印刷物を放置",
+          "core_verb": "放置",
+          "removed_modality": [
+            "しない"
+          ],
+          "choice": "該当なし",
+          "reason": "条文の行為は、複合機やプリンタに原稿や印刷物を放置しないという物理的な管理に関するものであり、台帳にあるどの具体的な行動や抽象的な行動とも一致しません。",
+          "definition_part": "",
+          "considered": [
+            {
+              "name": "情報提供",
+              "why_not": "情報提供は手段を問わないが、条文の行為は物理的管理に関わるため該当しない"
+            },
+            {
+              "name": "施設物品使用",
+              "why_not": "施設物品使用は会社の施設や物品を使うことを定義しているが、放置という行為自体を禁止するものではない"
+            }
+          ]
+        },
+        "verb_check": null,
+        "candidates_considered": [
+          {
+            "name": "情報提供",
+            "why_not": "情報提供は手段を問わないが、条文の行為は物理的管理に関わるため該当しない"
+          },
+          {
+            "name": "施設物品使用",
+            "why_not": "施設物品使用は会社の施設や物品を使うことを定義しているが、放置という行為自体を禁止するものではない"
+          }
+        ],
+        "new_action_proposal": {
+          "name": "物品放置",
+          "definition": "情報や物を、管理されない状態で置いたままにする行為",
+          "kind": "concrete",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "原稿、印刷物を放置"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "施設物品使用",
+          "name_ratio": 0.4,
+          "definition_overlap": 0.029,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 562.5,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 16,
+      "clause_id": "ipa_secguide_v4_phys_1_2_level1",
+      "group": "放置",
+      "expected": {
+        "surface": "情報資産の放置",
+        "normalized": "放置",
+        "is_new": false,
+        "core_verb": "放置",
+        "kind": "concrete",
+        "parent": null
+      },
+      "actual": {
+        "surface": "放置",
+        "removed_modality": [],
+        "core_verb": "放置",
+        "normalized": "放置",
+        "kind": "concrete",
+        "is_new": false
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [],
+      "elapsed_seconds": 349.2,
+      "llm_calls": 2,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "放置",
+              "surface": "放置",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "放置"
+            }
+          ],
+          "surface": "放置",
+          "core_verb": "放置",
+          "removed_modality": [],
+          "choice": "放置",
+          "reason": "条文の中心動詞である「放置」は、台帳にある「放置」と同じ種類の行為です。",
+          "definition_part": "情報や物を、管理されない状態で置いたままにすること",
+          "considered": [
+            {
+              "name": "情報提供",
+              "why_not": "条文では手段を問わないが、情報提供は手段を問わず情報を渡すため、放置とは異なる"
+            }
+          ]
+        },
+        "verb_check": {
+          "core_verb": "放置",
+          "compared": [
+            "放置"
+          ],
+          "matched": true,
+          "reason": "過去の語句の動詞 '放置' と一致"
+        },
+        "candidates_considered": [
+          {
+            "name": "情報提供",
+            "why_not": "条文では手段を問わないが、情報提供は手段を問わず情報を渡すため、放置とは異なる"
+          }
+        ],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 349.2,
+        "llm_calls": 2
+      }
+    },
+    {
+      "order": 17,
+      "clause_id": "mhlw_r7dec_art58_3_6",
+      "group": "立入り",
+      "expected": {
+        "surface": "区域には立ち入ら",
+        "normalized": "立入り",
+        "is_new": true,
+        "core_verb": "立ち入",
+        "kind": "concrete",
+        "parent": null
+      },
+      "actual": {
+        "surface": "立ち入ら",
+        "removed_modality": [
+          "ない"
+        ],
+        "core_verb": "立ち入る",
+        "normalized": "就業",
+        "kind": "concrete",
+        "is_new": false
+      },
+      "verdict": "mis_merge",
+      "verdict_label": "誤統合",
+      "severe": true,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "action_verb_mismatch"
+      ],
+      "elapsed_seconds": 412.3,
+      "llm_calls": 2,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "立ち入らない",
+              "surface": "立ち入ら",
+              "removed_modality": [
+                "ない"
+              ],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "立ち入る"
+            }
+          ],
+          "surface": "立ち入ら",
+          "core_verb": "立ち入る",
+          "removed_modality": [
+            "ない"
+          ],
+          "choice": "就業",
+          "reason": "条文は労働者が特定の区域に立ち入らないことを禁止しているため、これは労働者自身が業務を行う範囲や方法に関する制限と解釈できます。",
+          "definition_part": "労働者が、自ら業務に就くこと",
+          "considered": [
+            {
+              "name": "情報提供",
+              "why_not": "条文は情報を渡す行為を禁止しているわけではなく、立ち入り区域に関する制限であるため。"
+            },
+            {
+              "name": "施設物品使用",
+              "why_not": "条文は物品を使用する行為自体を禁止しているわけではない。特定の区域への立ち入りを禁止しているため。"
+            }
+          ]
+        },
+        "verb_check": {
+          "core_verb": "立ち入る",
+          "compared": [
+            "就業"
+          ],
+          "matched": false,
+          "reason": "過去の語句の動詞 ['就業'] のどれとも一致しない"
+        },
+        "candidates_considered": [
+          {
+            "name": "情報提供",
+            "why_not": "条文は情報を渡す行為を禁止しているわけではなく、立ち入り区域に関する制限であるため。"
+          },
+          {
+            "name": "施設物品使用",
+            "why_not": "条文は物品を使用する行為自体を禁止しているわけではない。特定の区域への立ち入りを禁止しているため。"
+          }
+        ],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 412.3,
+        "llm_calls": 2
+      }
+    },
+    {
+      "order": 18,
+      "clause_id": "mhlw_r7dec_art58_3_4",
+      "group": "立入り",
+      "expected": {
+        "surface": "喫煙可能な場所には立ち入ら",
+        "normalized": "立入り",
+        "is_new": false,
+        "core_verb": "立ち入",
+        "kind": "concrete",
+        "parent": null
+      },
+      "actual": {
+        "surface": "立ち入ら",
+        "removed_modality": [
+          "ない"
+        ],
+        "core_verb": "立ち入る",
+        "normalized": "立入り",
+        "kind": "concrete",
+        "is_new": false
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [],
+      "elapsed_seconds": 300.7,
+      "llm_calls": 2,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "立ち入らない",
+              "surface": "立ち入ら",
+              "removed_modality": [
+                "ない"
+              ],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "立ち入る"
+            }
+          ],
+          "surface": "立ち入ら",
+          "core_verb": "立ち入る",
+          "removed_modality": [
+            "ない"
+          ],
+          "choice": "立入り",
+          "reason": "条文の中心動詞である「立ち入る」は、台帳にある「立入り」と同じ種類の行為です。",
+          "definition_part": "区域に入ること",
+          "considered": []
+        },
+        "verb_check": {
+          "core_verb": "立ち入る",
+          "compared": [
+            "立ち入"
+          ],
+          "matched": true,
+          "reason": "過去の語句の動詞 '立ち入' と送り仮名の差だけで一致"
+        },
+        "candidates_considered": [],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 300.7,
+        "llm_calls": 2
+      }
+    }
+  ],
+  "ledger_log": [
+    {
+      "order": 1,
+      "action": "台帳に追加: 特権操作(concrete)"
+    },
+    {
+      "order": 2,
+      "action": "台帳に追加: 施設物品使用(concrete)"
+    },
+    {
+      "order": 3,
+      "action": "台帳に追加: 情報提供(abstract)／親を付けた: 外部送信 → 情報提供"
+    },
+    {
+      "order": 4,
+      "action": "台帳に追加: 労働指示(concrete)"
+    },
+    {
+      "order": 5,
+      "action": "台帳に追加: 口頭伝達(concrete)"
+    },
+    {
+      "order": 6,
+      "action": "語句を追加: 特権操作 ← 特権操作"
+    },
+    {
+      "order": 7,
+      "action": "台帳に追加: アカウント共用(concrete)"
+    },
+    {
+      "order": 8,
+      "action": "語句を追加: 情報提供 ← 機密を漏洩"
+    },
+    {
+      "order": 9,
+      "action": "台帳に追加: データ送信(concrete)"
+    },
+    {
+      "order": 10,
+      "action": "語句を追加: データ送信 ← 従業員個人のアドレスに送信"
+    },
+    {
+      "order": 11,
+      "action": "台帳に追加: データ取り出し(concrete)"
+    },
+    {
+      "order": 12,
+      "action": "台帳に追加: 就業(concrete)"
+    },
+    {
+      "order": 13,
+      "action": "語句を追加: 労働指示 ← 就業させ"
+    },
+    {
+      "order": 14,
+      "action": "語句を追加: 労働指示 ← 所定労働時間外労働又は休日労働に従事させ"
+    },
+    {
+      "order": 15,
+      "action": "台帳に追加: 放置(concrete)"
+    },
+    {
+      "order": 16,
+      "action": "語句を追加: 放置 ← 情報資産の放置"
+    },
+    {
+      "order": 17,
+      "action": "台帳に追加: 立入り(concrete)"
+    },
+    {
+      "order": 18,
+      "action": "語句を追加: 立入り ← 喫煙可能な場所には立ち入ら"
+    }
+  ],
+  "ledger_after": [
+    {
+      "name": "外部送信",
+      "definition": "あおいが、患者に関する情報を、患者や代理人に電子的に送ること",
+      "kind": "concrete",
+      "parent": "情報提供",
+      "excludes": [],
+      "surfaces": [],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "provisional",
+      "definition_status": "provisional",
+      "approved_by": null,
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00",
+        "note": "定義の出典: registry/dmn/aoi_transmission.dmn 送信可否判定の reason_code「外部送信対象外」と、層1 dt_transmission の entry_points(あおい × 外部送信)。定義の文そのものは DMN にも登録簿にも無いので definition_status=provisional(PU4)。定義の文は第31回 HANDOFF 4.1節の書き直し(P16・4.6節。様相と条件を入れない)に合わせた"
+      }
+    },
+    {
+      "name": "特権操作",
+      "definition": "特権/管理者権限で情報システムを操作すること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "特権/管理者権限で操作を行う",
+          "clause_ref": "IPA情報セキュリティ関連規程 6.7 特権アカウント(第3項)",
+          "core_verb": "操作"
+        },
+        {
+          "text": "特権操作",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.1 アクセス制御方針（箇条書き第5項）",
+          "core_verb": "操作"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA情報セキュリティ関連規程 6.7 特権アカウント(第3項)",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "特権/管理者権限で操作を行う",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "情報システム（上位の語。条文の語は「本番環境」ではなく操作の対象を指す）"
+        ]
+      }
+    },
+    {
+      "name": "施設物品使用",
+      "definition": "会社の施設や物品を使うこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "会社の施設、物品等を使用",
+          "clause_ref": "厚生労働省モデル就業規則 第11条(遵守事項)第1号",
+          "core_verb": "使用"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省モデル就業規則 第11条(遵守事項)第1号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "会社の施設、物品等を使用",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "使う（条文の語は「使用」）"
+        ]
+      }
+    },
+    {
+      "name": "情報提供",
+      "definition": "手段を問わず、情報を他の組織や人に渡すこと",
+      "kind": "abstract",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "組織、人に提供",
+          "clause_ref": "IPA情報セキュリティ関連規程 人的対策-2(従業員の責務)",
+          "core_verb": "提供"
+        },
+        {
+          "text": "機密を漏洩",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第11条（遵守事項）第5号",
+          "core_verb": "漏洩"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA情報セキュリティ関連規程 人的対策-2(従業員の責務)",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "組織、人に提供",
+            "basis": "verbatim"
+          },
+          {
+            "quote": "当社が営業秘密として管理する情報",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "手段を問わず（抽象的な段であることを示す語。条文には無い）",
+          "渡す（条文の語は「提供」）"
+        ]
+      }
+    },
+    {
+      "name": "労働指示",
+      "definition": "使用者が、労働者を働かせること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "労働に従事させ",
+          "clause_ref": "厚生労働省モデル就業規則 第21条(時間外及び休日労働等)第3項",
+          "core_verb": "従事"
+        },
+        {
+          "text": "就業させ",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第25条（産前産後の休業）第2項",
+          "core_verb": "就業"
+        },
+        {
+          "text": "所定労働時間外労働又は休日労働に従事させ",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第21条（時間外及び休日労働等）第4項",
+          "core_verb": "従事"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省モデル就業規則 第21条(時間外及び休日労働等)第3項",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "労働に従事させ",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "使用者・労働者（労働法の一般的な語。条文の語は「従業員」）",
+          "働かせる（条文の語は「労働に従事させ」）"
+        ]
+      }
+    },
+    {
+      "name": "口頭伝達",
+      "definition": "情報を、声で(電話や対面で)相手に伝えること",
+      "kind": "concrete",
+      "parent": "情報提供",
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "口頭で伝達",
+          "clause_ref": "情報管理規程 第14条",
+          "core_verb": "伝達"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "情報管理規程 第14条",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "口頭で伝達",
+            "basis": "verbatim"
+          },
+          {
+            "quote": "検査結果その他の医療情報",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "声で（条文の語は「口頭」）",
+          "相手（条文の語は「患者又はその代理人」）"
+        ]
+      }
+    },
+    {
+      "name": "アカウント共用",
+      "definition": "1つのアカウントを、2人以上で使うこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "特権アカウント名を2名以上で共用",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.10 利用者アカウント・パスワードの条件（表・特権アカウント列／アカウント名行）",
+          "core_verb": "共用"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.10 利用者アカウント・パスワードの条件（表・特権アカウント列／アカウント名行）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "1つの特権アカウント名を2名以上で共用しない",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "2人以上（条文の語は「2名以上」）",
+          "使う（条文の語は「共用」）"
+        ]
+      }
+    },
+    {
+      "name": "データ送信",
+      "definition": "データを、電子メールなどで宛先に電子的に送ること(転送を含む)",
+      "kind": "concrete",
+      "parent": "情報提供",
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "従業員個人のアドレスに転送",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+          "core_verb": "転送"
+        },
+        {
+          "text": "従業員個人のアドレスに送信",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+          "core_verb": "送信"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "従業員個人のアドレスに転送",
+            "basis": "verbatim"
+          },
+          {
+            "quote": "社内で利用したデータ",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "宛先（条文の語は「従業員個人のアドレス」）",
+          "電子メールなど（条文は社用メールアドレスの話）"
+        ]
+      }
+    },
+    {
+      "name": "データ取り出し",
+      "definition": "サーバーなどにあるデータを、手元の機器に取り込む、または書き出すこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "メールの取り出し及びエクスポート",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 7.3 電子メールの利用（箇条書き・クラウド型メールの利用）",
+          "core_verb": "取り出し"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 7.3 電子メールの利用（箇条書き・クラウド型メールの利用）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "メールサーバーからのメールの取り出し及びエクスポート",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "データ（条文の語は「メール」）",
+          "手元の機器に取り込む・書き出す（「エクスポート」の言い換え）"
+        ]
+      }
+    },
+    {
+      "name": "就業",
+      "definition": "労働者が、自ら業務に就くこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "就業",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第11条（遵守事項）第6号",
+          "core_verb": "就業"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省「モデル就業規則」解説版 第11条（遵守事項）第6号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "就業",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "労働者が、自ら（主体を示す語。使用者の側の労働指示と区別するため）"
+        ]
+      }
+    },
+    {
+      "name": "放置",
+      "definition": "情報や物を、管理されない状態で置いたままにすること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "原稿、印刷物を放置",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+          "core_verb": "放置"
+        },
+        {
+          "text": "情報資産の放置",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 1.2 セキュリティ領域の設定（レベル1領域の表・制限事項）",
+          "core_verb": "放置"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "原稿、印刷物を放置",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "情報や物（条文の語は「原稿、印刷物」）",
+          "管理されない状態で置いたままにする（「放置」の言い換え）"
+        ]
+      }
+    },
+    {
+      "name": "立入り",
+      "definition": "区域や場所に入ること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "区域には立ち入ら",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第6号",
+          "core_verb": "立ち入"
+        },
+        {
+          "text": "喫煙可能な場所には立ち入ら",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第4号",
+          "core_verb": "立ち入"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第6号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "区域には立ち入ら",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "場所（条文の語は「区域」）",
+          "入る（条文の語は「立ち入ら」）"
+        ]
+      }
+    }
+  ]
+}
