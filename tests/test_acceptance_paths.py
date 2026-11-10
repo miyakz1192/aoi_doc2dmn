@@ -110,7 +110,6 @@ def _assemble_test_ir(
     action = ActionRef(
         surface="(テスト用)",
         normalized=action_normalized,
-        parent="情報開示",
         is_new=action_is_new,
         approved_by=APPROVER if action_is_new else None,
     )

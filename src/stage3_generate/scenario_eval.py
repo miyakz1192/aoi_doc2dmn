@@ -73,19 +73,29 @@ def evaluate_scenario(
 # 結論の厳しさ(大きいほど厳しい)。禁止 ＞ 条件付き許可 ＞ 許可(D75)。
 # `escalate`(D46)は「人が見るまで通さない」ので、最も厳しい側に置く。実行時の
 # 仕組み(U4)が無いので、この並びは設計書の3値にエスカレーションを足した判断である。
+# 結論の厳しさ(D77。v1.10 で禁止を最上位にした)。
+#
+# v1.9 の実装はエスカレーションを禁止より上に置いていたが、D77 で採らないと決まった。
+# 禁止が確定しているなら人に尋ねることはなく、エスカレーションを上に置くと、継承した
+# 禁止が「知らない値についての問い」に塗り替えられて承認で上書きされるおそれがある。
 DECISION_STRICTNESS: dict[str, int] = {
     "許可": 1,
     "条件付き許可": 2,
-    "禁止": 3,
-    ESCALATE_DECISION: 4,
+    ESCALATE_DECISION: 3,
+    "禁止": 4,
 }
 # 継承側から取り入れる結論(制限的なものだけ。許可は及ばない。D74・D60)
 INHERITED_RESTRICTIVE = ("禁止", "条件付き許可", ESCALATE_DECISION)
 
 
 def strictness(decision: str) -> int:
-    """結論の厳しさを返す。知らない結論は最も厳しい扱いにする(安全側。D46と同じ)。"""
-    return DECISION_STRICTNESS.get(decision, max(DECISION_STRICTNESS.values()))
+    """結論の厳しさを返す。
+
+    知らない結論は、最上位(禁止)ではなく**エスカレーションと同じ厳しさ**にする(D77)。
+    知らない結論を禁止と同じに扱うと、確定した禁止と見分けが付かなくなる。人に尋ねる
+    のと同じ扱いにしておけば、禁止には負け、許可と条件付き許可には勝つ。
+    """
+    return DECISION_STRICTNESS.get(decision, DECISION_STRICTNESS[ESCALATE_DECISION])
 
 
 def compose_decisions(own: Optional[dict], inherited: list[dict]) -> dict:
@@ -93,6 +103,7 @@ def compose_decisions(own: Optional[dict], inherited: list[dict]) -> dict:
 
     - 継承側からは**禁止・条件付き許可だけ**を取り入れる。親の許可は子に及ばない(D60)
     - 取り入れた結論と自分の結論のうち、最も厳しいものを採る
+      (禁止 ＞ エスカレーション ＞ 条件付き許可 ＞ 許可。D77)
     - 自分の判定が無い具体的な行為(`own=None`)では、継承側の制限だけがかかる。
       制限が1つも無ければ「許可」になる(禁止する条文が1つも無い行為は許可)
 

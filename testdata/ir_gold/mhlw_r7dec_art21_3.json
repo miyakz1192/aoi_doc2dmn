@@ -32,7 +32,6 @@
     "action": {
       "surface": "労働に従事させ",
       "normalized": "労働指示",
-      "parent": null,
       "is_new": true,
       "approved_by": null
     },

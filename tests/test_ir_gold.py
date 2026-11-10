@@ -383,3 +383,77 @@ def test_article14_does_not_touch_the_shared_intermediate_decision():
     assert ir.level_determination.intermediate == []
     assert ir.new_decision_tables[0].input_columns == ["birth_match", "phone_match"]
     assert ir.review_gates.gate_names() == ["new_action_unapproved"]
+
+
+def test_gold_irs_do_not_carry_the_action_parent(): 
+    """D78: 正解IR に action.parent が無いこと。
+
+    親子関係を IR と台帳の2か所に持つと、どちらが規範かが決まらない。実際に
+    `aoi_johokanri_art14`(情報開示)と `mhlw_r7dec_art11_1`(会社資源利用)が台帳の
+    親と食い違っていた(第32回 6.8節)。
+    """
+    for path in _gold_files():
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        assert "parent" not in payload["ir"]["action"], path.name
+
+
+def test_the_two_revised_gold_irs_record_the_removal_in_their_history():
+    """D78: parent を消した2件は、消した値と再承認を履歴に残し approved のまま。"""
+    expected = {
+        "aoi_johokanri_art14": "情報開示",
+        "mhlw_r7dec_art11_1": "会社資源利用",
+    }
+    for gold_id, removed in expected.items():
+        payload = json.loads((GOLD_DIR / f"{gold_id}.json").read_text(encoding="utf-8"))
+        review = payload["review"]
+        assert review["status"] == "approved"
+        entries = [h for h in review["history"] if h["change"] == "action_parent_removed"]
+        assert len(entries) == 1, gold_id
+        entry = entries[0]
+        assert entry["before"]["parent"] == removed
+        assert entry["fields"] == ["ir.action.parent"]
+        assert entry["reason"] == "D78"
+        assert entry["approved_by"] == "Kazuhiro"
+        assert entry["at"] == "2026-11-11"
+
+
+def test_an_old_ir_that_still_writes_the_parent_is_read_with_a_warning():
+    """D78: 古い IR(parent 付き)はエラーにせず、無視して警告に残す。"""
+    from src.stage3_generate.ir_schema import clear_ir_load_warnings, ir_load_warnings
+
+    payload = json.loads(
+        (GOLD_DIR / "aoi_johokanri_art14.json").read_text(encoding="utf-8")
+    )["ir"]
+    payload["action"]["parent"] = "情報開示"
+    clear_ir_load_warnings()
+    ir = clause_ir_from_json(payload)
+    assert not hasattr(ir.action, "parent")
+    assert ir.action.normalized == "口頭伝達"
+    warnings = ir_load_warnings()
+    assert len(warnings) == 1
+    assert "action.parent" in warnings[0] and "情報開示" in warnings[0]
+    clear_ir_load_warnings()
+
+
+def test_the_hierarchy_comes_only_from_the_ledger():
+    """D78: 前段も後半も、親子関係は台帳からだけ引くこと。
+
+    台帳の親を書き換えると祖先・子孫が変わり、IR には親の欄が無いことを確かめる。
+    """
+    from src.stage3_generate.registry import Registry as _Registry
+    from src.stage3_frontstage.action_ledger import ActionLedger
+
+    ledger = [
+        {"name": "情報提供", "kind": "abstract", "parent": None},
+        {"name": "口頭伝達", "kind": "concrete", "parent": "情報提供"},
+    ]
+    registry = _Registry.empty()
+    registry.action_ledger = [dict(e) for e in ledger]
+    assert registry.action_ancestors("口頭伝達") == ["情報提供"]
+    assert registry.action_descendants("情報提供") == ["口頭伝達"]
+    # 前段(台帳)でも同じ親子関係が引ける
+    front = ActionLedger.from_json([dict(e) for e in ledger])
+    assert front.ancestors("口頭伝達") == ["情報提供"]
+    # 台帳の親を外せば、IR を1文字も変えなくても親子関係は消える
+    registry.action_ledger[1]["parent"] = None
+    assert registry.action_ancestors("口頭伝達") == []

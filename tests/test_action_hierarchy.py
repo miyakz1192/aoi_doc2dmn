@@ -17,6 +17,7 @@ import pytest
 
 from tests.conftest import make_provenance, passthrough_fact
 
+from src.stage3_generate.ir_schema import RuleRowDraft
 from src.stage3_generate.registry import (
     ACTION_ABSTRACT,
     ACTION_CONCRETE,
@@ -27,6 +28,7 @@ from src.stage3_generate.registry import (
 from src.stage3_generate.scenario_eval import (
     ESCALATE_DECISION,
     compose_decisions,
+    strictness,
     evaluate_route,
 )
 from src.stage3_generate.wiring_generator import (
@@ -221,9 +223,38 @@ def test_composition_prefers_the_strictest_of_three():
     assert compose_decisions(own, only_conditional)["decision"] == "条件付き許可"
 
 
-def test_composition_escalates_when_any_decision_escalates():
-    """知らない値でエスカレーションになった判定があれば、人の確認に回す(D46)。"""
+def test_composition_escalates_only_when_nothing_prohibits():
+    """知らない値のエスカレーションは、禁止が無いときだけ結論になる(D46・D77)。
+
+    v1.9 の実装はエスカレーションを禁止より上に置いていたので、継承した禁止が
+    エスカレーションに塗り替えられていた。D77 で禁止を最上位にした。
+    """
     own = {"decision": "許可"}
+    escalating = {
+        "decision_id": "d_parent",
+        "result": {"decision": ESCALATE_DECISION, "reason_code": "unknown_fact_value"},
+    }
+    assert compose_decisions(own, [escalating])["decision"] == ESCALATE_DECISION
+    # 禁止があれば禁止が勝つ
+    prohibiting = {"decision_id": "d_other", "result": {"decision": "禁止", "reason_code": "ng"}}
+    assert compose_decisions(own, [escalating, prohibiting])["decision"] == "禁止"
+
+
+def test_composition_prefers_prohibition_over_own_escalation():
+    """自分がエスカレーション、継承が禁止 → 禁止(D77)。"""
+    own = {"decision": ESCALATE_DECISION, "reason_code": "unknown_fact_value"}
+    inherited = [{"decision_id": "d_parent", "result": {"decision": "禁止", "reason_code": "p_ng"}}]
+    out = compose_decisions(own, inherited)
+    assert (out["decision"], out["reason_code"], out["_composed_from"]) == (
+        "禁止",
+        "p_ng",
+        "d_parent",
+    )
+
+
+def test_composition_prefers_escalation_over_own_conditional_permission():
+    """自分が条件付き許可、継承がエスカレーション → エスカレーション(D77)。"""
+    own = {"decision": "条件付き許可", "reason_code": "own_cond"}
     inherited = [
         {
             "decision_id": "d_parent",
@@ -231,6 +262,20 @@ def test_composition_escalates_when_any_decision_escalates():
         }
     ]
     assert compose_decisions(own, inherited)["decision"] == ESCALATE_DECISION
+
+
+def test_composition_treats_an_unknown_decision_as_escalation():
+    """知らない結論はエスカレーションと同じ厳しさで、禁止には負ける(D77)。"""
+    assert strictness("なんだこれ") == strictness(ESCALATE_DECISION)
+    own = {"decision": "なんだこれ", "reason_code": "weird"}
+    inherited = [{"decision_id": "d_parent", "result": {"decision": "禁止", "reason_code": "p_ng"}}]
+    assert compose_decisions(own, inherited)["decision"] == "禁止"
+    # 条件付き許可よりは厳しい(自分の側が知らない結論の場合)
+    cond = [{"decision_id": "d_parent", "result": {"decision": "条件付き許可"}}]
+    assert compose_decisions(own, cond)["decision"] == "なんだこれ"
+    # 継承側の知らない結論は取り入れない(INHERITED_RESTRICTIVE は D74 のまま)
+    weird = [{"decision_id": "d_parent", "result": {"decision": "なんだこれ"}}]
+    assert compose_decisions({"decision": "許可"}, weird)["decision"] == "許可"
 
 
 def test_composition_without_own_decision_is_permitted_when_nothing_restricts():
@@ -292,3 +337,137 @@ def test_ancestors_stops_on_a_cycle():
     ]
     assert action_ancestors(looped, "A") == ["B"]
     assert action_descendants(looped, "A") == ["B"]
+
+
+# --------------------------------------------------------------------------
+# D79: v1.9 の実装判断の追認(第33回タスクA3)
+# --------------------------------------------------------------------------
+
+
+def test_descendant_rows_are_exempt_from_the_d17_check(simple_ir, child_registry):
+    """D79 (a): 作り直した子孫の行は、IR とは別の DMN モデルにあってよい。
+
+    D17(1つの IR は1つのモデルだけを触る)をそのまま当てると、子の判定が別の
+    モデルにある普通の場合に継承が成立しない。例外にするのは `origin` が
+    `descendant` の行だけで、自分の行(`target`)には今までどおり当てる。
+    """
+    ir = _with_action(simple_ir, "情報提供")
+    routes = derive_routes(ir, child_registry)
+    assert routes[0]["origin"] == "descendant"
+    # 子の行のモデルは IR の target のモデルと違う
+    assert routes[0]["dmn_model"] == "verbal_disclosure"
+    assert ir.target.dmn_model == "simple"
+
+
+def test_only_descendant_rows_are_exempt_from_d17(simple_ir, child_registry):
+    """D79 (a): 例外は `origin == "descendant"` の行だけであること。
+
+    自分の行(`target`)は定義上 IR の target.dmn_model になるので検査にかからない。
+    検査が効くのは、IR が直した既存の表から作り直す行(`dependent`)である。段を
+    concrete にして同じ登録簿を通すと、子孫の行が作られなくなり D17 で止まる。
+    """
+    registry = child_registry.copy()
+    # 情報提供を具体的な行為にしてしまうと、子孫の行の作り直しが起きない
+    registry.action_ledger = [
+        {"name": "情報提供", "kind": ACTION_CONCRETE, "parent": None},
+        {"name": "口頭伝達", "kind": ACTION_CONCRETE, "parent": "情報提供"},
+    ]
+    ir = _with_action(simple_ir, "情報提供")
+    routes = derive_routes(ir, registry)
+    assert [r["origin"] for r in routes] == ["target"]
+    assert routes[0]["dmn_model"] == ir.target.dmn_model
+
+    # 一方、IR が直した既存の表から作り直す行(`dependent`)が別のモデルにあると、
+    # 今までどおり D17 で止まる
+    ir = dataclasses.replace(
+        _with_action(simple_ir, "情報提供"),
+        rule_row_additions=[
+            RuleRowDraft(
+                row_id="id_verbal_2",
+                decision_table_id="dt_verbal",
+                position=2,
+                conditions={"birth_match": "不一致"},
+                outputs={"decision": "禁止", "reason_code": "ng"},
+            )
+        ],
+    )
+    with pytest.raises(SchemaWiringError, match="D17違反"):
+        derive_routes(ir, registry)
+
+
+def test_layer1_entry_points_also_carry_an_abstract_actions_decision(simple_ir, child_registry):
+    """D79 (b): 層1の entry_points は抽象的な Action の判定も持つ。
+
+    行を作らないのはルーティング表の段階だけで、「Action と判定の対応」としては
+    抽象的な Action も層1に載る。載っていなければ、子の行は継承する判定を引けない。
+    """
+    registry = child_registry.copy()
+    provenance = make_provenance("既存規程 第0条").to_json()
+    registry.decision_tables = list(registry.decision_tables) + [
+        {
+            "decision_table_id": "dt_provision",
+            "decision_id": "decision_provision",
+            "decision_name": "情報提供可否判定",
+            "dmn_model": "information_provision",
+            # 抽象的な Action の entry_point
+            "entry_points": [{"actor": "あおい", "action": "情報提供"}],
+            "hit_policy": "FIRST",
+            "input_columns": [],
+            "output_columns": ["decision", "reason_code"],
+            "depends_on_decisions": [],
+            "depends_on_inputs": [],
+            "knowledge_sources": [],
+            "provenance": provenance,
+        }
+    ]
+    assert registry.entry_points_of_action("情報提供") == [
+        {
+            "actor": "あおい",
+            "action": "情報提供",
+            "dmn_model": "information_provision",
+            "decision_id": "decision_provision",
+        }
+    ]
+    # 子(口頭伝達)の行が、その判定を継承する判定として引く
+    routes = derive_routes(_with_action(simple_ir, "口頭伝達"), registry)
+    assert routes[0]["inherited_decisions"] == [
+        {"dmn_model": "information_provision", "decision_id": "decision_provision"}
+    ]
+
+
+def test_c8_allows_the_own_facts_of_an_ir_that_makes_no_row():
+    """D79 (c): C8 は非対称。行を作らない IR の自分の事実は余分として許す。"""
+    routing = {"routes": []}
+    bindings = {"dmn_model": "simple", "facts": [{"variable": "role"}]}
+    # 余分な事実を extra_facts として渡せば通る(行が無い IR の自分の事実)
+    _check_c8_routing_matches_bindings(routing, bindings, extra_facts={"role"})
+    # 渡さなければ止まる(バインディング設定にだけある事実は普通は誤り)
+    with pytest.raises(SchemaWiringError, match="C8検証失敗"):
+        _check_c8_routing_matches_bindings(routing, bindings)
+
+
+def test_a_gold_ir_with_inherited_decisions_needs_a_composition_scenario(tmp_path):
+    """D79 (e): 継承する判定を持つ正解IR には composition のシナリオを要求する。
+
+    正解IR の一式を一時ディレクトリに写し、第14条から `"composition": true` の
+    シナリオだけを外して全件を通す。継承が効くことを確かめるシナリオが無ければ、
+    その1件が失敗になる。
+    """
+    import json
+    import shutil
+
+    from src.stage3_generate.run_ir_gold import GOLD_DIR_DEFAULT, run_all
+
+    gold_dir = tmp_path / "ir_gold"
+    shutil.copytree(GOLD_DIR_DEFAULT, gold_dir)
+    path = gold_dir / "aoi_johokanri_art14.json"
+    gold = json.loads(path.read_text(encoding="utf-8"))
+    assert any(s.get("composition") for s in gold["scenarios"])
+    gold["scenarios"] = [s for s in gold["scenarios"] if not s.get("composition")]
+    path.write_text(json.dumps(gold, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    results = {r.gold_id: r for r in run_all(gold_dir=gold_dir, verbose=False)}
+    problems = results["aoi_johokanri_art14"].problems
+    assert any("composition" in p for p in problems), problems
+    # ほかの正解IR は通ったまま
+    assert not results["ipa_secguide_v4_6_7_1"].problems

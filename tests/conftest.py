@@ -108,7 +108,6 @@ def _assemble(
     action = ActionRef(
         surface="操作を行う",
         normalized="テスト操作",
-        parent="システム操作",
         is_new=True,
         approved_by="pytest",
     )

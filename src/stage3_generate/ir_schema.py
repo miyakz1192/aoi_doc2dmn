@@ -122,6 +122,30 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Literal, Optional, Union
 
+# --------------------------------------------------------------------------
+# 読み込み時の警告(v1.10)
+# --------------------------------------------------------------------------
+#
+# 廃止した欄を持つ古い IR を読んでも、エラーにはせず無視して警告に残す(D78)。
+# 例外にすると承認済みの古い IR が読めなくなり、警告を出さないと黙って落ちる。
+_LOAD_WARNINGS: list[str] = []
+
+
+def _warn(message: str) -> None:
+    if message not in _LOAD_WARNINGS:
+        _LOAD_WARNINGS.append(message)
+
+
+def ir_load_warnings() -> list[str]:
+    """これまでの読み込みで出た警告の一覧を返す。"""
+    return list(_LOAD_WARNINGS)
+
+
+def clear_ir_load_warnings() -> None:
+    """警告を捨てる(1件ずつ評価するときに、件ごとに区切るため)。"""
+    _LOAD_WARNINGS.clear()
+
+
 ColumnSetRelationKind = Literal[
     "exact_match",
     "proper_subset",
@@ -269,11 +293,20 @@ class ActionRef:
 
     NL表層->候補はLLM、階層への位置づけは人間が新規登録時のみ判断、
     実行時は静的文字列一致で完結させる、という設計を踏襲する。
+
+    ## v1.10 で `parent` を廃止した(D78)
+
+    Action の親子関係は **Action 台帳だけが持つ**。前段も後半も IR の parent を
+    読まない。親子関係が2か所にあると、どちらが規範かが決まらず、実際に正解IR の
+    parent(情報開示・会社資源利用)と台帳の親(情報提供・親なし)が食い違っていた
+    (第32回 6.8節)。前段はもともと parent を書かない(前段設計書 P6)。
+
+    古い IR(parent を書いた JSON)も読めるようにしてあり、`parent` があれば
+    無視して `ir_load_warnings()` に警告を1件足す。
     """
 
     surface: str
     normalized: str
-    parent: Optional[str]
     is_new: bool
     approved_by: Optional[str] = None
 
@@ -989,10 +1022,16 @@ def clause_ir_from_json(payload: dict) -> ClauseIR:
     axis1 = _axis_from_json(payload["axis1_result"])
     axis2 = _axis_from_json(payload["axis2_result"])
     action_payload = payload["action"]
+    if "parent" in action_payload:
+        # v1.10 で廃止した欄(D78)。古い IR を読めるようにエラーにはせず、無視した
+        # ことを警告に残す
+        _warn(
+            f"action.parent は v1.10 で廃止した(D78)ので無視した: "
+            f"{action_payload.get('parent')!r}(Action の親子関係は Action 台帳が持つ)"
+        )
     action = ActionRef(
         surface=action_payload["surface"],
         normalized=action_payload["normalized"],
-        parent=action_payload.get("parent"),
         is_new=action_payload["is_new"],
         approved_by=action_payload.get("approved_by"),
     )

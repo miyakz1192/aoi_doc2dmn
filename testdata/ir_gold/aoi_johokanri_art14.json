@@ -49,7 +49,6 @@
     "action": {
       "surface": "口頭で伝達",
       "normalized": "口頭伝達",
-      "parent": "情報開示",
       "is_new": true,
       "approved_by": null
     },
@@ -350,6 +349,20 @@
         "reason": "D74・D75(親の Action の判定の継承と合成)を評価で確かめるため。IR の本体は変えていない",
         "approved_by": "Kazuhiro",
         "at": "2026-11-08"
+      },
+      {
+        "change": "action_parent_removed",
+        "fields": [
+          "ir.action.parent"
+        ],
+        "before": {
+          "parent": "情報開示"
+        },
+        "after": {},
+        "reason": "D78",
+        "approved_by": "Kazuhiro",
+        "at": "2026-11-11",
+        "note": "Action の親子関係は Action 台帳だけが持つことにしたので(D78)、IR の parent の欄を廃止した。消した値は「情報開示」で、台帳の親(口頭伝達 → 情報提供／施設物品使用 → 親なし)と食い違っていた(第32回 6.8節)。D78 の機械的な変更として Kazuhiro が承認した。判定にも配線にも影響しないので review.status は approved のまま"
       }
     ]
   }

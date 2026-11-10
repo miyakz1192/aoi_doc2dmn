@@ -566,7 +566,8 @@ class ActionNormalizer:
         action = ActionRef(
             surface=primary.surface,
             normalized=normalized,
-            parent=None,  # P6: 前段は親を書かない
+            # P6: 前段は親を書かない。v1.10 で IR の parent そのものを廃止した(D78)ので、
+            # 新規候補の親の案は Trace の new_action_proposal にだけ置く
             is_new=is_new,
             approved_by=None,  # D53: 承認は人
         )

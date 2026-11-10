@@ -32,7 +32,6 @@
     "action": {
       "surface": "特権/管理者権限で操作を行う",
       "normalized": "特権操作",
-      "parent": null,
       "is_new": true,
       "approved_by": null
     },

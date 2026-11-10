@@ -32,7 +32,6 @@
     "action": {
       "surface": "組織、人に提供",
       "normalized": "情報提供",
-      "parent": null,
       "is_new": true,
       "approved_by": null
     },

@@ -351,7 +351,8 @@ def test_no_match_proposes_a_new_action_with_a_kind_and_never_writes_the_parent(
     )
     assert result.action.is_new is True
     assert result.action.normalized == "口頭伝達"
-    assert result.action.parent is None  # IR には書かない(P6)
+    # IR に parent の欄そのものが無い(P6・D78。v1.10 で廃止)
+    assert not hasattr(result.action, "parent")
     assert result.action.approved_by is None  # 承認は人(D53)
     assert result.trace.new_action_proposal.parent_suggestion == "情報提供"
     assert result.trace.new_action_proposal.kind == "concrete"

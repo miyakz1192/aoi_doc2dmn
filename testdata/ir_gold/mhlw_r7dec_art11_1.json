@@ -32,7 +32,6 @@
     "action": {
       "surface": "会社の施設、物品等を使用",
       "normalized": "施設物品使用",
-      "parent": "会社資源利用",
       "is_new": true,
       "approved_by": null
     },
@@ -380,6 +379,20 @@
         "approved_by": "Kazuhiro",
         "at": "2026-11-06",
         "note": "規範の様相(「しないこと」)を surface から外した。決定表・事実・シナリオは変えていない"
+      },
+      {
+        "change": "action_parent_removed",
+        "fields": [
+          "ir.action.parent"
+        ],
+        "before": {
+          "parent": "会社資源利用"
+        },
+        "after": {},
+        "reason": "D78",
+        "approved_by": "Kazuhiro",
+        "at": "2026-11-11",
+        "note": "Action の親子関係は Action 台帳だけが持つことにしたので(D78)、IR の parent の欄を廃止した。消した値は「会社資源利用」で、台帳の親(口頭伝達 → 情報提供／施設物品使用 → 親なし)と食い違っていた(第32回 6.8節)。D78 の機械的な変更として Kazuhiro が承認した。判定にも配線にも影響しないので review.status は approved のまま"
       }
     ]
   }

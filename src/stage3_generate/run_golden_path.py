@@ -151,8 +151,8 @@ def run(
     # --- ③a IR構築 ---
     ir = build_golden_path_ir(axis1, axis2, clause_text=clause.text_raw)
     print("[③a IR]")
-    print(f"  actor={ir.actor} action={ir.action.normalized}(parent={ir.action.parent}, "
-          f"is_new={ir.action.is_new}) scope={ir.scope}")
+    print(f"  actor={ir.actor} action={ir.action.normalized}"
+          f"(is_new={ir.action.is_new}) scope={ir.scope}")
     print(f"  level_outcome={ir.level_determination.outcome}")
     # D31: option_taken は決定表ごとに導出する(IR には拒否の印だけを持つ)
     print(f"  compound_fact={ir.option_taken} "
