@@ -146,6 +146,44 @@ def clear_ir_load_warnings() -> None:
     _LOAD_WARNINGS.clear()
 
 
+# --------------------------------------------------------------------------
+# ゲートの2種類(前段設計書 v0.5 の P21)
+# --------------------------------------------------------------------------
+#
+# 「疑い」は誤りの疑いがあるときだけ立つゲートで、**正しい結果なのに立ったら誤報**
+# として数える。「設計上の確認」は結果が正しくても人が見ることにしているゲートで、
+# 誤報には数えない(P21・P22)。
+#
+# - new_action_unapproved: 新しい語彙の承認は必ず人(D14・D53)
+# - action_abstract_selected: 抽象的な Action を選ぶと禁止が子すべてに及ぶので、
+#   正しく選んだ場合でも人が段を確かめる(P22)
+SUSPICION_GATES: tuple[str, ...] = (
+    "action_surface_unverified",
+    "action_surface_ambiguous",
+    "action_verb_mismatch",
+    "action_possible_duplicate",
+    "action_name_rule",
+)
+DESIGN_CHECK_GATES: tuple[str, ...] = (
+    "new_action_unapproved",
+    "action_abstract_selected",
+)
+
+
+def gate_kind(name: str) -> str:
+    """ゲートの種類を返す(P21)。"suspicion" / "design_check" / "other"。
+
+    "other" は、Action 正規化より前の段(②の分類・fact)のゲートである
+    (confidence_below_threshold・quote_unverified・new_fact_unapproved など)。
+    前段の Action 正規化の評価では立たないので、2種類のどちらにも入れない。
+    """
+    if name in SUSPICION_GATES:
+        return "suspicion"
+    if name in DESIGN_CHECK_GATES:
+        return "design_check"
+    return "other"
+
+
 ColumnSetRelationKind = Literal[
     "exact_match",
     "proper_subset",

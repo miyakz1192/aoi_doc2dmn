@@ -15,6 +15,7 @@
       "candidates": 13
     },
     "version": "v2(第31回 HANDOFF 4章)",
+    "split": "dev",
     "based_on": "testdata/action_gold/action_gold_v1.json(v1 は残す)",
     "changes": [
       "expected に kind(concrete / abstract)と parent を足した(P14・D73)",
@@ -27,7 +28,8 @@
     "hierarchy_approved_by": "Kazuhiro",
     "hierarchy_approved_at": "2026-11-08",
     "hierarchy_basis": "2026-11-08 の案X(Action の階層＋禁止の継承)。名前・段・親は承認済み、定義は案のまま(definition_status=provisional。P18)",
-    "excludes_note": "excludes はすべて空にする。紛らわしい相手は評価の後半で台帳に入る Action であり、最初から書くと正解を先取りすることになる(第31回 HANDOFF 4.1節)"
+    "excludes_note": "excludes はすべて空にする。紛らわしい相手は評価の後半で台帳に入る Action であり、最初から書くと正解を先取りすることになる(第31回 HANDOFF 4.1節)",
+    "split_note": "開発用(dev)。設計を直すときに見てよい条文(P20)。保留用は action_gold_holdout_v1.json"
   },
   "ledger_seed": [
     {

@@ -49,6 +49,12 @@ MODALITY_WORDS: tuple[str, ...] = (
     "しなければいけない",
     "しないものとする",
     "するものとする",
+    # 「してはならない」の「し」が無い形。「伝えてはならない」「立ち入ってはならない」の
+    # ように、動詞が「し」で終わらない条文で要る。今の一覧では「ならない」だけが削れて
+    # 「伝えては」が残っていた。第33回タスクB3(保留評価セットの条文を読んで気付いた、
+    # 結果を見る前の一般的な抜けの補い)
+    "てはならない",
+    "てはいけない",
     "しないこと",
     "しないよう",
     "なりません",
@@ -171,6 +177,37 @@ class SurfaceCheck:
 # 逐語の照合の前に剥がす記号(②の分類器の _QUOTE_STRIP_CHARS と同じ扱い)。
 _STRIP_CHARS = "「」『』\"'“” 　\n\t。、"
 
+# P24 で取り除く丸括弧の組(全角・半角)。角括弧・隅付き括弧は条文の項番号に使われる
+# ので対象にしない。
+_PAREN_PAIRS = (("（", "）"), ("(", ")"))
+
+
+def strip_parentheses(text: str) -> str:
+    """丸括弧とその中身を取り除く(P24)。
+
+    入れ子は**外側ごと**除く(「（甲（乙）丙）」→ 空)。閉じ括弧が足りない場合は、
+    開き括弧から末尾までを除く。全角と半角は別々に数える(「（…)」のような混在は
+    対応させない。条文にそういう書き方は無く、無理に組み合わせると取りすぎる)。
+
+    前段設計書 P24: 語句が条文の部分文字列かを確かめる前に、**条文と語句の両方**から
+    取り除く。第32回の `action_surface_unverified` の1件は、LLM が
+    「深夜（午後１０時から午前５時まで）労働」の括弧の中を飛ばして「深夜労働」と
+    書いたためだった。括弧の中は補足で、行為の語句の一部ではない。
+    """
+    out = text
+    for opener, closer in _PAREN_PAIRS:
+        buf: list[str] = []
+        depth = 0
+        for char in out:
+            if char == opener:
+                depth += 1
+            elif char == closer and depth > 0:
+                depth -= 1
+            elif depth == 0:
+                buf.append(char)
+        out = "".join(buf)
+    return out
+
 
 def find_normative_modality(text: str) -> list[str]:
     """Action の名前・定義に規範の様相の語が入っていないかを見る(P16)。"""
@@ -178,13 +215,19 @@ def find_normative_modality(text: str) -> list[str]:
 
 
 def check_surface(surface: str, clause_text: str) -> SurfaceCheck:
-    """末尾の様相を削り、残りが条文の部分文字列かを確かめる(手順2。P4)。"""
+    """末尾の様相を削り、残りが条文の部分文字列かを確かめる(手順2。P4・P24)。
+
+    部分文字列の照合は、条文と語句の**両方から丸括弧とその中身を取り除いて**行う
+    (P24)。`surface` には括弧を取り除く前の語句を入れる。括弧の中は条文に実在する
+    文字なので、語句から勝手に消して IR に入れるのは逐語ではなくなるためである。
+    """
     cleaned = surface.strip().strip(_STRIP_CHARS).strip()
     stripped, removed = strip_modality(cleaned)
     stripped = stripped.strip().strip(_STRIP_CHARS).strip()
+    for_match = strip_parentheses(stripped).strip()
     return SurfaceCheck(
         surface=stripped,
-        in_clause=bool(stripped) and stripped in clause_text,
+        in_clause=bool(for_match) and for_match in strip_parentheses(clause_text),
         modality_found=find_modality(stripped),
         raw=cleaned,
         removed_modality=removed,

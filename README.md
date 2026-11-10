@@ -20,9 +20,10 @@ aoi_doc2dmn/
 │   │   └── vocab_flags.py   # 既知の語彙的盲点への安全網フラグ
 │   ├── stage3_frontstage/ # ③a 前段(条文→IR)。第1要素: Action 正規化
 │   │   ├── action_ledger.py     # Action 台帳(登録簿の action_ledger)と近さの判定
-│   │   ├── modality.py          # 規範の様相の語の一覧と検出(D71・P4)
-│   │   ├── action_normalizer.py # 逐語の抜き出し→閉じた選択→k回の多数決→ゲート
-│   │   └── run_action_eval.py   # 正解18件を台帳を育てながら評価する(P13)
+│   │   ├── modality.py          # 様相の語の一覧と検出(D71・P4)、括弧の除去(P24)
+│   │   ├── action_normalizer.py # 逐語の抜き出し→閉じた選択→検査→ゲート(k=1)
+│   │   ├── run_action_eval.py   # 正解を台帳を育てながら評価する(P13。dev / holdout)
+│   │   └── recompute_metrics.py # 済んだ評価の生データから指標を計算し直す(LLM 不要)
 │   ├── stage3_generate/  # ③a 内容生成(IR→4点セット)
 │   │   ├── ir_schema.py        # ClauseIR v2 / FactDef / ReviewGates
 │   │   ├── registry.py         # Scope/Decision登録簿(層1・2・3)の読み書き
@@ -133,8 +134,13 @@ aoi_doc2dmn/
   IRは自分の行を作らず、子孫の具体的な行為の行を作り直す（D76）。合成の規則
   （禁止＞条件付き許可＞許可）は`scenario_eval.compose_decisions`にあり、
   `"composition": true`のシナリオが正解IRで確かめる
+- v1.10 では、合成の厳しさの順序を**禁止 ＞ エスカレーション ＞ 条件付き許可 ＞ 許可**に
+  した（D77）。禁止が確定しているなら人に尋ねることはないためで、知らない結論は最上位では
+  なくエスカレーションと同じ厳しさにする。`ClauseIR.action.parent`は**廃止**し、Actionの
+  親子関係はAction台帳だけが持つ（D78。古いIRのparentは無視して`ir_load_warnings()`に
+  警告を残す）。v1.9の実装判断5件を設計として追認した（D79）
 - ③aの**前段**（条文 → IR）は`docs/design/aoi_doc2dmn_frontstage_design.md`（前段設計書
-  v0.4）で設計し、4つの要素（Action正規化 → 事実の抽出 → 行の構成 → レベル判定）に分けて
+  v0.5）で設計し、4つの要素（Action正規化 → 事実の抽出 → 行の構成 → レベル判定）に分けて
   1つずつ自動化する（P1）。**第1要素のAction正規化を`src/stage3_frontstage/`に実装済み**。
   残り3要素は未実装で、`golden_path.py`がゴールデンパス1件のIRを手で組み立てている
 - Action正規化は、Action台帳（`registry.json`の`action_ledger`。エージェントの職務記述書に
@@ -148,6 +154,14 @@ aoi_doc2dmn/
   - 行為の語句の候補が2つ出たら`action_surface_ambiguous`（P17）
   - 既存に寄せたとき、語句の**中心の動詞**が、その Action の過去の語句の動詞に無ければ
     `action_verb_mismatch`（P15）。抽象的な段を選んだら`action_abstract_selected`
+- v0.5（第33回）で、ゲートを**疑い**（surface_unverified・surface_ambiguous・
+  verb_mismatch・possible_duplicate・name_rule）と**設計上の確認**
+  （new_action_unapproved・action_abstract_selected）に分けた（P21・P22。一覧は
+  `ir_schema.SUSPICION_GATES` / `DESIGN_CHECK_GATES`）。誤報は疑いのゲートについてだけ
+  数え、合格の条件と並べて**人に回る割合**と**疑いのゲートの適合率**を報告する。
+  部分文字列の照合の前に、条文と語句の両方から丸括弧とその中身を取り除く
+  （P24。`modality.strip_parentheses`）。1文に複数の行為がある条文は正解を並べ、
+  どれを出力しても正しいとする（P25。正解ファイルの`expected_alternatives`）
   - 新規候補の名前・定義に規範の様相があれば`action_name_rule`（P16）
 - 合格の条件は「**ゲートをすり抜けた重大な誤り（誤統合・適用漏れ）が0件**」（P9）。
   14Bのローカルモデルに誤りを0件にさせるのではなく、疑わしいものを必ず人に回す
@@ -249,7 +263,9 @@ Action**を台帳に足してから次へ進む（教師あり。P13）。前段
 
 測るのは、誤りの4分類（**誤統合**・**適用漏れ**＝重大、過剰適用＝中、取りこぼし＝軽）と、
 **そのうちゲートが1つも立たなかった件数（すり抜け。0件が合格の条件。P9）**、
-ゲートの誤報、既存か新規かの正解率、surfaceの3条件である。結果は
+ゲートの誤報（疑いのゲートだけ）、既存か新規かの正解率、surfaceの3条件、そしてv0.5で
+足した**人に回る割合**・**疑いのゲートの適合率**・**新規候補の段の一致率**・
+**新規候補の一覧**（P21・P23）である。結果は
 `out/action_eval/result.json`に出る（1件ごとに`partial.json`も書くので、途中で落ちても
 結果は残る）。LLM呼び出しは1件あたり2〜3回（k=1。抜き出し＋選択＋「該当なし」なら候補の案）。
 
@@ -264,13 +280,38 @@ surfaceの3条件が8/18→16/18に上がり、LLM呼び出しは114回→44回�
 `HANDOFF_20261108_round32_to_web.md`の5節・6節。どちらのファイルにも18件それぞれの
 Trace（抜き出し・選択・理由・選ばなかったActionとその理由・新規候補・重複の判定）が入っている。
 
+#### 開発用と保留用（P20）
+
+評価に使う条文は**開発用**（設計を直すときに見てよい）と**保留用**（設計を固めてから
+1回だけ流し、結果を見て直さない）に分ける。正解ファイルの`_meta.split`が`dev`か`holdout`で、
+評価の出力の`_meta.split`にも書く。
+
+| 正解ファイル | split | 件数 | 台帳の出発点 |
+|---|---|---|---|
+| `testdata/action_gold/action_gold_v2.json` | dev | 18 | 初期登録の1件（あおいの外部送信） |
+| `testdata/action_gold/action_gold_holdout_v1.json` | holdout | 15 | 開発用18件を足し終えた状態（12件） |
+
+保留用は、**全件の`review.approved_by`が入るまで`run_action_eval`が止まる**
+（第33回4.3節。誤って未確定の正解で流すと、その条文は二度と保留用に使えない）。
+保留用の出発点の台帳は`ledger_seed`に固定してあり、`action_gold_v2`から作り直して一致する
+ことを`tests/test_action_gold_holdout.py`が確かめる。
+
+```bash
+# 済んだ評価の生データから、v0.5 の指標を計算し直す（LLM は回さない）
+.venv/bin/python3 -m src.stage3_frontstage.recompute_metrics
+```
+
+第32回の生データに当てた結果は`docs/eval/action_eval_20261108_metrics_v05.json`にある
+（人に回ったのは15/18件・自動で通ったのは3件、疑いのゲートの適合率5/9、新規候補の段の
+一致5/7、P24を当てると`action_surface_unverified`が1件→0件）。
+
 ### テスト
 
 ```bash
 .venv/bin/python3 -m pytest tests/ -v
 ```
 
-Ollamaは不要。6つのファイルに分かれている。
+Ollamaは不要。9つのファイルに分かれている。
 
 - `test_cross_validation.py`：クロス検証C1〜C12の失敗テスト（わざと違反させたIRで
   `SchemaWiringError`になること）
@@ -289,9 +330,13 @@ Ollamaは不要。6つのファイルに分かれている。
 - `test_action_normalizer.py`：前段のAction正規化。**LLMは固定の応答を返す偽物に差し替える**
   （様相の削り落とし・逐語の確認・候補2つ・動詞の一致の検査・7つのゲート・名前と定義の
   規則・教師ありの台帳の更新・誤りの4分類）
-- `test_action_hierarchy.py`：Action台帳の2段化と禁止の継承（D73〜D76）。抽象的なActionが
+- `test_action_hierarchy.py`：Action台帳の2段化と禁止の継承（D73〜D79）。抽象的なActionが
   行を作らないこと、継承する判定の事実がrequired_factsに入ること、合成で継承側の許可が
-  無視されること
+  無視されること、厳しさの順序が禁止＞エスカレーション＞条件付き許可＞許可であること（D77）
+- `test_action_gold_holdout.py`：保留評価セット（P20・5.4節）。出発点の台帳が開発用18件を
+  足し終えた状態と一致すること、承認されていない項目があるかぎり評価が止まること、
+  正解の語句が条文の部分文字列で中心の動詞を含むこと、複数の行為を含む条文の判定（P25）
+- `test_recompute_metrics.py`：済んだ評価の生データからv0.5の指標を計算し直す処理（B5）
 
 元のDMNと第14条の条文本文は`tests/fixtures/`にコミットしてあるため（D42）、
 `reference/`が無い環境でも全件が動く（skipは0件）。

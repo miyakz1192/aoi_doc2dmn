@@ -1,0 +1,582 @@
+{
+  "items": 18,
+  "false_alarm_items_v04": 4,
+  "false_alarm_gates_v04": {
+    "action_surface_unverified": 1,
+    "action_abstract_selected": 2,
+    "action_verb_mismatch": 3
+  },
+  "false_alarm_items": 4,
+  "false_alarm_gates": {
+    "action_surface_unverified": 1,
+    "action_verb_mismatch": 3
+  },
+  "routed_to_human": 15,
+  "routed_design_check_only": 6,
+  "routed_with_suspicion": 9,
+  "automatic": 3,
+  "suspicion_precision": {
+    "raised": 9,
+    "really_wrong": 5
+  },
+  "suspicion_precision_by_gate": {
+    "action_surface_unverified": {
+      "raised": 1,
+      "really_wrong": 0
+    },
+    "action_verb_mismatch": {
+      "raised": 7,
+      "really_wrong": 4
+    },
+    "action_possible_duplicate": {
+      "raised": 1,
+      "really_wrong": 1
+    }
+  },
+  "new_action_kind_total": 7,
+  "new_action_kind_matches": 5,
+  "surface_in_clause_before": 17,
+  "surface_in_clause_after": 18,
+  "surface_unverified_before": 1,
+  "surface_unverified_after": 0,
+  "surface_ok_before": 16,
+  "surface_ok_after": 17,
+  "rows": [
+    {
+      "order": 1,
+      "clause_id": "ipa_secguide_v4_6_7_1",
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "correct": true,
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "false_alarm_gates": [],
+      "routed_to_human": true,
+      "design_check_only": true,
+      "surface_in_clause_before": true,
+      "surface_in_clause_after": true,
+      "surface_no_modality": true,
+      "surface_has_core_verb": true,
+      "proposal_name": "特権操作",
+      "proposal_kind": "concrete",
+      "proposal_definition": "システムにおいて特権/管理者権限を使用して行う操作を行うこと",
+      "proposal_parent": null,
+      "proposal_basis": [
+        "特権/管理者権限で操作を行う"
+      ],
+      "expected_kind": "concrete",
+      "kind_matches": true
+    },
+    {
+      "order": 2,
+      "clause_id": "mhlw_r7dec_art11_1",
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "correct": true,
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "false_alarm_gates": [],
+      "routed_to_human": true,
+      "design_check_only": true,
+      "surface_in_clause_before": true,
+      "surface_in_clause_after": true,
+      "surface_no_modality": true,
+      "surface_has_core_verb": true,
+      "proposal_name": "私的使用",
+      "proposal_kind": "concrete",
+      "proposal_definition": "会社の施設や物品等を職務以外の目的で利用すること。",
+      "proposal_parent": null,
+      "proposal_basis": [
+        "許可なく職務以外の目的で会社の施設、物品等を使用"
+      ],
+      "expected_kind": "concrete",
+      "kind_matches": true
+    },
+    {
+      "order": 3,
+      "clause_id": "ipa_secguide_v4_personnel_2",
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "correct": true,
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "false_alarm_gates": [],
+      "routed_to_human": true,
+      "design_check_only": true,
+      "surface_in_clause_before": true,
+      "surface_in_clause_after": true,
+      "surface_no_modality": true,
+      "surface_has_core_verb": true,
+      "proposal_name": "情報提供",
+      "proposal_kind": "concrete",
+      "proposal_definition": "当社が営業秘密として管理する情報及びその複製物を、外部組織や個人に対して提供すること。",
+      "proposal_parent": null,
+      "proposal_basis": [
+        "従業員は、当社が営業秘密として管理する情報及びその複製物の一切を許可されていない組織、人に提供してはならない。"
+      ],
+      "expected_kind": "abstract",
+      "kind_matches": false
+    },
+    {
+      "order": 4,
+      "clause_id": "mhlw_r7dec_art21_3",
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "correct": true,
+      "gates": [
+        "new_action_unapproved",
+        "action_surface_unverified",
+        "action_abstract_selected"
+      ],
+      "suspicion_gates": [
+        "action_surface_unverified"
+      ],
+      "design_check_gates": [
+        "new_action_unapproved",
+        "action_abstract_selected"
+      ],
+      "false_alarm_gates": [
+        "action_surface_unverified"
+      ],
+      "routed_to_human": true,
+      "design_check_only": false,
+      "surface_in_clause_before": false,
+      "surface_in_clause_after": true,
+      "surface_no_modality": true,
+      "surface_has_core_verb": true,
+      "proposal_name": "労働指示",
+      "proposal_kind": "abstract",
+      "proposal_definition": "労働者に対して時間外労働や休日労働、深夜労働を行うよう指示すること",
+      "proposal_parent": null,
+      "proposal_basis": [
+        "第２項による時間外労働又は休日若しくは深夜（午後１０時から午前５時まで）労働に従事させない"
+      ],
+      "expected_kind": "concrete",
+      "kind_matches": false
+    },
+    {
+      "order": 5,
+      "clause_id": "aoi_johokanri_art14",
+      "verdict": "over_applied",
+      "verdict_label": "過剰適用",
+      "correct": false,
+      "gates": [
+        "action_verb_mismatch",
+        "action_abstract_selected"
+      ],
+      "suspicion_gates": [
+        "action_verb_mismatch"
+      ],
+      "design_check_gates": [
+        "action_abstract_selected"
+      ],
+      "false_alarm_gates": [],
+      "routed_to_human": true,
+      "design_check_only": false,
+      "surface_in_clause_before": true,
+      "surface_in_clause_after": true,
+      "surface_no_modality": true,
+      "surface_has_core_verb": true,
+      "proposal_name": null,
+      "proposal_kind": null,
+      "proposal_definition": null,
+      "proposal_parent": null,
+      "proposal_basis": null,
+      "expected_kind": "concrete",
+      "kind_matches": null
+    },
+    {
+      "order": 6,
+      "clause_id": "ipa_secguide_v4_6_1_5",
+      "verdict": "missed",
+      "verdict_label": "取りこぼし",
+      "correct": false,
+      "gates": [
+        "new_action_unapproved",
+        "action_possible_duplicate"
+      ],
+      "suspicion_gates": [
+        "action_possible_duplicate"
+      ],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "false_alarm_gates": [],
+      "routed_to_human": true,
+      "design_check_only": false,
+      "surface_in_clause_before": true,
+      "surface_in_clause_after": true,
+      "surface_no_modality": true,
+      "surface_has_core_verb": false,
+      "proposal_name": "私有機器使用",
+      "proposal_kind": "concrete",
+      "proposal_definition": "個人所有の機器を使用すること。",
+      "proposal_parent": null,
+      "proposal_basis": [
+        "私有機器を使用"
+      ],
+      "expected_kind": "concrete",
+      "kind_matches": null
+    },
+    {
+      "order": 7,
+      "clause_id": "ipa_secguide_v4_6_10_priv_name",
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "correct": true,
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "false_alarm_gates": [],
+      "routed_to_human": true,
+      "design_check_only": true,
+      "surface_in_clause_before": true,
+      "surface_in_clause_after": true,
+      "surface_no_modality": true,
+      "surface_has_core_verb": true,
+      "proposal_name": "アカウント共有",
+      "proposal_kind": "concrete",
+      "proposal_definition": "1つの特権アカウント名を複数の人で使用すること",
+      "proposal_parent": "特権操作",
+      "proposal_basis": [
+        "1つの特権アカウント名を2名以上で共用しない"
+      ],
+      "expected_kind": "concrete",
+      "kind_matches": true
+    },
+    {
+      "order": 8,
+      "clause_id": "mhlw_r7dec_art11_5",
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "correct": true,
+      "gates": [
+        "action_verb_mismatch",
+        "action_abstract_selected"
+      ],
+      "suspicion_gates": [
+        "action_verb_mismatch"
+      ],
+      "design_check_gates": [
+        "action_abstract_selected"
+      ],
+      "false_alarm_gates": [
+        "action_verb_mismatch"
+      ],
+      "routed_to_human": true,
+      "design_check_only": false,
+      "surface_in_clause_before": true,
+      "surface_in_clause_after": true,
+      "surface_no_modality": true,
+      "surface_has_core_verb": true,
+      "proposal_name": null,
+      "proposal_kind": null,
+      "proposal_definition": null,
+      "proposal_parent": null,
+      "proposal_basis": null,
+      "expected_kind": "abstract",
+      "kind_matches": null
+    },
+    {
+      "order": 9,
+      "clause_id": "ipa_secguide_v4_2_3_3_forward",
+      "verdict": "over_applied",
+      "verdict_label": "過剰適用",
+      "correct": false,
+      "gates": [
+        "action_verb_mismatch",
+        "action_abstract_selected"
+      ],
+      "suspicion_gates": [
+        "action_verb_mismatch"
+      ],
+      "design_check_gates": [
+        "action_abstract_selected"
+      ],
+      "false_alarm_gates": [],
+      "routed_to_human": true,
+      "design_check_only": false,
+      "surface_in_clause_before": true,
+      "surface_in_clause_after": true,
+      "surface_no_modality": true,
+      "surface_has_core_verb": true,
+      "proposal_name": null,
+      "proposal_kind": null,
+      "proposal_definition": null,
+      "proposal_parent": null,
+      "proposal_basis": null,
+      "expected_kind": "concrete",
+      "kind_matches": null
+    },
+    {
+      "order": 10,
+      "clause_id": "ipa_secguide_v4_2_3_3_send",
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "correct": true,
+      "gates": [
+        "action_verb_mismatch"
+      ],
+      "suspicion_gates": [
+        "action_verb_mismatch"
+      ],
+      "design_check_gates": [],
+      "false_alarm_gates": [
+        "action_verb_mismatch"
+      ],
+      "routed_to_human": true,
+      "design_check_only": false,
+      "surface_in_clause_before": true,
+      "surface_in_clause_after": true,
+      "surface_no_modality": true,
+      "surface_has_core_verb": true,
+      "proposal_name": null,
+      "proposal_kind": null,
+      "proposal_definition": null,
+      "proposal_parent": null,
+      "proposal_basis": null,
+      "expected_kind": "concrete",
+      "kind_matches": null
+    },
+    {
+      "order": 11,
+      "clause_id": "ipa_secguide_v4_7_3_export",
+      "verdict": "mis_merge",
+      "verdict_label": "誤統合",
+      "correct": false,
+      "gates": [
+        "action_verb_mismatch",
+        "action_abstract_selected"
+      ],
+      "suspicion_gates": [
+        "action_verb_mismatch"
+      ],
+      "design_check_gates": [
+        "action_abstract_selected"
+      ],
+      "false_alarm_gates": [],
+      "routed_to_human": true,
+      "design_check_only": false,
+      "surface_in_clause_before": true,
+      "surface_in_clause_after": true,
+      "surface_no_modality": true,
+      "surface_has_core_verb": true,
+      "proposal_name": null,
+      "proposal_kind": null,
+      "proposal_definition": null,
+      "proposal_parent": null,
+      "proposal_basis": null,
+      "expected_kind": "concrete",
+      "kind_matches": null
+    },
+    {
+      "order": 12,
+      "clause_id": "mhlw_r7dec_art11_6",
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "correct": true,
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "false_alarm_gates": [],
+      "routed_to_human": true,
+      "design_check_only": true,
+      "surface_in_clause_before": true,
+      "surface_in_clause_after": true,
+      "surface_no_modality": true,
+      "surface_has_core_verb": true,
+      "proposal_name": "就業中の飲酒",
+      "proposal_kind": "concrete",
+      "proposal_definition": "業務中にアルコールの影響を受けた状態で働くこと",
+      "proposal_parent": null,
+      "proposal_basis": [
+        "酒気を帯びて就業"
+      ],
+      "expected_kind": "concrete",
+      "kind_matches": true
+    },
+    {
+      "order": 13,
+      "clause_id": "mhlw_r7dec_art25_2",
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "correct": true,
+      "gates": [
+        "action_verb_mismatch"
+      ],
+      "suspicion_gates": [
+        "action_verb_mismatch"
+      ],
+      "design_check_gates": [],
+      "false_alarm_gates": [
+        "action_verb_mismatch"
+      ],
+      "routed_to_human": true,
+      "design_check_only": false,
+      "surface_in_clause_before": true,
+      "surface_in_clause_after": true,
+      "surface_no_modality": true,
+      "surface_has_core_verb": true,
+      "proposal_name": null,
+      "proposal_kind": null,
+      "proposal_definition": null,
+      "proposal_parent": null,
+      "proposal_basis": null,
+      "expected_kind": "concrete",
+      "kind_matches": null
+    },
+    {
+      "order": 14,
+      "clause_id": "mhlw_r7dec_art21_4",
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "correct": true,
+      "gates": [],
+      "suspicion_gates": [],
+      "design_check_gates": [],
+      "false_alarm_gates": [],
+      "routed_to_human": false,
+      "design_check_only": false,
+      "surface_in_clause_before": true,
+      "surface_in_clause_after": true,
+      "surface_no_modality": true,
+      "surface_has_core_verb": true,
+      "proposal_name": null,
+      "proposal_kind": null,
+      "proposal_definition": null,
+      "proposal_parent": null,
+      "proposal_basis": null,
+      "expected_kind": "concrete",
+      "kind_matches": null
+    },
+    {
+      "order": 15,
+      "clause_id": "ipa_secguide_v4_phys_3_printer",
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "correct": true,
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "false_alarm_gates": [],
+      "routed_to_human": true,
+      "design_check_only": true,
+      "surface_in_clause_before": true,
+      "surface_in_clause_after": true,
+      "surface_no_modality": true,
+      "surface_has_core_verb": true,
+      "proposal_name": "物品放置",
+      "proposal_kind": "concrete",
+      "proposal_definition": "情報や物を、管理されない状態で置いたままにする行為",
+      "proposal_parent": null,
+      "proposal_basis": [
+        "原稿、印刷物を放置"
+      ],
+      "expected_kind": "concrete",
+      "kind_matches": true
+    },
+    {
+      "order": 16,
+      "clause_id": "ipa_secguide_v4_phys_1_2_level1",
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "correct": true,
+      "gates": [],
+      "suspicion_gates": [],
+      "design_check_gates": [],
+      "false_alarm_gates": [],
+      "routed_to_human": false,
+      "design_check_only": false,
+      "surface_in_clause_before": true,
+      "surface_in_clause_after": true,
+      "surface_no_modality": true,
+      "surface_has_core_verb": true,
+      "proposal_name": null,
+      "proposal_kind": null,
+      "proposal_definition": null,
+      "proposal_parent": null,
+      "proposal_basis": null,
+      "expected_kind": "concrete",
+      "kind_matches": null
+    },
+    {
+      "order": 17,
+      "clause_id": "mhlw_r7dec_art58_3_6",
+      "verdict": "mis_merge",
+      "verdict_label": "誤統合",
+      "correct": false,
+      "gates": [
+        "action_verb_mismatch"
+      ],
+      "suspicion_gates": [
+        "action_verb_mismatch"
+      ],
+      "design_check_gates": [],
+      "false_alarm_gates": [],
+      "routed_to_human": true,
+      "design_check_only": false,
+      "surface_in_clause_before": true,
+      "surface_in_clause_after": true,
+      "surface_no_modality": true,
+      "surface_has_core_verb": true,
+      "proposal_name": null,
+      "proposal_kind": null,
+      "proposal_definition": null,
+      "proposal_parent": null,
+      "proposal_basis": null,
+      "expected_kind": "concrete",
+      "kind_matches": null
+    },
+    {
+      "order": 18,
+      "clause_id": "mhlw_r7dec_art58_3_4",
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "correct": true,
+      "gates": [],
+      "suspicion_gates": [],
+      "design_check_gates": [],
+      "false_alarm_gates": [],
+      "routed_to_human": false,
+      "design_check_only": false,
+      "surface_in_clause_before": true,
+      "surface_in_clause_after": true,
+      "surface_no_modality": true,
+      "surface_has_core_verb": true,
+      "proposal_name": null,
+      "proposal_kind": null,
+      "proposal_definition": null,
+      "proposal_parent": null,
+      "proposal_basis": null,
+      "expected_kind": "concrete",
+      "kind_matches": null
+    }
+  ]
+}

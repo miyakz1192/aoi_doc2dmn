@@ -47,6 +47,7 @@ from src.stage3_frontstage.modality import (  # noqa: E402
     NORMATIVE_MODALITY_WORDS,
     check_surface,
     find_modality,
+    strip_parentheses,
     find_normative_modality,
     strip_modality,
 )
@@ -144,6 +145,9 @@ def test_causative_sase_is_not_modality():
         ("立ち入らないこと", "立ち入ら", ["ないこと"]),
         ("喫煙可能な場所には立ち入らないこと", "喫煙可能な場所には立ち入ら", ["ないこと"]),
         ("提供してはならない", "提供", ["してはならない"]),
+        # タスクB3: 動詞が「し」で終わらない形。足す前は「伝えては」が残っていた
+        ("口頭で伝えてはならない", "口頭で伝え", ["てはならない"]),
+        ("立ち入ってはいけない", "立ち入っ", ["てはいけない"]),
         ("労働に従事させない", "労働に従事させ", ["ない"]),
         ("私有機器を使用しないこと", "私有機器を使用", ["しないこと"]),
         ("原稿、印刷物を放置しない", "原稿、印刷物を放置", ["しない"]),
@@ -159,12 +163,44 @@ def test_strip_modality_never_returns_an_empty_surface():
     """語を1つ削ると空になる場合は削らない(空の語句は何も報告できないため)。
 
     様相の語だけを抜き出してきた場合(「してはならない」)は、途中まで削れて
-    「しては」のような残りが出る。行為が1つも入っていないので、評価の3条件のうち
+    「し」のような残りが出る。行為が1つも入っていないので、評価の3条件のうち
     「正解の中心の動詞を含む」で落ちる。**この形はゲートでは捕まらない**
     (条文の部分文字列ではあるため)。限界として記録する。
     """
     assert strip_modality("ない") == ("ない", [])
-    assert strip_modality("してはならない") == ("しては", ["ならない"])
+    assert strip_modality("してはならない") == ("し", ["てはならない"])
+
+
+def test_parentheses_are_removed_before_the_substring_check():
+    """P24: 条文と語句の両方から丸括弧とその中身を取り除いてから照合する。
+
+    第32回の `action_surface_unverified` の1件は、LLM が
+    「深夜（午後１０時から午前５時まで）労働」の括弧の中を飛ばしたためだった。
+    """
+    clause = (
+        "第２項による時間外労働又は休日若しくは深夜（午後１０時から午前５時まで）"
+        "労働に従事させない。"
+    )
+    # 括弧の中を飛ばして引いた語句が通る
+    check = check_surface("時間外労働又は休日若しくは深夜労働に従事させない", clause)
+    assert check.surface == "時間外労働又は休日若しくは深夜労働に従事させ"
+    assert check.in_clause is True
+    # 括弧を含んだまま正しく引いた語句も通る。IR に入る語句は括弧を消さない
+    check = check_surface("深夜（午後１０時から午前５時まで）労働に従事させ", clause)
+    assert check.surface == "深夜（午後１０時から午前５時まで）労働に従事させ"
+    assert check.in_clause is True
+    # 条文に無い語句は、括弧を除いても通らない
+    assert check_surface("休日に出勤させ", clause).in_clause is False
+
+
+def test_strip_parentheses_removes_nested_pairs_and_both_widths():
+    """P24: 入れ子は外側ごと除く。全角と半角の両方を対象にする。"""
+    assert strip_parentheses("深夜（午後１０時から午前５時まで）労働") == "深夜労働"
+    assert strip_parentheses("特権(管理者)権限") == "特権権限"
+    assert strip_parentheses("（甲（乙）丙）労働") == "労働"
+    # 閉じ括弧が無ければ、開き括弧から末尾まで除く
+    assert strip_parentheses("労働（午後１０時から") == "労働"
+    assert strip_parentheses("括弧のない語句") == "括弧のない語句"
 
 
 def test_the_surface_gate_is_only_about_the_substring():
@@ -792,3 +828,193 @@ def test_frontstage_clauses_are_all_hard_declarative():
     assert not {c["clause_id"] for c in doc["clauses"]} & {
         c["clause_id"] for c in v1["clauses"]
     }
+
+
+# --------------------------------------------------------------------------
+# ゲートの2種類と v0.5 の指標(P21・P22・P23・P25。タスクB1・B4)
+# --------------------------------------------------------------------------
+
+
+def test_the_design_check_gates_are_not_counted_as_false_alarms(action_gold, seeded_ledger):
+    """P21・P22: action_abstract_selected は設計上の確認で、誤報に数えない。
+
+    正解が抽象の項目(人的対策-2)で、正しく抽象を選んでも必ず立つ。第32回はこれを
+    誤報に数えていたので、完璧な答えでも誤報が出る状態になっていた(6.2節)。
+    """
+    for item in action_gold["items"][:3]:
+        teach(seeded_ledger, item)
+    item = action_gold["items"][7]  # 第11条⑤(正解は既存の抽象「情報提供」)
+    result, _ = _normalize(
+        seeded_ledger, item["text"],
+        [{"surface": "漏洩しないこと", "core_verb": "漏洩"}], "情報提供",
+        clause_ref=item["clause_ref"],
+    )
+    verdict = judge(item, result, seeded_ledger)
+    assert verdict.verdict == "correct"
+    assert "action_abstract_selected" in verdict.gates
+    assert verdict.design_check_gates == ["action_abstract_selected"]
+    # 立った疑いのゲート(動詞の不一致)だけが誤報になる
+    assert verdict.suspicion_gates == ["action_verb_mismatch"]
+    assert verdict.false_alarm_gates == ["action_verb_mismatch"]
+    # 人に回ったが、疑いのゲートも立っている
+    assert verdict.routed_to_human is True
+    assert verdict.design_check_only is False
+
+
+def test_an_item_with_only_a_design_check_gate_is_counted_separately(
+    action_gold, seeded_ledger
+):
+    """P21: 人に回る割合は「設計上の確認だけ」と「疑いのゲートあり」に分ける。"""
+    item = action_gold["items"][0]
+    proposal = {
+        "name": "特権操作",
+        "definition": "特権/管理者権限で情報システムを操作すること",
+        "kind": "concrete",
+        "parent": None,
+        "basis_quotes": ["特権/管理者権限で操作を行う"],
+    }
+    result, _ = _normalize(
+        seeded_ledger, item["text"],
+        [{"surface": "特権/管理者権限で操作を行う", "core_verb": "操作"}], NO_MATCH,
+        proposal=proposal, clause_ref=item["clause_ref"],
+    )
+    teach(seeded_ledger, item)
+    verdict = judge(item, result, seeded_ledger)
+    assert verdict.gates == ["new_action_unapproved"]
+    assert verdict.routed_to_human is True
+    assert verdict.design_check_only is True
+    assert verdict.false_alarm_gates == []
+    # P23: 新規候補の段が正解と一致したか
+    assert verdict.new_action_kind_matches is True
+
+
+def test_a_new_candidate_with_the_wrong_tier_is_counted(action_gold, seeded_ledger):
+    """P23: 段が正解と逆の新規候補を数える(4分類では「正しい」のままである)。"""
+    for item in action_gold["items"][:2]:
+        teach(seeded_ledger, item)
+    item = action_gold["items"][2]  # 人的対策-2(正解は abstract)
+    proposal = {
+        "name": "情報提供",
+        "definition": "情報を他の組織や人に渡すこと",
+        "kind": "concrete",  # 正解は abstract
+        "parent": None,
+        "basis_quotes": ["組織、人に提供"],
+    }
+    result, _ = _normalize(
+        seeded_ledger, item["text"],
+        [{"surface": "提供してはならない", "core_verb": "提供"}], NO_MATCH,
+        proposal=proposal, clause_ref=item["clause_ref"],
+    )
+    teach(seeded_ledger, item)
+    verdict = judge(item, result, seeded_ledger)
+    # 名前と既存／新規は合っているので4分類では正しい(第32回 6.1節の穴)
+    assert verdict.verdict == "correct"
+    assert verdict.new_action_kind_matches is False
+
+
+def test_an_existing_choice_has_no_tier_metric(action_gold, taught_ledger):
+    """P23: 既存を選んだ項目に段の一致は問えない(分母から外す)。"""
+    item = action_gold["items"][5]
+    result, _ = _normalize(
+        taught_ledger, item["text"], [{"surface": "特権操作", "core_verb": "操作"}],
+        "特権操作", clause_ref=item["clause_ref"],
+    )
+    assert judge(item, result, taught_ledger).new_action_kind_matches is None
+
+
+@pytest.fixture
+def holdout_gold() -> dict:
+    path = REPO_ROOT / "testdata" / "action_gold" / "action_gold_holdout_v1.json"
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _holdout_ledger(holdout_gold) -> ActionLedger:
+    return ActionLedger.from_json(holdout_gold["ledger_seed"])
+
+
+def test_either_action_of_a_line_of_expectations_is_correct(holdout_gold):
+    """P25: 並べた正解のどれか1つと一致すれば正しい。"""
+    item = holdout_gold["items"][1]  # 共有(アカウント共用)／発行(アカウント発行)
+    ledger = _holdout_ledger(holdout_gold)
+    ledger.add(
+        ActionEntry(name="アカウント発行", definition="アカウントを作って渡すこと")
+    )
+    for surface, choice, verb in (
+        ("同一アカウントの他者との共有", "アカウント共用", "共有"),
+        ("複数の利用者が共有するアカウントの発行", "アカウント発行", "発行"),
+    ):
+        result, _ = _normalize(
+            ledger, item["text"], [{"surface": surface, "core_verb": verb}], choice,
+            clause_ref=item["clause_ref"],
+        )
+        verdict = judge(item, result, ledger)
+        assert verdict.verdict == "correct", choice
+        assert verdict.is_alternatives is True
+
+
+def test_an_unrelated_action_on_a_line_of_expectations_is_a_mis_merge(holdout_gold):
+    """P25: 並びのどれとも親子関係にない既存を選べば誤統合(重大)。"""
+    item = holdout_gold["items"][1]
+    ledger = _holdout_ledger(holdout_gold)
+    result, _ = _normalize(
+        ledger, item["text"],
+        [{"surface": "同一アカウントの他者との共有", "core_verb": "共有"}], "放置",
+        clause_ref=item["clause_ref"],
+    )
+    verdict = judge(item, result, ledger)
+    assert verdict.verdict == "mis_merge"
+    assert verdict.severe is True
+
+
+def test_the_ambiguous_gate_is_by_design_on_a_line_of_expectations(holdout_gold):
+    """P25: 正解が並びの項目で action_surface_ambiguous が立つのは設計どおり。
+
+    正解が1つの項目で立った場合は誤報として数える。
+    """
+    item = holdout_gold["items"][1]
+    ledger = _holdout_ledger(holdout_gold)
+    candidates = [
+        {"surface": "同一アカウントの他者との共有", "core_verb": "共有"},
+        {"surface": "複数の利用者が共有するアカウントの発行", "core_verb": "発行"},
+    ]
+    result, _ = _normalize(
+        ledger, item["text"], candidates, "アカウント共用",
+        clause_ref=item["clause_ref"],
+    )
+    verdict = judge(item, result, ledger)
+    assert verdict.surface_ambiguous is True
+    assert verdict.verdict == "correct"
+    assert "action_surface_ambiguous" not in verdict.false_alarm_gates
+
+    # 正解が1つの項目では誤報になる
+    single = holdout_gold["items"][4]  # 私有機器へのダウンロード(データ取り出し)
+    result, _ = _normalize(
+        ledger, single["text"],
+        [
+            {"surface": "私有機器への極秘情報及び社外秘情報のダウンロード",
+             "core_verb": "ダウンロード"},
+            {"surface": "ダウンロード", "core_verb": "ダウンロード"},
+        ],
+        "データ取り出し", clause_ref=single["clause_ref"],
+    )
+    verdict = judge(single, result, ledger)
+    assert verdict.verdict == "correct"
+    # 動詞の不一致も立つ(台帳のデータ取り出しの過去の語句は「取り出し」)
+    assert "action_surface_ambiguous" in verdict.false_alarm_gates
+
+
+def test_choosing_a_descendant_of_the_new_abstract_action_is_under_applied(holdout_gold):
+    """4.1節 項目14: 情報取得(抽象)の子であるデータ取り出しを選ぶと適用漏れ(重大)。"""
+    item = holdout_gold["items"][13]
+    ledger = _holdout_ledger(holdout_gold)
+    result, _ = _normalize(
+        ledger, item["text"],
+        [{"surface": "自らの業務に関係のない情報を不当に取得", "core_verb": "取得"}],
+        "データ取り出し", clause_ref=item["clause_ref"],
+    )
+    # 正解(情報取得)を台帳に足し、データ取り出しをその子にしてから分類する
+    teach(ledger, item)
+    assert ledger.find("データ取り出し").parent == "情報取得"
+    verdict = judge(item, result, ledger)
+    assert verdict.verdict == "under_applied"
+    assert verdict.severe is True
