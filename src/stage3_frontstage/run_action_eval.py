@@ -896,15 +896,20 @@ def main(argv: Optional[list[str]] = None) -> int:
     args = parser.parse_args(argv)
 
     out_dir = Path(args.out)
+    # 保留用の結果は開発用と別のファイルに出す(上書きして取り違えないため。P20)
+    split = json.loads(Path(args.gold).read_text(encoding="utf-8")).get("_meta", {}).get(
+        "split", "dev"
+    )
+    suffix = "" if split == "dev" else f"_{split}"
     out = run(
         args.gold,
         args.registry,
         use_oracle=args.use_oracle,
         limit=args.limit,
-        partial_path=None if args.use_oracle else out_dir / "partial.json",
+        partial_path=None if args.use_oracle else out_dir / f"partial{suffix}.json",
     )
     out_dir.mkdir(parents=True, exist_ok=True)
-    name = "result_oracle.json" if args.use_oracle else "result.json"
+    name = f"result{suffix}_oracle.json" if args.use_oracle else f"result{suffix}.json"
     path = out_dir / name
     path.write_text(
         json.dumps(out, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
