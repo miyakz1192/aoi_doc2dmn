@@ -1,0 +1,335 @@
+{
+  "_meta": {
+    "purpose": "前段の Action 正規化の保留評価セット(前段設計書 P20・5.4節)14件の、軸1・軸2の正解ラベル(第33回 HANDOFF 4.2節)。",
+    "why_separate_file": "開発用の13件(clauses_frontstage_v1.json)・②の評価用の28件(clauses_v1.json)と分ける。保留用の条文は設計を直すときに見ないため(P20)",
+    "labeled_by": "Kazuhiro",
+    "labeled_at": "2026-11-20",
+    "labeling_note": "第33回追補 4章: 正解ラベルは14件とも ハード制約 × 宣言的。番号(holdout_order)は第33回のまま(9は欠番)",
+    "classifier_note": "②の分類器にかけた参考値は testdata/candidates/candidates_round3.json の classifier_result にある(正解ラベルではない)",
+    "gold": "testdata/action_gold/action_gold_holdout_v1.json"
+  },
+  "clauses": [
+    {
+      "clause_id": "ipa_secguide_v4_6_2_1_item1",
+      "holdout_order": 1,
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "1.組織的対策 6.2.1 認証に関する基本方針（箇条書き第1項）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0136.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "ハード制約",
+        "axis2": "宣言的",
+        "cell_id": "hard_declarative"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "利用者の認証に用いるアカウントは、利用者1名につき1つを発行する。",
+      "text_filled": "利用者の認証に用いるアカウントは、利用者1名につき1つを発行する。",
+      "parameter_slots": [],
+      "candidate_of": "testdata/candidates/candidates_round3.json"
+    },
+    {
+      "clause_id": "ipa_secguide_v4_6_2_1_item2",
+      "holdout_order": 2,
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "1.組織的対策 6.2.1 認証に関する基本方針（箇条書き第2項）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0137.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "ハード制約",
+        "axis2": "宣言的",
+        "cell_id": "hard_declarative"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "同一アカウントの他者との共有および複数の利用者が共有するアカウントの発行を禁止する。",
+      "text_filled": "同一アカウントの他者との共有および複数の利用者が共有するアカウントの発行を禁止する。",
+      "parameter_slots": [],
+      "candidate_of": "testdata/candidates/candidates_round3.json"
+    },
+    {
+      "clause_id": "ipa_secguide_v4_phys_1_2_level2",
+      "holdout_order": 3,
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "3.物理的対策 1.2 セキュリティ領域の設定（レベル2領域の表・制限事項）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "T24.R5.C2.L1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "ハード制約",
+        "axis2": "宣言的",
+        "cell_id": "hard_declarative"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "情報機器・設備の無断操作禁止・無断持出し禁止",
+      "text_filled": "情報機器・設備の無断操作禁止・無断持出し禁止",
+      "parameter_slots": [],
+      "candidate_of": "testdata/candidates/candidates_round3.json"
+    },
+    {
+      "clause_id": "ipa_secguide_v4_phys_1_2_level3_carry_in",
+      "holdout_order": 4,
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "3.物理的対策 1.2 セキュリティ領域の設定（レベル3領域の表・制限事項）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "T25.R5.C2.L2",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "ハード制約",
+        "axis2": "宣言的",
+        "cell_id": "hard_declarative"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "スマートフォン、USBメモリ、HDD、CD-R、デジタルカメラその他の情報記憶媒体の無断持込み禁止",
+      "text_filled": "スマートフォン、USBメモリ、HDD、CD-R、デジタルカメラその他の情報記憶媒体の無断持込み禁止",
+      "parameter_slots": [],
+      "candidate_of": "testdata/candidates/candidates_round3.json"
+    },
+    {
+      "clause_id": "ipa_secguide_v4_personnel_6_1_2",
+      "holdout_order": 5,
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "2.人的対策 6.1.2 テレワークで利用する機器（末尾の文）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0449.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "ハード制約",
+        "axis2": "宣言的",
+        "cell_id": "hard_declarative"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "また、私有機器への極秘情報及び社外秘情報のダウンロードは原則禁止とする。",
+      "text_filled": "また、私有機器への極秘情報及び社外秘情報のダウンロードは原則禁止とする。",
+      "parameter_slots": [],
+      "candidate_of": "testdata/candidates/candidates_round3.json"
+    },
+    {
+      "clause_id": "ipa_secguide_v4_2_3_3_store",
+      "holdout_order": 6,
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0707.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "ハード制約",
+        "axis2": "宣言的",
+        "cell_id": "hard_declarative"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "社外秘又は極秘の情報資産の保存を禁止する。",
+      "text_filled": "社外秘又は極秘の情報資産の保存を禁止する。",
+      "parameter_slots": [],
+      "candidate_of": "testdata/candidates/candidates_round3.json"
+    },
+    {
+      "clause_id": "ipa_secguide_v4_2_3_3_wifi",
+      "holdout_order": 7,
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0712.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "ハード制約",
+        "axis2": "宣言的",
+        "cell_id": "hard_declarative"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "会社で契約したサービス社外のWi-Fiサービスの利用を禁止する。",
+      "text_filled": "会社で契約したサービス社外のWi-Fiサービスの利用を禁止する。",
+      "parameter_slots": [],
+      "candidate_of": "testdata/candidates/candidates_round3.json"
+    },
+    {
+      "clause_id": "ipa_secguide_v4_5_6_share",
+      "holdout_order": 8,
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "1.組織的対策 5.6 情報資産の社外持ち出し（箇条書き）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0099.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "ハード制約",
+        "axis2": "宣言的",
+        "cell_id": "hard_declarative"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "社外秘又は極秘の情報ファイルを社外に共有する場合は、秘密保持に関する合意をした相手とのみ共有する。",
+      "text_filled": "社外秘又は極秘の情報ファイルを社外に共有する場合は、秘密保持に関する合意をした相手とのみ共有する。",
+      "parameter_slots": [],
+      "candidate_of": "testdata/candidates/candidates_round3.json"
+    },
+    {
+      "clause_id": "ipa_secguide_v4_5_6_outdoor",
+      "holdout_order": 10,
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "1.組織的対策 5.6 情報資産の社外持ち出し（箇条書き）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0097.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "ハード制約",
+        "axis2": "宣言的",
+        "cell_id": "hard_declarative"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "屋外でネットワークへ接続して極秘又は社外秘の情報資産を送受信する場合は、暗号化する。",
+      "text_filled": "屋外でネットワークへ接続して極秘又は社外秘の情報資産を送受信する場合は、暗号化する。",
+      "parameter_slots": [],
+      "candidate_of": "testdata/candidates/candidates_round3.json"
+    },
+    {
+      "clause_id": "ipa_secguide_v4_phys_3_phone",
+      "holdout_order": 11,
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0592.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "ハード制約",
+        "axis2": "宣言的",
+        "cell_id": "hard_declarative"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "外線受話時の際に相手が不審な場合は、従業員の個人情報を伝えてはならない。",
+      "text_filled": "外線受話時の際に相手が不審な場合は、従業員の個人情報を伝えてはならない。",
+      "parameter_slots": [],
+      "candidate_of": "testdata/candidates/candidates_round3.json"
+    },
+    {
+      "clause_id": "ipa_secguide_v4_phys_3_photo",
+      "holdout_order": 12,
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0590.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "ハード制約",
+        "axis2": "宣言的",
+        "cell_id": "hard_declarative"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "室内での撮影、録音は禁止する。業務上必要な場合は、情報セキュリティ部門責任者の許可を得ること。",
+      "text_filled": "室内での撮影、録音は禁止する。業務上必要な場合は、情報セキュリティ部門責任者の許可を得ること。",
+      "parameter_slots": [],
+      "candidate_of": "testdata/candidates/candidates_round3.json"
+    },
+    {
+      "clause_id": "mhlw_r7dec_art11_3",
+      "holdout_order": 13,
+      "source": {
+        "name": "厚生労働省「モデル就業規則」解説版",
+        "section": "第11条（遵守事項）第3号",
+        "url": "https://www.mhlw.go.jp/content/001620506.docx",
+        "locator": "T14.R1.C1.L5",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "ハード制約",
+        "axis2": "宣言的",
+        "cell_id": "hard_declarative"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "勤務中は職務に専念し、正当な理由なく勤務場所を離れないこと。",
+      "text_filled": "勤務中は職務に専念し、正当な理由なく勤務場所を離れないこと。",
+      "parameter_slots": [],
+      "candidate_of": "testdata/candidates/candidates_round3.json"
+    },
+    {
+      "clause_id": "mhlw_r7dec_art16_1",
+      "holdout_order": 14,
+      "source": {
+        "name": "厚生労働省「モデル就業規則」解説版",
+        "section": "第16条（個人情報保護）第1項",
+        "url": "https://www.mhlw.go.jp/content/001620506.docx",
+        "locator": "T19.R1.C1.L2",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "ハード制約",
+        "axis2": "宣言的",
+        "cell_id": "hard_declarative"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "労働者は、会社及び取引先等に関する情報の管理に十分注意を払うとともに、自らの業務に関係のない情報を不当に取得してはならない。",
+      "text_filled": "労働者は、会社及び取引先等に関する情報の管理に十分注意を払うとともに、自らの業務に関係のない情報を不当に取得してはならない。",
+      "parameter_slots": [],
+      "candidate_of": "testdata/candidates/candidates_round3.json"
+    },
+    {
+      "clause_id": "mhlw_r7dec_art58_3_5",
+      "holdout_order": 15,
+      "source": {
+        "name": "厚生労働省「モデル就業規則」解説版",
+        "section": "第58条（遵守事項）第3項第5号",
+        "url": "https://www.mhlw.go.jp/content/001620506.docx",
+        "locator": "T81.R1.C1.L9",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "oracle": {
+        "stage1_relevant": true,
+        "axis1": "ハード制約",
+        "axis2": "宣言的",
+        "cell_id": "hard_declarative"
+      },
+      "is_ambiguous": false,
+      "alt_labels": null,
+      "text_raw": "受動喫煙を望まない者を喫煙可能な場所に連れて行かないこと。",
+      "text_filled": "受動喫煙を望まない者を喫煙可能な場所に連れて行かないこと。",
+      "parameter_slots": [],
+      "candidate_of": "testdata/candidates/candidates_round3.json"
+    }
+  ]
+}

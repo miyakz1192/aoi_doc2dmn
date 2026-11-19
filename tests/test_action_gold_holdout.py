@@ -283,3 +283,15 @@ def test_the_nearest_expectation_is_the_one_in_the_same_line():
     assert nearest_expectation(options, "移動", ledger)["normalized"] == "持出し"
     # どちらとも親子関係にない → 並びの先の方と比べる
     assert nearest_expectation(options, "放置", ledger)["normalized"] == "複写"
+
+
+def test_the_axis_labels_are_in_testdata_clauses(holdout):
+    """第33回4.2節: 承認後に軸1・軸2の正解ラベルを testdata/clauses/ に足す。"""
+    path = GOLD_DIR.parent / "clauses" / "clauses_holdout_v1.json"
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    assert [c["clause_id"] for c in doc["clauses"]] == [i["clause_id"] for i in holdout["items"]]
+    for clause, item in zip(doc["clauses"], holdout["items"]):
+        assert clause["oracle"]["axis1"] == "ハード制約"
+        assert clause["oracle"]["axis2"] == "宣言的"
+        assert clause["text_raw"] == item["text"]
+        assert clause["holdout_order"] == item["order"]
