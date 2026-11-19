@@ -164,7 +164,7 @@ def test_routing_table_identifies_the_decision(golden_bundle):
     _, bundle = golden_bundle
     route = bundle.routing_table["routes"][0]
     assert route["actor"] == "あおい"
-    assert route["action"] == "特権操作"
+    assert route["action"] == "操作"  # D82(旧: 特権操作)
     assert route["dmn_model"] == "privileged_operation"
     assert route["decision_id"] == "decision_privileged_operation"
     assert route["required_facts"] == [
@@ -259,7 +259,7 @@ def test_registry_layer1_has_output_columns_and_entry_points(golden_bundle):
     )
     assert entry["output_columns"] == ["decision", "reason_code"]
     # 最終判定(この IR の起点)なので、呼び出し口が入る
-    assert entry["entry_points"] == [{"actor": "あおい", "action": "特権操作"}]
+    assert entry["entry_points"] == [{"actor": "あおい", "action": "操作"}]  # D82
 
 
 def test_new_primitive_gate_is_not_raised(golden_bundle):

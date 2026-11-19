@@ -471,3 +471,171 @@ def test_a_gold_ir_with_inherited_decisions_needs_a_composition_scenario(tmp_pat
     assert any("composition" in p for p in problems), problems
     # ほかの正解IR は通ったまま
     assert not results["ipa_secguide_v4_6_7_1"].problems
+
+
+# --------------------------------------------------------------------------
+# D81: 1つの actor × action に複数の判定
+# --------------------------------------------------------------------------
+
+
+class _TableByTarget:
+    """対象(usage_target)が自分の対象なら規則を当て、外なら既定の行(許可)に落ちる表。
+
+    D81 の「各判定の表は、自分の対象の外の要求を『その他』として既定の行に落とす」を
+    DMN を使わずに再現する。
+    """
+
+    def __init__(self, decision_id, target, decision, reason):
+        self.decision_id, self.target = decision_id, target
+        self.decision, self.reason = decision, reason
+
+    def evaluate(self, decision_id, facts):
+        assert decision_id == self.decision_id
+        if facts.get("usage_target") == self.target:
+            return {"decision": self.decision, "reason_code": self.reason}
+        return {"decision": "許可", "reason_code": "out_of_scope"}
+
+
+def _two_tables_on_one_action():
+    """「使用」に、施設・物品の表と社外 Wi-Fi の表が付いた状態(D81 の例)。"""
+    tables = {
+        "facility_use": _TableByTarget("decision_facility", "会社の物品", "条件付き許可", "need_permission"),
+        "wifi_use": _TableByTarget("decision_wifi", "社外Wi-Fi", "禁止", "wifi_ng"),
+    }
+    routes = [
+        {"actor": "あおい", "action": "使用", "dmn_model": "facility_use",
+         "decision_id": "decision_facility", "inherited_decisions": []},
+        {"actor": "あおい", "action": "使用", "dmn_model": "wifi_use",
+         "decision_id": "decision_wifi", "inherited_decisions": []},
+        {"actor": "あおい", "action": "送信", "dmn_model": "other",
+         "decision_id": "decision_other", "inherited_decisions": []},
+    ]
+    return routes, tables.__getitem__
+
+
+def test_one_action_can_carry_several_decisions():
+    """D81: 同じ actor × action の行を判定ごとに集め、すべて評価して合成する。"""
+    from src.stage3_generate.scenario_eval import evaluate_request, routes_for_request
+
+    routes, model_of = _two_tables_on_one_action()
+    assert [r["decision_id"] for r in routes_for_request(routes, "あおい", "使用")] == [
+        "decision_facility",
+        "decision_wifi",
+    ]
+    # 社外 Wi-Fi の利用: 施設の表は対象外で許可、Wi-Fi の表が禁止 → 禁止
+    out = evaluate_request(
+        routes, "あおい", "使用", {"usage_target": "社外Wi-Fi"}, model_of=model_of
+    )
+    assert (out["decision"], out["reason_code"]) == ("禁止", "wifi_ng")
+    assert out["_composed_from"] == "decision_wifi"
+    assert out["_routes"] == 2
+    # 会社の物品の使用: Wi-Fi の表は対象外で許可、施設の表が条件付き許可 → 条件付き許可
+    out = evaluate_request(
+        routes, "あおい", "使用", {"usage_target": "会社の物品"}, model_of=model_of
+    )
+    assert (out["decision"], out["reason_code"]) == ("条件付き許可", "need_permission")
+    # どちらの対象でもない: 両方とも既定の行の許可
+    out = evaluate_request(
+        routes, "あおい", "使用", {"usage_target": "その他"}, model_of=model_of
+    )
+    assert out["decision"] == "許可"
+    assert [e["decision"] for e in out["_evaluated"]] == ["許可", "許可"]
+
+
+def test_several_decisions_compose_with_the_inherited_ones():
+    """D81: 複数の自分の判定と、継承する判定を一緒に D77 の順序で合成する。
+
+    継承する判定は、同じ祖先の判定が複数の行に付いていても1回だけ評価する。
+    """
+    from src.stage3_generate.scenario_eval import evaluate_request
+
+    routes, base_model_of = _two_tables_on_one_action()
+    parent = {"dmn_model": "parent", "decision_id": "decision_parent"}
+    for route in routes[:2]:
+        route["inherited_decisions"] = [dict(parent)]
+
+    calls: list[str] = []
+
+    class _ParentEscalates:
+        def evaluate(self, decision_id, facts):
+            calls.append(decision_id)
+            return {"decision": ESCALATE_DECISION, "reason_code": "unknown_fact_value"}
+
+    def model_of(name):
+        return _ParentEscalates() if name == "parent" else base_model_of(name)
+
+    # 会社の物品: 自分は条件付き許可と許可、親はエスカレーション → エスカレーション
+    out = evaluate_request(
+        routes, "あおい", "使用", {"usage_target": "会社の物品"}, model_of=model_of
+    )
+    assert out["decision"] == ESCALATE_DECISION
+    assert calls == ["decision_parent"]  # 2行に付いていても1回だけ
+    # 社外 Wi-Fi: 自分の Wi-Fi の表が禁止 → 親のエスカレーションより禁止が勝つ(D77)
+    out = evaluate_request(
+        routes, "あおい", "使用", {"usage_target": "社外Wi-Fi"}, model_of=model_of
+    )
+    assert out["decision"] == "禁止"
+
+
+def test_a_request_with_no_route_is_permitted():
+    """D81・D79(d): 規制する判定が1つも無い行為は許可(no_restriction)。"""
+    from src.stage3_generate.scenario_eval import evaluate_request
+
+    routes, model_of = _two_tables_on_one_action()
+    out = evaluate_request(routes, "あおい", "撮影", {}, model_of=model_of)
+    assert (out["decision"], out["reason_code"]) == ("許可", "no_restriction")
+    assert out["_routes"] == 0
+
+
+def test_routing_keeps_one_row_per_decision_for_the_same_action(simple_ir, child_registry):
+    """D81: 層1で同じ Action に判定が2つあれば、子孫の作り直しで行も2つになる。"""
+    registry = child_registry.copy()
+    second = dict(registry.decision_tables[0])
+    second.update(
+        decision_table_id="dt_verbal_2",
+        decision_id="decision_verbal_2",
+        decision_name="口頭伝達可否判定2",
+    )
+    registry.decision_tables = list(registry.decision_tables) + [second]
+    routes = derive_routes(_with_action(simple_ir, "情報提供"), registry)
+    assert [(r["action"], r["decision_id"]) for r in routes] == [
+        ("口頭伝達", "decision_verbal"),
+        ("口頭伝達", "decision_verbal_2"),
+    ]
+    # 2行とも、親(この IR)の判定を継承する
+    for route in routes:
+        assert route["inherited_decisions"] == [
+            {"dmn_model": "simple", "decision_id": "decision_simple"}
+        ]
+
+
+def test_the_registry_builds_every_row_for_a_request(child_registry):
+    """D81・D75: 実行時の行は層1から作る。判定ごとに1行、祖先の判定を継承する。"""
+    registry = child_registry.copy()
+    second = dict(registry.decision_tables[0])
+    second.update(
+        decision_table_id="dt_verbal_2",
+        decision_id="decision_verbal_2",
+        decision_name="口頭伝達可否判定2",
+        dmn_model="verbal_disclosure_2",
+    )
+    parent = dict(registry.decision_tables[0])
+    parent.update(
+        decision_table_id="dt_provision",
+        decision_id="decision_provision",
+        decision_name="情報提供可否判定",
+        dmn_model="information_provision",
+        entry_points=[{"actor": "あおい", "action": "情報提供"}],
+    )
+    registry.decision_tables = list(registry.decision_tables) + [second, parent]
+    rows = registry.routes_for_request("あおい", "口頭伝達")
+    assert [(r["dmn_model"], r["decision_id"]) for r in rows] == [
+        ("verbal_disclosure", "decision_verbal"),
+        ("verbal_disclosure_2", "decision_verbal_2"),
+    ]
+    for row in rows:
+        assert row["inherited_decisions"] == [
+            {"dmn_model": "information_provision", "decision_id": "decision_provision"}
+        ]
+    # 別の actor の要求には行が無い
+    assert registry.routes_for_request("別のエージェント", "口頭伝達") == []

@@ -143,10 +143,12 @@ def build_golden_path_ir(
     """
     action = ActionRef(
         surface="特権/管理者権限で操作を行う",
-        normalized="特権操作",
+        # v1.11 で名前を行為の種類だけにした(D80・D82。旧: 特権操作)。権限は名前に
+        # 入れず、決定表の列 requested_privilege で判定する(PU1 は v0.6 で解消)。
+        # 判定名「特権操作可否判定」・モデル名・判定 ID は変えない(D82)
+        normalized="操作",
         # D60・レビュー A-2: 親は None にして、位置づけを人の判断に回す。
-        # v1.10 で parent の欄を廃止した(D78)。特権操作を「システム操作」の子に
-        # 置くかどうかは Action 台帳の側で人が決める(PU1)
+        # v1.10 で parent の欄を廃止した(D78)。親子関係は Action 台帳の側で人が決める
         is_new=True,
         approved_by=action_approved_by,
     )

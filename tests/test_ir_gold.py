@@ -74,10 +74,11 @@ def test_action_ledger_declares_the_hierarchy_used_by_the_evaluation():
 
     entries = load_action_ledger(GOLD_DIR)
     by_name = {e["name"]: e for e in entries}
-    assert by_name["情報提供"]["kind"] == "abstract"
-    for child in ("外部送信", "口頭伝達", "データ送信"):
+    # v1.11 の名前(D82)。外部送信とデータ送信は「送信」にまとめ、共有を足した
+    assert by_name["提供"]["kind"] == "abstract"
+    for child in ("送信", "伝達", "共有"):
         assert by_name[child]["kind"] == "concrete"
-        assert by_name[child]["parent"] == "情報提供"
+        assert by_name[child]["parent"] == "提供"
     for entry in entries:
         # 親子関係は人が承認する(D60)。定義は案のまま(P18)
         assert entry["name_status"] == "approved"
@@ -428,7 +429,7 @@ def test_an_old_ir_that_still_writes_the_parent_is_read_with_a_warning():
     clear_ir_load_warnings()
     ir = clause_ir_from_json(payload)
     assert not hasattr(ir.action, "parent")
-    assert ir.action.normalized == "口頭伝達"
+    assert ir.action.normalized == "伝達"  # D82(旧: 口頭伝達)
     warnings = ir_load_warnings()
     assert len(warnings) == 1
     assert "action.parent" in warnings[0] and "情報開示" in warnings[0]

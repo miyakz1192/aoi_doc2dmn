@@ -49,15 +49,18 @@ evidence の各項目は `basis` を持つ。
 段(concrete / abstract)と親を置く。初期登録の登録簿の `action_ledger` にこれをマージして
 から manifest の順に通す(`registry/` には反映しない)。
 
-抽象的な Action(情報提供)を target にした IR は、ルーティング表に自分の行を作らず、
+抽象的な Action(提供。旧: 情報提供)を target にした IR は、ルーティング表に自分の行を作らず、
 子孫の具体的な行為の行を作り直す(D76)。子の行には `inherited_decisions`(祖先の Action の
 判定)が入り、`required_facts` に継承する判定の事実も加わる(D75)。
 
-## 継承した判定の合成を確かめるシナリオ(D74・D75)
+## 継承した判定の合成を確かめるシナリオ(D74・D75・D81)
 
-シナリオに `"composition": true` を書くと、そのルートを `scenario_eval.evaluate_route`
-で評価する。自分の判定と継承する判定の両方を評価し、継承側からは禁止・条件付き許可だけを
-取り入れて、最も厳しい結論を採る。`inherited_decisions` があるルートを持つ正解IR には、
+シナリオに `"composition": true` を書くと、そのルートの actor × action への要求を
+`scenario_eval.evaluate_request` で評価する。行は、この IR を反映した後の登録簿から
+`Registry.routes_for_request` で作る(D81 で、1つの actor × action に判定が複数付いて
+よくなったので、実行時と同じく判定ごとの行をすべて集める)。自分の判定はすべて、継承する
+判定からは禁止・エスカレーション・条件付き許可だけを取り入れて、D77 の順序で最も厳しい
+結論を採る。`inherited_decisions` があるルートを持つ正解IR には、
 この種のシナリオを1件以上要求する(継承が効いていることを、生成物の形だけでなく評価でも
 確かめるため)。
 
@@ -90,7 +93,7 @@ from .ir_schema import (
     has_other_value,
 )
 from .registry import Registry, dmn_path
-from .scenario_eval import evaluate_route, evaluate_scenario
+from .scenario_eval import evaluate_request, evaluate_scenario
 from .wiring_generator import (
     SchemaWiringError,
     existing_facts_used_by_ir,
@@ -487,16 +490,22 @@ def run_one(
     target.write_text(bundle.dmn_xml, encoding="utf-8")
     model = DmnModel(str(target))
     model_of = _model_loader(dmn_dir)
+    updated = Registry.from_json(bundle.registry)
     scenarios = gold.get("scenarios", [])
     result.scenarios_total = len(scenarios)
     for scenario in scenarios:
         decision_id = scenario.get("decision_id") or ir.target.entry_decision_id
         try:
             if scenario.get("composition"):
-                # D74・D75: ルーティング表の1行を、継承する判定も含めて評価する
+                # D74・D75・D81: 要求(actor × action)に付いた判定すべてと、継承する
+                # 判定を評価して合成する。行は、この IR を反映した後の登録簿から作る
+                # (実行時に見るのは、すべての IR の行を合わせたものだから)
                 route = _route_for(bundle.routing_table["routes"], ir, scenario)
-                actual = evaluate_route(
-                    route,
+                rows = updated.routes_for_request(route["actor"], route["action"])
+                actual = evaluate_request(
+                    rows,
+                    route["actor"],
+                    route["action"],
                     scenario["facts"],
                     model_of=model_of,
                     bindings=bundle.bindings,
@@ -523,13 +532,13 @@ def run_one(
     result.ok = not result.problems
     if verbose:
         _print_one(result)
-    return result, Registry.from_json(bundle.registry)
+    return result, updated
 
 
 def _model_loader(dmn_dir: Path):
     """DMN モデル名から評価器を返す呼び出し可能オブジェクト(合成の評価用。D75)。
 
-    継承する判定は別の DMN モデルにあるのが普通なので(例: あおいの外部送信は
+    継承する判定は別の DMN モデルにあるのが普通なので(例: あおいの送信は
     aoi_transmission)、持ち回り用のディレクトリから名前で読む。同じモデルは1回だけ
     読み、キャッシュする。
     """

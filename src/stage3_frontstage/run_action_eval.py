@@ -1,7 +1,7 @@
 """Action 正規化の評価(前段設計書5章・P9・P13 v0.4)。
 
-`testdata/action_gold/action_gold_v2.json` の18件を、台帳を育てながら順に正規化し、
-正解と比べる。台帳の出発点は初期登録の登録簿にある Action 1件(あおいの外部送信)で、
+`testdata/action_gold/action_gold_v3.json`(v0.6 の名前)の18件を、台帳を育てながら順に正規化し、
+正解と比べる。台帳の出発点は初期登録の登録簿にある Action 1件(あおいの送信。旧: 外部送信)で、
 1件を正規化したら**前段の出力ではなく正解の Action を台帳に足してから**次へ進む
 (教師あり。P13)。前段が1件誤ったとき、その誤りが後の条文の選択肢に持ち越されると、
 後の誤りの原因が分からなくなるためである。
@@ -85,7 +85,7 @@ from .action_normalizer import (
 )
 from .modality import check_surface
 
-GOLD_PATH = "testdata/action_gold/action_gold_v2.json"
+GOLD_PATH = "testdata/action_gold/action_gold_v3.json"
 # 重大な誤り(実行時に別の判定に入る・禁止が効かない)。すり抜けを0件にするのが合格の条件
 SEVERE = ("mis_merge", "under_applied")
 CLASS_LABELS = {
@@ -384,7 +384,7 @@ def teach(ledger: ActionLedger, item: dict) -> str:
 
     前段の出力ではなく**正解**を足す。1件ずつ独立に評価するため(P13)。段(kind)と
     親(parent)も正解どおりに足す(4.2節)。`ledger_updates` があれば、すでに台帳に
-    ある Action の親を付け替える(項目3で外部送信に親が付く。4.1節)。
+    ある Action の親を付け替える(項目3で送信に親が付く。4.1節)。
 
     正解が並びの項目(1文に複数の行為。P25)では、**並べた正解をすべて**足す。
     """
@@ -510,9 +510,9 @@ def load_ledger(gold: dict, registry_path: str | Path) -> ActionLedger:
     """台帳の出発点を作る(P10)。
 
     - **開発用(split=dev)**: 初期登録の登録簿から読み、正解ファイルの `ledger_seed`
-      (1件。あおいの外部送信)と照合する。登録簿が規範で、正解ファイルは写しである
+      (1件。あおいの送信)と照合する。登録簿が規範で、正解ファイルは写しである
     - **保留用(split=holdout)**: 出発点は「開発用18件の正解をすべて足し終えた状態」
-      (12件)で、登録簿には無い。正解ファイルの `ledger_seed` から作り、登録簿の
+      (v3 で11件)で、登録簿には無い。正解ファイルの `ledger_seed` から作り、登録簿の
       エントリがその中にあること(定義まで一致すること)だけを確かめる(第33回4.1節)
     """
     registry = Registry.load(registry_path)
@@ -561,9 +561,21 @@ def check_holdout_is_approved(gold: dict) -> None:
 
     誤って未確定の正解で流すと、「結果を見てから直さない」という保留評価の前提が
     崩れ、その条文は二度と保留用に使えない(P20)。開発用(split=dev)には当てない。
+
+    止まる条件は2つある。(1) 正解の値(`expected`)が入っていない項目がある
+    (正解の値は追補で受け取る。ファイルは仕組みだけの形で置いてある)、
+    (2) `review.approved_by` が入っていない項目がある。
     """
     if gold.get("_meta", {}).get("split") != "holdout":
         return
+    # 正解の値(expected)は追補で受け取る。入っていない項目があれば流さない
+    missing = [item["clause_id"] for item in gold["items"] if not item.get("expected")]
+    if missing:
+        raise HoldoutNotApproved(
+            "保留用の正解の値が入っていないので評価を止めました"
+            f"（{len(missing)}件: {'、'.join(missing)}）。"
+            "expected は web Claude の追補で受け取る(第33回 HANDOFF 4.3節・P20)"
+        )
     unapproved = [
         item["clause_id"]
         for item in gold["items"]

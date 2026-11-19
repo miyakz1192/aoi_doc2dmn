@@ -110,18 +110,27 @@ FACT_PRIMITIVES: dict[str, str] = {
 #   > `actor_action=("あおい", "口頭伝達")` / `existing_routes={("あおい","外部送信")}`
 #
 # 「既存のルート」= 初期登録時点で登録簿にある最終判定の呼び出し口なので、
-# 送信可否判定の entry_points は ("あおい", "外部送信") になる。
+# 送信可否判定の entry_points は出典では ("あおい", "外部送信") である。
 # この付与は第18回の報告事項であり、出典ごと差し替えられるようここに分離してある。
+#
+# **v1.11 で Action の名前を「送信」に改めた(D80・D82)。** 名前は行為の種類だけにし、
+# 宛先(外部)は決定表の列にする。外部送信とデータ送信は同じ行為なので1つにまとめる。
+# 変わるのはルーティングのキーだけで、DMN のモデル名・判定 ID・reason_code
+# (「外部送信対象外」)は変えない(D82)。出典の語は「外部送信」のままなので、
+# ここで名前を読み替えていることを ENTRY_POINTS_RENAMED に残す。
 ENTRY_POINTS: dict[str, list[dict[str, str]]] = {
-    "dt_transmission": [{"actor": "あおい", "action": "外部送信"}],
+    "dt_transmission": [{"actor": "あおい", "action": "送信"}],
 }
+ENTRY_POINTS_RENAMED = {"外部送信": "送信"}  # D82: 出典の語 → v1.11 の名前
 ENTRY_POINTS_SOURCE = (
     "reference/gijinka-extraction-pipeline/docs/diagrams/"
-    "sequence_diagram_explained.md:278 (existing_routes)"
+    "sequence_diagram_explained.md:278 (existing_routes)。出典の action「外部送信」を"
+    "v1.11 の D82 で「送信」に読み替えた"
 )
 
 # Action 台帳の出発点(前段設計書3.3節・P10)。初期登録の登録簿にある Action は
-# 「あおい × 外部送信」の1件だけで、これが前段の Action 正規化の最初の選択肢になる。
+# 「あおい × 送信」(出典の語は「外部送信」。D82)の1件だけで、これが前段の
+# Action 正規化の最初の選択肢になる。
 #
 # **定義は DMN にも登録簿にも書かれていない。** 出典は次の2つで、どちらも「外部送信」
 # という行為の名前が使われていることしか示さない。定義の文は、この2つの出典と、
@@ -130,15 +139,19 @@ ENTRY_POINTS_SOURCE = (
 #   - registry/registry.json 層1 dt_transmission の entry_points
 #   - registry/dmn/aoi_transmission.dmn 送信可否判定の行の reason_code「外部送信対象外」
 #
-# 段(kind)と親(parent)は v1.9 の D73 で足した欄である。外部送信は、あおいが実行時に
-# 要求する具体的な行為なので concrete。親(情報提供)は、正解 IR の評価の中で台帳に
+# 段(kind)と親(parent)は v1.9 の D73 で足した欄である。送信は、あおいが実行時に
+# 要求する具体的な行為なので concrete。親(提供)は、正解 IR の評価の中で台帳に
 # 入るので、初期登録では None のままにする(第31回 HANDOFF 2章 タスクA2)。
+#
+# 定義は前段設計書 v0.6 の図3の文(「電子的に宛先へ送ること」)を使う。v1.10 までの
+# 定義(「あおいが、患者に関する情報を、患者や代理人に電子的に送ること」)は、主体・
+# 対象・宛先を含んでいて D80 に合わない。
 # 承認の状態は名前と定義で分ける(P18)。どちらも人のレビューを経ていないので
 # provisional である。
 ACTION_LEDGER_SEED: list[dict] = [
     {
-        "name": "外部送信",
-        "definition": "あおいが、患者に関する情報を、患者や代理人に電子的に送ること",
+        "name": "送信",
+        "definition": "電子的に宛先へ送ること",
         "kind": ACTION_CONCRETE,
         "parent": None,
         "excludes": [],
@@ -150,11 +163,12 @@ ACTION_LEDGER_SEED: list[dict] = [
     }
 ]
 ACTION_LEDGER_SOURCE = (
-    "定義の出典: registry/dmn/aoi_transmission.dmn 送信可否判定の reason_code"
+    "名前の出典: registry/dmn/aoi_transmission.dmn 送信可否判定の reason_code"
     "「外部送信対象外」と、層1 dt_transmission の entry_points"
-    "(あおい × 外部送信)。定義の文そのものは DMN にも登録簿にも無いので "
-    "definition_status=provisional(PU4)。定義の文は第31回 HANDOFF 4.1節の"
-    "書き直し(P16・4.6節。様相と条件を入れない)に合わせた"
+    "(出典の語は「外部送信」)。v1.11 の D82 で名前を「送信」に改めた"
+    "(外部送信とデータ送信を1つにまとめる)。定義の文は前段設計書 v0.6 の図3"
+    "(「電子的に宛先へ送ること」)。定義の文そのものは DMN にも登録簿にも無いので "
+    "definition_status=provisional(PU4)"
 )
 
 # 層3の sources(一致プリミティブの引数の取得元)は DMN XML に書かれていない。

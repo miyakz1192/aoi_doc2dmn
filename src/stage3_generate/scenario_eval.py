@@ -99,7 +99,21 @@ def strictness(decision: str) -> int:
 
 
 def compose_decisions(own: Optional[dict], inherited: list[dict]) -> dict:
-    """自分の判定と継承する判定の結論を合成する(D74・D75)。
+    """自分の判定1つと継承する判定を合成する(D74・D75)。`compose_many` の1件版。"""
+    owns = [] if own is None else [{"decision_id": "own", "result": own}]
+    out = compose_many(owns, inherited)
+    # 1件版では、自分の判定から採ったときの出どころを従来どおり "own" と書く
+    return out
+
+
+def compose_many(owns: list[dict], inherited: list[dict]) -> dict:
+    """自分の判定(複数可)と継承する判定の結論を合成する(D74・D75・D81)。
+
+    `owns` は、要求された actor × action に付いた判定の評価結果の一覧である
+    (`{"decision_id", "result"}`)。v1.11 の D81 で、1つの actor × action に別々の
+    条文から来た判定が複数付いてよくなった。自分の判定は**結論をすべて**取り入れる
+    (許可も含む)。各表は自分の対象の外の要求を「その他」として既定の行に落とすので、
+    対象外の表は既定の行の結論(ふつうは許可)を返し、ほかの表の禁止に負ける。
 
     - 継承側からは**禁止・条件付き許可だけ**を取り入れる。親の許可は子に及ばない(D60)
     - 取り入れた結論と自分の結論のうち、最も厳しいものを採る
@@ -113,9 +127,11 @@ def compose_decisions(own: Optional[dict], inherited: list[dict]) -> dict:
     """
     evaluated: list[dict] = []
     candidates: list[tuple[int, str, dict]] = []
-    if own is not None:
-        evaluated.append({"source": "own", "decision": own.get("decision")})
-        candidates.append((strictness(str(own.get("decision"))), "own", own))
+    for item in owns:
+        result = item["result"]
+        source = str(item.get("decision_id"))
+        evaluated.append({"source": source, "decision": result.get("decision")})
+        candidates.append((strictness(str(result.get("decision"))), source, result))
     for item in inherited:
         result = item["result"]
         decision = str(result.get("decision"))
@@ -180,3 +196,70 @@ def evaluate_route(
             }
         )
     return compose_decisions(own, inherited)
+
+
+def routes_for_request(routes: list[dict], actor: str, action: str) -> list[dict]:
+    """ルーティング表から、要求された actor × action の行をすべて集める(D81)。
+
+    v1.11 で、1つの actor × action に判定ごとの行を置くことにした。行が1つも無い
+    場合は空のリストを返す(呼び出し側が「この行為を規制する条文が無い」と扱う)。
+    """
+    return [r for r in routes if r.get("actor") == actor and r.get("action") == action]
+
+
+def evaluate_request(
+    routes: list[dict],
+    actor: str,
+    action: str,
+    facts: dict,
+    *,
+    model_of,
+    bindings: Optional[dict] = None,
+) -> dict:
+    """1つの要求(actor × action)を、付いた判定すべてと継承する判定で評価する(D81)。
+
+    1. ルーティング表から actor × action の行をすべて集める(判定ごとに1行)
+    2. 各行の自分の判定を評価する(結論をすべて取り入れる)
+    3. 各行の継承する判定を、重複を除いて評価する(禁止・エスカレーション・
+       条件付き許可だけを取り入れる。D74)
+    4. D77 の順序(禁止 ＞ エスカレーション ＞ 条件付き許可 ＞ 許可)で最も厳しい
+       結論を採る
+
+    継承する判定は、同じ祖先の判定が複数の行に付いていても1回だけ評価する
+    (行ごとに祖先は同じなので、重ねて評価しても結論は変わらない)。
+    """
+    rows = routes_for_request(routes, actor, action)
+    owns: list[dict] = []
+    inherited: list[dict] = []
+    seen: set[tuple] = set()
+    for route in rows:
+        decision_id = route.get("decision_id")
+        if decision_id:
+            model = model_of(route.get("dmn_model"))
+            owns.append(
+                {
+                    "dmn_model": route.get("dmn_model"),
+                    "decision_id": decision_id,
+                    "result": evaluate_scenario(
+                        model, decision_id, facts, bindings=bindings
+                    ),
+                }
+            )
+        for decision in route.get("inherited_decisions", []):
+            key = (decision.get("dmn_model"), decision.get("decision_id"))
+            if key in seen:
+                continue
+            seen.add(key)
+            model = model_of(decision.get("dmn_model"))
+            inherited.append(
+                {
+                    "dmn_model": decision.get("dmn_model"),
+                    "decision_id": decision.get("decision_id"),
+                    "result": evaluate_scenario(
+                        model, decision["decision_id"], facts, bindings=bindings
+                    ),
+                }
+            )
+    out = compose_many(owns, inherited)
+    out["_routes"] = len(rows)
+    return out

@@ -60,13 +60,15 @@ from src.stage3_frontstage.run_action_eval import (  # noqa: E402
 from src.stage3_generate.registry import Registry  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-GOLD_PATH = REPO_ROOT / "testdata" / "action_gold" / "action_gold_v2.json"
+GOLD_PATH = REPO_ROOT / "testdata" / "action_gold" / "action_gold_v3.json"
+GOLD_V2_PATH = REPO_ROOT / "testdata" / "action_gold" / "action_gold_v2.json"
 GOLD_V1_PATH = REPO_ROOT / "testdata" / "action_gold" / "action_gold_v1.json"
 REGISTRY_PATH = REPO_ROOT / "registry" / "registry.json"
 
 CLAUSE = "許可なく職務以外の目的で会社の施設、物品等を使用しないこと。"
 SURFACE = "会社の施設、物品等を使用"
-SEED_DEFINITION = "あおいが、患者に関する情報を、患者や代理人に電子的に送ること"
+# 初期登録の送信(旧: 外部送信)の定義(前段設計書 v0.6 の図3。D82)
+SEED_DEFINITION = "電子的に宛先へ送ること"
 
 
 @pytest.fixture
@@ -76,11 +78,11 @@ def action_gold() -> dict:
 
 @pytest.fixture
 def seeded_ledger() -> ActionLedger:
-    """出発点(あおいの外部送信)だけの台帳。"""
+    """出発点(あおいの送信)だけの台帳。"""
     return ActionLedger(
         entries=[
             ActionEntry(
-                name="外部送信",
+                name="送信",
                 definition=SEED_DEFINITION,
                 kind="concrete",
                 actors=["あおい"],
@@ -105,7 +107,7 @@ def _responses(
             "definition_part": "",
             "considered": considered
             if considered is not None
-            else [{"name": "外部送信", "why_not": "手段が違う(固定)"}],
+            else [{"name": "送信", "why_not": "手段が違う(固定)"}],
         }
     )
     if proposal is not None:
@@ -264,7 +266,7 @@ def test_the_name_rule_list_excludes_the_plain_negation():
 def test_normalization_runs_once_at_temperature_zero(seeded_ledger):
     """P7 v0.4: k=1。呼び出しは抜き出しと選択の2回で、温度は 0.0。"""
     result, llm = _normalize(
-        seeded_ledger, CLAUSE, [{"surface": SURFACE, "core_verb": "使用"}], "外部送信"
+        seeded_ledger, CLAUSE, [{"surface": SURFACE, "core_verb": "使用"}], "送信"
     )
     assert llm.temperatures == [TEMPERATURE, TEMPERATURE]
     assert result.trace.llm_calls == 2
@@ -283,7 +285,7 @@ def test_two_candidates_raise_the_ambiguous_gate(seeded_ledger):
             {"surface": "私有機器を使用しないこと", "core_verb": "使用"},
         ],
         NO_MATCH,
-        proposal={"name": "特権操作", "definition": "特権/管理者権限で情報システムを操作すること",
+        proposal={"name": "操作", "definition": "特権/管理者権限で情報システムを操作すること",
                   "kind": "concrete", "parent": None, "basis_quotes": ["特権操作"]},
     )
     assert "action_surface_ambiguous" in result.gates.gate_names()
@@ -297,7 +299,7 @@ def test_two_candidates_raise_the_ambiguous_gate(seeded_ledger):
 
 def test_a_single_candidate_does_not_raise_the_ambiguous_gate(seeded_ledger):
     result, _ = _normalize(
-        seeded_ledger, CLAUSE, [{"surface": SURFACE, "core_verb": "使用"}], "外部送信"
+        seeded_ledger, CLAUSE, [{"surface": SURFACE, "core_verb": "使用"}], "送信"
     )
     assert "action_surface_ambiguous" not in result.gates.gate_names()
 
@@ -309,12 +311,12 @@ def test_a_single_candidate_does_not_raise_the_ambiguous_gate(seeded_ledger):
 
 def test_verb_mismatch_raises_the_gate(seeded_ledger):
     """P15: 既存に寄せたが、中心の動詞が過去の語句の動詞にない。"""
-    seeded_ledger.record_surface("外部送信", "情報を送信", "あおいの既存DMN", "送信")
+    seeded_ledger.record_surface("送信", "情報を送信", "あおいの既存DMN", "送信")
     result, _ = _normalize(
         seeded_ledger,
         "医療情報を口頭で伝達してはならない。",
         [{"surface": "口頭で伝達してはならない", "core_verb": "伝達"}],
-        "外部送信",
+        "送信",
     )
     assert "action_verb_mismatch" in result.gates.gate_names()
     check = result.trace.verb_check
@@ -335,7 +337,7 @@ def test_verb_check_is_not_run_for_a_new_action(seeded_ledger):
     """新規候補のときは比べる相手が無いので、動詞の検査はしない。"""
     result, _ = _normalize(
         seeded_ledger, CLAUSE, [{"surface": SURFACE, "core_verb": "使用"}], NO_MATCH,
-        proposal={"name": "施設物品使用", "definition": "会社の施設や物品を使うこと",
+        proposal={"name": "使用", "definition": "会社の施設や物品を使うこと",
                   "kind": "concrete", "parent": None, "basis_quotes": [SURFACE]},
     )
     assert result.trace.verb_check is None
@@ -346,17 +348,17 @@ def test_abstract_selected_raises_the_gate(seeded_ledger):
     """P15: 抽象的な段を選んだら、禁止が子すべてに及ぶので人が段を確かめる。"""
     seeded_ledger.add(
         ActionEntry(
-            name="情報提供",
+            name="提供",
             definition="手段を問わず、情報を他の組織や人に渡すこと",
             kind="abstract",
         )
     )
-    seeded_ledger.record_surface("情報提供", "組織、人に提供", "人的対策-2", "提供")
+    seeded_ledger.record_surface("提供", "組織、人に提供", "人的対策-2", "提供")
     result, _ = _normalize(
         seeded_ledger,
         "機密を漏洩しないこと。",
         [{"surface": "漏洩しないこと", "core_verb": "漏洩"}],
-        "情報提供",
+        "提供",
     )
     assert "action_abstract_selected" in result.gates.gate_names()
     assert result.chosen_kind == "abstract"
@@ -372,10 +374,10 @@ def test_no_match_proposes_a_new_action_with_a_kind_and_never_writes_the_parent(
 ):
     """P6: 親の案は Trace にだけ置く。段(kind)の案も出させる(P14)。"""
     proposal = {
-        "name": "口頭伝達",
+        "name": "伝達",
         "definition": "情報を、声で相手に伝えること",
         "kind": "concrete",
-        "parent": "情報提供",
+        "parent": "提供",
         "basis_quotes": ["口頭で伝達"],
     }
     result, _ = _normalize(
@@ -386,11 +388,11 @@ def test_no_match_proposes_a_new_action_with_a_kind_and_never_writes_the_parent(
         proposal=proposal,
     )
     assert result.action.is_new is True
-    assert result.action.normalized == "口頭伝達"
+    assert result.action.normalized == "伝達"
     # IR に parent の欄そのものが無い(P6・D78。v1.10 で廃止)
     assert not hasattr(result.action, "parent")
     assert result.action.approved_by is None  # 承認は人(D53)
-    assert result.trace.new_action_proposal.parent_suggestion == "情報提供"
+    assert result.trace.new_action_proposal.parent_suggestion == "提供"
     assert result.trace.new_action_proposal.kind == "concrete"
     assert result.trace.new_action_proposal.basis_verified == [True]
     assert "new_action_unapproved" in result.gates.gate_names()
@@ -463,25 +465,25 @@ def test_a_name_outside_the_ledger_is_treated_as_no_match(seeded_ledger):
 def test_the_ledger_block_shows_the_kind_the_parent_and_the_core_verbs(seeded_ledger):
     seeded_ledger.add(
         ActionEntry(
-            name="情報提供",
+            name="提供",
             definition="手段を問わず、情報を他の組織や人に渡すこと",
             kind="abstract",
         )
     )
-    seeded_ledger.find("外部送信").parent = "情報提供"
-    seeded_ledger.find("外部送信").excludes = ["口頭伝達"]
-    seeded_ledger.record_surface("情報提供", "組織、人に提供", "人的対策-2", "提供")
+    seeded_ledger.find("送信").parent = "提供"
+    seeded_ledger.find("送信").excludes = ["伝達"]
+    seeded_ledger.record_surface("提供", "組織、人に提供", "人的対策-2", "提供")
     block = seeded_ledger.prompt_block()
     assert "抽象的な行為(手段を問わない)" in block
-    assert "親(より抽象的な行為): 情報提供" in block
-    assert "この Action に含まないもの: 口頭伝達" in block
+    assert "親(より抽象的な行為): 提供" in block
+    assert "この Action に含まないもの: 伝達" in block
     assert "中心の動詞: 提供" in block
 
 
 def test_the_choice_prompt_tells_the_model_to_match_the_tier(seeded_ledger):
     """手順3: 段を合わせること・excludes にある行為は選ばないことを示す(P14)。"""
     _result, llm = _normalize(
-        seeded_ledger, CLAUSE, [{"surface": SURFACE, "core_verb": "使用"}], "外部送信"
+        seeded_ledger, CLAUSE, [{"surface": SURFACE, "core_verb": "使用"}], "送信"
     )
     choice_prompt = llm.prompts[1]
     assert "段を合わせてください" in choice_prompt
@@ -492,7 +494,7 @@ def test_the_choice_prompt_tells_the_model_to_match_the_tier(seeded_ledger):
 def test_the_surface_prompt_warns_about_the_sentence_final_predicate(seeded_ledger):
     """P17: 「〜は」「〜が」の直後の体言が行為であることを示す。"""
     _result, llm = _normalize(
-        seeded_ledger, CLAUSE, [{"surface": SURFACE, "core_verb": "使用"}], "外部送信"
+        seeded_ledger, CLAUSE, [{"surface": SURFACE, "core_verb": "使用"}], "送信"
     )
     surface_prompt = llm.prompts[0]
     assert "文末の述語だけを見ないこと" in surface_prompt
@@ -511,15 +513,33 @@ def test_the_proposal_prompt_forbids_modality_and_conditions(seeded_ledger):
     )
     prompt = llm.prompts[2]
     assert "規範の様相(禁止・不可・不許可など)を名前と定義に入れない" in prompt
-    assert "条件(誰が・どこで・いつ・どの区分か)を名前と定義に入れない" in prompt
+    assert "条件(誰が・どこで・いつ・どの区分か)と対象・手段を名前と定義に入れない" in prompt
     assert "一般的な言い換えや" in prompt
+    # P26: 名前は行為の種類(動詞)だけ。対象・権限・場所・宛先・副詞の手段は列
+    assert "名前は行為の種類(動詞)だけにする" in prompt
+    assert "対象(何を)・権限・場所・宛先・副詞で" in prompt
+    assert "使役(させる)は動詞の" in prompt
+
+
+def test_the_choice_prompt_tells_the_model_to_merge_by_verb(seeded_ledger):
+    """P26: 動詞が同じ(または同義の)行為は、対象が違っても同じ Action に寄せる。"""
+    _result, llm = _normalize(
+        seeded_ledger, CLAUSE, [{"surface": SURFACE, "core_verb": "使用"}], NO_MATCH,
+        proposal={"name": "使用", "definition": "使うこと", "kind": "concrete",
+                  "parent": None, "basis_quotes": []},
+    )
+    choice_prompt = llm.prompts[1]
+    assert "Action の名前は**行為の種類(動詞)だけ**です" in choice_prompt
+    assert "動詞が\n   同じなら同じ Action です" in choice_prompt or "同じなら同じ Action です" in choice_prompt
+    assert "動詞が**同義**なら同じ Action です(例: 送信と転送、共有と共用、使用と利用)" in choice_prompt
+    assert "**使役(させる)は動詞の一部**で、別の行為です" in choice_prompt
 
 
 def test_context_is_offered_but_not_as_the_source_of_the_surface(seeded_ledger):
     """IR v2 1.4節: context は補足で、逐語で抜き出す対象は条文本文だけ。"""
     context = [{"text": "特権アカウント", "where": "6.10 の表の列の見出し"}]
     llm = ScriptedJsonLlm(
-        _responses([{"surface": SURFACE, "core_verb": "使用"}], "外部送信")
+        _responses([{"surface": SURFACE, "core_verb": "使用"}], "送信")
     )
     ActionNormalizer(llm).normalize(CLAUSE, "テスト 第1条", seeded_ledger, context=context)
     assert "特権アカウント" in llm.prompts[0]
@@ -537,7 +557,7 @@ def test_duplicate_check_flags_a_shared_head_noun(seeded_ledger):
         "データ送信", "データを、電子メールなどで宛先に電子的に送ること"
     )
     assert check.flagged
-    assert check.closest == "外部送信"
+    assert check.closest == "送信"
     assert name_ratio("データ送信", "外部送信") < NAME_RATIO_THRESHOLD
     assert shared_suffix_length("データ送信", "外部送信") >= SHARED_SUFFIX_THRESHOLD
 
@@ -579,7 +599,7 @@ def test_duplicate_gate_is_raised_for_a_close_new_candidate(seeded_ledger):
 def test_the_ledger_start_comes_from_the_initial_registry(action_gold):
     """P10: 台帳の出発点は初期登録の登録簿にある Action(外部送信)だけ。"""
     ledger = load_ledger(action_gold, REGISTRY_PATH)
-    assert ledger.names() == ["外部送信"]
+    assert ledger.names() == ["送信"]
     entry = ledger.entries[0]
     # P18: 承認の状態は名前と定義で分かれている
     assert entry.name_status == "provisional"
@@ -588,21 +608,21 @@ def test_the_ledger_start_comes_from_the_initial_registry(action_gold):
     assert entry.kind == "concrete"
     assert entry.parent is None
     registry = Registry.load(REGISTRY_PATH)
-    assert registry.find_action("外部送信") is not None
-    assert registry.action_kind("外部送信") == "concrete"
+    assert registry.find_action("送信") is not None
+    assert registry.action_kind("送信") == "concrete"
 
 
 def test_teaching_adds_the_expected_action_with_its_kind_and_parent(
     action_gold, seeded_ledger
 ):
     """P13・4.2節: 台帳に足すのは正解の Action で、段と親も正解どおり。"""
-    item = action_gold["items"][4]  # 口頭伝達(親は情報提供)
+    item = action_gold["items"][4]  # 伝達(親は提供)
     message = teach(seeded_ledger, item)
     assert "台帳に追加" in message
-    entry = seeded_ledger.find("口頭伝達")
+    entry = seeded_ledger.find("伝達")
     assert entry is not None
     assert entry.kind == "concrete"
-    assert entry.parent == "情報提供"
+    assert entry.parent == "提供"
     assert entry.name_status == "approved"
     assert entry.definition_status == "provisional"
     assert entry.approved_by == "Kazuhiro"
@@ -617,14 +637,14 @@ def test_teaching_adds_the_expected_action_with_its_kind_and_parent(
 
 
 def test_teaching_applies_the_ledger_updates(action_gold, seeded_ledger):
-    """4.1節: 項目3で情報提供が台帳に入った時点で、外部送信に親が付く。"""
-    item = action_gold["items"][2]  # 人的対策-2(情報提供・abstract)
-    assert seeded_ledger.find("外部送信").parent is None
+    """4.1節: 項目3で提供が台帳に入った時点で、外部送信に親が付く。"""
+    item = action_gold["items"][2]  # 人的対策-2(提供・abstract)
+    assert seeded_ledger.find("送信").parent is None
     message = teach(seeded_ledger, item)
-    assert seeded_ledger.find("情報提供").kind == "abstract"
-    assert seeded_ledger.find("外部送信").parent == "情報提供"
+    assert seeded_ledger.find("提供").kind == "abstract"
+    assert seeded_ledger.find("送信").parent == "提供"
     assert "親を付けた" in message
-    assert seeded_ledger.relation("情報提供", "外部送信") == "descendant"
+    assert seeded_ledger.relation("提供", "送信") == "descendant"
 
 
 # --------------------------------------------------------------------------
@@ -634,7 +654,7 @@ def test_teaching_applies_the_ledger_updates(action_gold, seeded_ledger):
 
 @pytest.fixture
 def taught_ledger(action_gold, seeded_ledger) -> ActionLedger:
-    """項目5まで教えた台帳(情報提供・その子・特権操作などが入っている)。"""
+    """項目5まで教えた台帳(提供・その子・操作などが入っている)。"""
     for item in action_gold["items"][:5]:
         teach(seeded_ledger, item)
     return seeded_ledger
@@ -645,7 +665,7 @@ def test_mis_merge_is_an_unrelated_existing_action(action_gold, taught_ledger):
     item = action_gold["items"][14]  # 物理3(正解は新規の「放置」)
     result, _ = _normalize(
         taught_ledger, item["text"],
-        [{"surface": "原稿、印刷物を放置しない", "core_verb": "放置"}], "施設物品使用",
+        [{"surface": "原稿、印刷物を放置しない", "core_verb": "放置"}], "使用",
         clause_ref=item["clause_ref"],
     )
     assert classify(item, result, taught_ledger) == "mis_merge"
@@ -660,10 +680,10 @@ def test_under_applied_is_choosing_a_descendant_of_the_right_abstract_action(
     action_gold, seeded_ledger
 ):
     """適用漏れ: 正解は抽象的な Action なのに、その子孫を選んだ(重大)。"""
-    item = action_gold["items"][2]  # 人的対策-2(正解は抽象の「情報提供」)
+    item = action_gold["items"][2]  # 人的対策-2(正解は抽象の「提供」)
     result, _ = _normalize(
         seeded_ledger, item["text"],
-        [{"surface": "組織、人に提供してはならない", "core_verb": "提供"}], "外部送信",
+        [{"surface": "組織、人に提供してはならない", "core_verb": "提供"}], "送信",
         clause_ref=item["clause_ref"],
     )
     teach(seeded_ledger, item)  # 正解を足してから分類する(4.2節)
@@ -677,10 +697,10 @@ def test_over_applied_is_choosing_the_parent_of_the_right_concrete_action(
     """過剰適用: 正解は具体的な Action なのに、その祖先を選んだ(中)。"""
     for item in action_gold["items"][:3]:
         teach(seeded_ledger, item)
-    item = action_gold["items"][4]  # 第14条(正解は具体の「口頭伝達」)
+    item = action_gold["items"][4]  # 第14条(正解は具体の「伝達」)
     result, _ = _normalize(
         seeded_ledger, item["text"],
-        [{"surface": "口頭で伝達してはならない", "core_verb": "伝達"}], "情報提供",
+        [{"surface": "口頭で伝達してはならない", "core_verb": "伝達"}], "提供",
         clause_ref=item["clause_ref"],
     )
     teach(seeded_ledger, item)
@@ -692,7 +712,7 @@ def test_over_applied_is_choosing_the_parent_of_the_right_concrete_action(
 
 def test_missing_an_existing_action_is_counted_as_a_miss(action_gold, taught_ledger):
     """取りこぼし: 正解は既存なのに新規にした(軽。ゲートで人が拾える)。"""
-    item = action_gold["items"][5]  # 6.1⑤(正解は既存の「特権操作」)
+    item = action_gold["items"][5]  # 6.1⑤(正解は既存の「操作」。旧: 特権操作)
     proposal = {
         "name": "私有機器使用",
         "definition": "私有機器を使うこと",
@@ -716,7 +736,7 @@ def test_choosing_the_right_existing_action_is_correct(action_gold, taught_ledge
     item = action_gold["items"][5]
     result, _ = _normalize(
         taught_ledger, item["text"], [{"surface": "特権操作", "core_verb": "操作"}],
-        "特権操作", clause_ref=item["clause_ref"],
+        "操作", clause_ref=item["clause_ref"],
     )
     verdict = judge(item, result, taught_ledger)
     assert verdict.verdict == "correct"
@@ -729,7 +749,7 @@ def test_the_new_action_gate_is_not_counted_as_a_false_alarm(action_gold, seeded
     """5.1節: 新しい Action の承認は設計どおりの動きなので、誤報に数えない。"""
     item = action_gold["items"][0]
     proposal = {
-        "name": "特権操作",
+        "name": "操作",
         "definition": "特権/管理者権限で情報システムを操作すること",
         "kind": "concrete",
         "parent": None,
@@ -752,7 +772,7 @@ def test_the_new_action_gate_is_not_counted_as_a_false_alarm(action_gold, seeded
 # --------------------------------------------------------------------------
 
 
-def test_action_gold_v2_has_18_items_in_evaluation_order(action_gold):
+def test_action_gold_v3_has_18_items_in_evaluation_order(action_gold):
     """P13: 正解IR 5件 ＋ 候補13件を、評価の順に並べる。"""
     items = action_gold["items"]
     assert len(items) == 18
@@ -767,29 +787,41 @@ def test_action_gold_v2_has_18_items_in_evaluation_order(action_gold):
             assert item["definition"]["basis"], item["clause_id"]
 
 
-def test_action_gold_v2_hierarchy_matches_the_design(action_gold):
-    """4.1節の表どおりの段と親になっていること。"""
+def test_action_gold_v3_hierarchy_matches_the_design(action_gold):
+    """前段設計書 v0.6 の3.4節の表どおりの名前・段・親になっていること(D82)。"""
     by_name = {}
     for item in action_gold["items"]:
         expected = item["expected"]
         by_name.setdefault(expected["normalized"], expected)
-    assert by_name["情報提供"]["kind"] == "abstract"
-    assert by_name["口頭伝達"]["parent"] == "情報提供"
-    assert by_name["データ送信"]["parent"] == "情報提供"
-    # データ取り出しは向きが違うので情報提供の子にしない(3.4節)
-    assert by_name["データ取り出し"]["parent"] is None
-    # 項目3で外部送信に親が付く(4.1節)
+    assert by_name["提供"]["kind"] == "abstract"
+    for child in ("伝達", "送信", "共有"):
+        assert by_name[child]["parent"] == "提供", child
+    # 取り出しは向きが違うので提供の子にしない(3.4節)
+    assert by_name["取り出し"]["parent"] is None
+    # 旧い名前は1つも残っていない(D82 の対応表)
+    old = {"特権操作", "施設物品使用", "情報提供", "口頭伝達", "アカウント共用",
+           "データ取り出し", "外部送信", "データ送信"}
+    assert not old & set(by_name)
+    # 項目3で、初期登録の送信に親が付く
     updates = action_gold["items"][2]["ledger_updates"]
-    assert updates == [
-        {
-            "name": "外部送信",
-            "parent": "情報提供",
-            "reason": updates[0]["reason"],
-        }
-    ]
+    assert [(u["name"], u["parent"]) for u in updates] == [("送信", "提供")]
 
 
-def test_action_gold_v2_definitions_have_no_modality(action_gold):
+def test_action_gold_v3_merges_the_two_sendings(action_gold):
+    """D80・D82: 外部送信とデータ送信を「送信」にまとめたので、項目9は既存になる。"""
+    item9 = action_gold["items"][8]
+    assert item9["clause_id"] == "ipa_secguide_v4_2_3_3_forward"
+    assert item9["expected"]["normalized"] == "送信"
+    assert item9["expected"]["is_new"] is False
+    assert item9["expected"]["renamed_from"] == "データ送信"
+    assert "definition" not in item9
+    assert action_gold["ledger_seed"][0]["name"] == "送信"
+    # 18件を足し終えた台帳は11件(v2 は12件)
+    names = {i["expected"]["normalized"] for i in action_gold["items"]} | {"送信"}
+    assert len(names) == 11
+
+
+def test_action_gold_v3_definitions_have_no_modality(action_gold):
     """P16: Action の名前と定義に規範の様相を入れない。"""
     for item in action_gold["items"]:
         assert find_normative_modality(item["expected"]["normalized"]) == []
@@ -800,13 +832,22 @@ def test_action_gold_v2_definitions_have_no_modality(action_gold):
     assert find_normative_modality(seed["definition"]) == []
 
 
-def test_the_v1_gold_is_kept(action_gold):
-    """第31回 HANDOFF 4章: v1 は残す(比較のため)。"""
+def test_the_v1_and_v2_golds_are_kept(action_gold):
+    """v1・v2 は残す(過去の評価の記録。第30回は v1、第32回は v2 で流した)。"""
     v1 = json.loads(GOLD_V1_PATH.read_text(encoding="utf-8"))
-    assert len(v1["items"]) == 18
+    v2 = json.loads(GOLD_V2_PATH.read_text(encoding="utf-8"))
+    assert len(v1["items"]) == len(v2["items"]) == 18
     # v1 には段が無い。v2 で足した
     assert "kind" not in v1["items"][0]["expected"]
-    assert action_gold["_meta"]["based_on"].endswith("action_gold_v1.json(v1 は残す)")
+    assert v2["_meta"]["based_on"].endswith("action_gold_v1.json(v1 は残す)")
+    # v2 は旧い名前のまま(第32回の生データと突き合わせるため)
+    assert v2["items"][0]["expected"]["normalized"] == "特権操作"
+    assert action_gold["_meta"]["based_on"].startswith("testdata/action_gold/action_gold_v2.json")
+    # 条文と語句は v2 から変えていない(名前・段・親・定義だけを改めた)
+    for a, b in zip(v2["items"], action_gold["items"]):
+        assert a["clause_id"] == b["clause_id"]
+        assert a["text"] == b["text"]
+        assert a["expected"]["surface"] == b["expected"]["surface"]
 
 
 def test_frontstage_clauses_are_all_hard_declarative():
@@ -843,10 +884,10 @@ def test_the_design_check_gates_are_not_counted_as_false_alarms(action_gold, see
     """
     for item in action_gold["items"][:3]:
         teach(seeded_ledger, item)
-    item = action_gold["items"][7]  # 第11条⑤(正解は既存の抽象「情報提供」)
+    item = action_gold["items"][7]  # 第11条⑤(正解は既存の抽象「提供」)
     result, _ = _normalize(
         seeded_ledger, item["text"],
-        [{"surface": "漏洩しないこと", "core_verb": "漏洩"}], "情報提供",
+        [{"surface": "漏洩しないこと", "core_verb": "漏洩"}], "提供",
         clause_ref=item["clause_ref"],
     )
     verdict = judge(item, result, seeded_ledger)
@@ -867,7 +908,7 @@ def test_an_item_with_only_a_design_check_gate_is_counted_separately(
     """P21: 人に回る割合は「設計上の確認だけ」と「疑いのゲートあり」に分ける。"""
     item = action_gold["items"][0]
     proposal = {
-        "name": "特権操作",
+        "name": "操作",
         "definition": "特権/管理者権限で情報システムを操作すること",
         "kind": "concrete",
         "parent": None,
@@ -894,7 +935,7 @@ def test_a_new_candidate_with_the_wrong_tier_is_counted(action_gold, seeded_ledg
         teach(seeded_ledger, item)
     item = action_gold["items"][2]  # 人的対策-2(正解は abstract)
     proposal = {
-        "name": "情報提供",
+        "name": "提供",
         "definition": "情報を他の組織や人に渡すこと",
         "kind": "concrete",  # 正解は abstract
         "parent": None,
@@ -917,32 +958,48 @@ def test_an_existing_choice_has_no_tier_metric(action_gold, taught_ledger):
     item = action_gold["items"][5]
     result, _ = _normalize(
         taught_ledger, item["text"], [{"surface": "特権操作", "core_verb": "操作"}],
-        "特権操作", clause_ref=item["clause_ref"],
+        "操作", clause_ref=item["clause_ref"],
     )
     assert judge(item, result, taught_ledger).new_action_kind_matches is None
 
 
-@pytest.fixture
-def holdout_gold() -> dict:
-    path = REPO_ROOT / "testdata" / "action_gold" / "action_gold_holdout_v1.json"
-    return json.loads(path.read_text(encoding="utf-8"))
+# P25 の仕組みは、保留用の正解の値ではなく合成の項目で確かめる(保留用の正解の値は
+# 追補で受け取る。前段設計書 PU3 の例「複写し、又は持ち出してはならない」を使う)
+ALT_CLAUSE = "書類を複写し、又は持ち出してはならない。"
 
 
-def _holdout_ledger(holdout_gold) -> ActionLedger:
-    return ActionLedger.from_json(holdout_gold["ledger_seed"])
+def _alt_item() -> dict:
+    return {
+        "order": 1,
+        "clause_id": "synthetic_copy_or_carry_out",
+        "clause_ref": "テスト規程 第1条",
+        "group": "合成",
+        "text": ALT_CLAUSE,
+        "expected": {"surface": "書類を複写", "normalized": "複写", "is_new": False,
+                     "core_verb": "複写", "kind": "concrete", "parent": None},
+        "expected_alternatives": [
+            {"surface": "持ち出", "normalized": "持出し", "is_new": False,
+             "core_verb": "持ち出", "kind": "concrete", "parent": None},
+        ],
+        "review": {"approved_by": "pytest"},
+    }
 
 
-def test_either_action_of_a_line_of_expectations_is_correct(holdout_gold):
+def _alt_ledger() -> ActionLedger:
+    ledger = ActionLedger.from_json([])
+    for name, definition in (("複写", "写しを作ること"),
+                             ("持出し", "物を、置かれている場所の外へ持って出ること"),
+                             ("放置", "置いたままにすること")):
+        ledger.add(ActionEntry(name=name, definition=definition))
+    ledger.record_surface("複写", "原本を複写", "テスト規程 第0条", "複写")
+    ledger.record_surface("持出し", "持ち出", "テスト規程 第0条", "持ち出")
+    return ledger
+
+
+def test_either_action_of_a_line_of_expectations_is_correct():
     """P25: 並べた正解のどれか1つと一致すれば正しい。"""
-    item = holdout_gold["items"][1]  # 共有(アカウント共用)／発行(アカウント発行)
-    ledger = _holdout_ledger(holdout_gold)
-    ledger.add(
-        ActionEntry(name="アカウント発行", definition="アカウントを作って渡すこと")
-    )
-    for surface, choice, verb in (
-        ("同一アカウントの他者との共有", "アカウント共用", "共有"),
-        ("複数の利用者が共有するアカウントの発行", "アカウント発行", "発行"),
-    ):
+    item, ledger = _alt_item(), _alt_ledger()
+    for surface, choice, verb in (("書類を複写", "複写", "複写"), ("持ち出", "持出し", "持ち出")):
         result, _ = _normalize(
             ledger, item["text"], [{"surface": surface, "core_verb": verb}], choice,
             clause_ref=item["clause_ref"],
@@ -950,15 +1007,14 @@ def test_either_action_of_a_line_of_expectations_is_correct(holdout_gold):
         verdict = judge(item, result, ledger)
         assert verdict.verdict == "correct", choice
         assert verdict.is_alternatives is True
+        assert verdict.matched["normalized"] == choice
 
 
-def test_an_unrelated_action_on_a_line_of_expectations_is_a_mis_merge(holdout_gold):
+def test_an_unrelated_action_on_a_line_of_expectations_is_a_mis_merge():
     """P25: 並びのどれとも親子関係にない既存を選べば誤統合(重大)。"""
-    item = holdout_gold["items"][1]
-    ledger = _holdout_ledger(holdout_gold)
+    item, ledger = _alt_item(), _alt_ledger()
     result, _ = _normalize(
-        ledger, item["text"],
-        [{"surface": "同一アカウントの他者との共有", "core_verb": "共有"}], "放置",
+        ledger, item["text"], [{"surface": "書類を複写", "core_verb": "複写"}], "放置",
         clause_ref=item["clause_ref"],
     )
     verdict = judge(item, result, ledger)
@@ -966,55 +1022,60 @@ def test_an_unrelated_action_on_a_line_of_expectations_is_a_mis_merge(holdout_go
     assert verdict.severe is True
 
 
-def test_the_ambiguous_gate_is_by_design_on_a_line_of_expectations(holdout_gold):
+def test_the_ambiguous_gate_is_by_design_on_a_line_of_expectations():
     """P25: 正解が並びの項目で action_surface_ambiguous が立つのは設計どおり。
 
     正解が1つの項目で立った場合は誤報として数える。
     """
-    item = holdout_gold["items"][1]
-    ledger = _holdout_ledger(holdout_gold)
+    item, ledger = _alt_item(), _alt_ledger()
     candidates = [
-        {"surface": "同一アカウントの他者との共有", "core_verb": "共有"},
-        {"surface": "複数の利用者が共有するアカウントの発行", "core_verb": "発行"},
+        {"surface": "書類を複写", "core_verb": "複写"},
+        {"surface": "持ち出", "core_verb": "持ち出"},
     ]
     result, _ = _normalize(
-        ledger, item["text"], candidates, "アカウント共用",
-        clause_ref=item["clause_ref"],
+        ledger, item["text"], candidates, "複写", clause_ref=item["clause_ref"]
     )
     verdict = judge(item, result, ledger)
     assert verdict.surface_ambiguous is True
     assert verdict.verdict == "correct"
-    assert "action_surface_ambiguous" not in verdict.false_alarm_gates
+    assert verdict.false_alarm_gates == []
 
     # 正解が1つの項目では誤報になる
-    single = holdout_gold["items"][4]  # 私有機器へのダウンロード(データ取り出し)
+    single = _alt_item()
+    del single["expected_alternatives"]
     result, _ = _normalize(
-        ledger, single["text"],
-        [
-            {"surface": "私有機器への極秘情報及び社外秘情報のダウンロード",
-             "core_verb": "ダウンロード"},
-            {"surface": "ダウンロード", "core_verb": "ダウンロード"},
-        ],
-        "データ取り出し", clause_ref=single["clause_ref"],
+        ledger, single["text"], candidates, "複写", clause_ref=single["clause_ref"]
     )
     verdict = judge(single, result, ledger)
     assert verdict.verdict == "correct"
-    # 動詞の不一致も立つ(台帳のデータ取り出しの過去の語句は「取り出し」)
-    assert "action_surface_ambiguous" in verdict.false_alarm_gates
+    assert verdict.false_alarm_gates == ["action_surface_ambiguous"]
 
 
-def test_choosing_a_descendant_of_the_new_abstract_action_is_under_applied(holdout_gold):
-    """4.1節 項目14: 情報取得(抽象)の子であるデータ取り出しを選ぶと適用漏れ(重大)。"""
-    item = holdout_gold["items"][13]
-    ledger = _holdout_ledger(holdout_gold)
+def test_choosing_a_descendant_of_a_new_abstract_action_is_under_applied():
+    """P25・5.1節: 新しい抽象の正解に、ledger_updates でその子になる既存を選ぶと適用漏れ。
+
+    教師ありで正解(抽象)を足し、ledger_updates で既存の具体を子にしてから分類する。
+    """
+    ledger = _alt_ledger()
+    item = {
+        "order": 1,
+        "clause_id": "synthetic_abstract",
+        "clause_ref": "テスト規程 第2条",
+        "group": "合成",
+        "text": "書類を移動してはならない。",
+        "expected": {"surface": "書類を移動", "normalized": "移動", "is_new": True,
+                     "core_verb": "移動", "kind": "abstract", "parent": None},
+        "ledger_updates": [{"name": "持出し", "parent": "移動"}],
+        "definition": {"text": "物の場所を変えること", "status": "provisional",
+                       "basis": [], "general_terms": []},
+        "review": {"approved_by": "pytest"},
+    }
     result, _ = _normalize(
-        ledger, item["text"],
-        [{"surface": "自らの業務に関係のない情報を不当に取得", "core_verb": "取得"}],
-        "データ取り出し", clause_ref=item["clause_ref"],
+        ledger, item["text"], [{"surface": "書類を移動", "core_verb": "移動"}], "持出し",
+        clause_ref=item["clause_ref"],
     )
-    # 正解(情報取得)を台帳に足し、データ取り出しをその子にしてから分類する
     teach(ledger, item)
-    assert ledger.find("データ取り出し").parent == "情報取得"
+    assert ledger.find("持出し").parent == "移動"
     verdict = judge(item, result, ledger)
     assert verdict.verdict == "under_applied"
     assert verdict.severe is True

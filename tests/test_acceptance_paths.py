@@ -78,7 +78,8 @@ DT_IDENTITY = "dt_identity"
 DECISION_TRANSMISSION = "decision_transmission"
 DT_TRANSMISSION = "dt_transmission"
 # 既存の最終判定の呼び出し口(層1の entry_points)
-EXISTING_ROUTE = {"actor": "あおい", "action": "外部送信"}
+# D82: 初期登録の Action は「送信」(出典の語は「外部送信」)
+EXISTING_ROUTE = {"actor": "あおい", "action": "送信"}
 
 
 @pytest.fixture
@@ -437,7 +438,7 @@ def level2_ir() -> ClauseIR:
     )
     return _assemble_test_ir(
         clause_ref="(テスト用) 架空規程 第902条",
-        # 既存のルート(あおい×外部送信)に行を足すので、新しい Action ではない
+        # 既存のルート(あおい×送信)に行を足すので、新しい Action ではない
         action_normalized=EXISTING_ROUTE["action"],
         action_is_new=False,
         target=DecisionTarget(
@@ -779,7 +780,7 @@ def no_change_ir() -> ClauseIR:
     中とする」。本人確認判定に行を1本足すだけで、新しい最終判定は作らない。
 
     `target.entry_decision_id` には影響を受ける既存の最終判定(送信可否判定)を入れ、
-    actor・action はその `entry_points`(あおい × 外部送信)と揃える(C9条件7・8)。
+    actor・action はその `entry_points`(あおい × 送信)と揃える(C9条件7・8)。
     電話番号の列は「-」なので、D25 の基準では phone_match は「IR が使う既存 fact」
     に入らない。
     """
@@ -833,7 +834,7 @@ def test_no_change_outcome_and_option_taken(no_change_ir):
 def test_no_change_routing_table_has_one_row(no_change_ir, aoi_registry):
     """D30: IR 自身のルートと、D16 で洗い出した既存のルートが1行にまとまる。
 
-    どちらも「あおい × 外部送信 → 送信可否判定」なので、同じ actor・action・
+    どちらも「あおい × 送信 → 送信可否判定」なので、同じ actor・action・
     decision_id の行は1つにする(設計書4.1)。
     """
     bundle = generate_wiring_bundle(no_change_ir, registry=aoi_registry, dmn_dir=DMN_DIR)

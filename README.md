@@ -139,8 +139,17 @@ aoi_doc2dmn/
   なくエスカレーションと同じ厳しさにする。`ClauseIR.action.parent`は**廃止**し、Actionの
   親子関係はAction台帳だけが持つ（D78。古いIRのparentは無視して`ir_load_warnings()`に
   警告を残す）。v1.9の実装判断5件を設計として追認した（D79）
+- v1.11 では、**Actionの名前を行為の種類（動詞を体言にした語）だけにした**（D80）。対象・
+  権限・場所・宛先・副詞の手段（「口頭で」）は名前に入れず、決定表の列にする。同義語
+  （送信と転送、共有と共用、使用と利用）は1つにまとめ、使役は別の行為として残す。
+  既存の名前を改めた（D82：外部送信・データ送信→送信、特権操作→操作、施設物品使用→使用、
+  情報提供→提供、口頭伝達→伝達、アカウント共用→共有、データ取り出し→取り出し）。
+  変わるのはルーティングのキーだけで、DMNのモデル名・判定ID・判定名・reason_codeは
+  変えない。1つのactor × actionに**判定が複数付いてよい**（D81）。実行時は付いた判定
+  すべてと継承する判定を評価し、D77の順序で合成する（`scenario_eval.evaluate_request`、
+  行は`Registry.routes_for_request`が層1から作る）
 - ③aの**前段**（条文 → IR）は`docs/design/aoi_doc2dmn_frontstage_design.md`（前段設計書
-  v0.5）で設計し、4つの要素（Action正規化 → 事実の抽出 → 行の構成 → レベル判定）に分けて
+  v0.6）で設計し、4つの要素（Action正規化 → 事実の抽出 → 行の構成 → レベル判定）に分けて
   1つずつ自動化する（P1）。**第1要素のAction正規化を`src/stage3_frontstage/`に実装済み**。
   残り3要素は未実装で、`golden_path.py`がゴールデンパス1件のIRを手で組み立てている
 - Action正規化は、Action台帳（`registry.json`の`action_ledger`。エージェントの職務記述書に
@@ -162,6 +171,9 @@ aoi_doc2dmn/
   部分文字列の照合の前に、条文と語句の両方から丸括弧とその中身を取り除く
   （P24。`modality.strip_parentheses`）。1文に複数の行為がある条文は正解を並べ、
   どれを出力しても正しいとする（P25。正解ファイルの`expected_alternatives`）
+- v0.6 で、Action正規化は**動詞が同じ（または同義の）行為を、対象が違っても同じActionに
+  寄せる**（P26）。選択と新規候補のプロンプトにこの原則を書いた。難しさはActionの選択から、
+  対象を正しく列に出せるか（前段の2番目の要素、事実の抽出）へ移る（PU11）
   - 新規候補の名前・定義に規範の様相があれば`action_name_rule`（P16）
 - 合格の条件は「**ゲートをすり抜けた重大な誤り（誤統合・適用漏れ）が0件**」（P9）。
   14Bのローカルモデルに誤りを0件にさせるのではなく、疑わしいものを必ず人に回す
@@ -255,9 +267,9 @@ Action台帳の段と親は`testdata/ir_gold/action_ledger.json`から読み、�
 .venv/bin/python3 -m src.stage3_frontstage.run_action_eval --use-oracle # Ollama不要。評価の筋だけ
 ```
 
-`testdata/action_gold/action_gold_v2.json`の18件（承認済みの正解IR 5件＋候補13件）を、
-Action台帳を育てながら順に正規化して正解と比べる。台帳の出発点は初期登録の登録簿にある
-Action 1件（あおいの外部送信）だけで、1件を正規化したら**前段の出力ではなく正解の
+`testdata/action_gold/action_gold_v3.json`の18件（承認済みの正解IR 5件＋候補13件。
+v0.6の名前）を、Action台帳を育てながら順に正規化して正解と比べる。台帳の出発点は初期登録の
+登録簿にあるAction 1件（あおいの送信。旧：外部送信）だけで、1件を正規化したら**前段の出力ではなく正解の
 Action**を台帳に足してから次へ進む（教師あり。P13）。前段が1件誤ったとき、その誤りが後の
 条文の選択肢に持ち越されると後の誤りの原因が分からなくなるためである。
 
@@ -288,13 +300,19 @@ Trace（抜き出し・選択・理由・選ばなかったActionとその理由
 
 | 正解ファイル | split | 件数 | 台帳の出発点 |
 |---|---|---|---|
-| `testdata/action_gold/action_gold_v2.json` | dev | 18 | 初期登録の1件（あおいの外部送信） |
-| `testdata/action_gold/action_gold_holdout_v1.json` | holdout | 15 | 開発用18件を足し終えた状態（12件） |
+| `testdata/action_gold/action_gold_v3.json` | dev | 18 | 初期登録の1件（あおいの送信） |
+| `testdata/action_gold/action_gold_holdout_v1.json` | holdout | 14 | 開発用18件を足し終えた状態（11件） |
 
-保留用は、**全件の`review.approved_by`が入るまで`run_action_eval`が止まる**
-（第33回4.3節。誤って未確定の正解で流すと、その条文は二度と保留用に使えない）。
-保留用の出発点の台帳は`ledger_seed`に固定してあり、`action_gold_v2`から作り直して一致する
-ことを`tests/test_action_gold_holdout.py`が確かめる。
+`action_gold_v1.json`（第30回）と`action_gold_v2.json`（第32回）は、過去の評価の記録として
+旧い名前のまま残してある。v3はv2の名前・段・親・定義をD82の対応表で改めたもので、
+外部送信とデータ送信を「送信」にまとめたため、**項目9（転送）の正解が既存の送信になった**。
+
+保留用のファイルは**仕組みだけの形**で、正解の値（`expected`・`expected_alternatives`・
+新規のActionの`definition`・`ledger_updates`）はまだ入っていない（Kazuhiroさんのレビューの
+後に追補で受け取る）。**正解の値が入っていない項目か、`review.approved_by`が入っていない
+項目が1件でもあれば`run_action_eval`が止まる**（第33回4.3節。誤って未確定の正解で流すと、
+その条文は二度と保留用に使えない）。保留用の出発点の台帳は`ledger_seed`に固定してあり、
+`action_gold_v3`から作り直して一致することを`tests/test_action_gold_holdout.py`が確かめる。
 
 ```bash
 # 済んだ評価の生データから、v0.5 の指標を計算し直す（LLM は回さない）
@@ -333,9 +351,9 @@ Ollamaは不要。9つのファイルに分かれている。
 - `test_action_hierarchy.py`：Action台帳の2段化と禁止の継承（D73〜D79）。抽象的なActionが
   行を作らないこと、継承する判定の事実がrequired_factsに入ること、合成で継承側の許可が
   無視されること、厳しさの順序が禁止＞エスカレーション＞条件付き許可＞許可であること（D77）
-- `test_action_gold_holdout.py`：保留評価セット（P20・5.4節）。出発点の台帳が開発用18件を
-  足し終えた状態と一致すること、承認されていない項目があるかぎり評価が止まること、
-  正解の語句が条文の部分文字列で中心の動詞を含むこと、複数の行為を含む条文の判定（P25）
+- `test_action_gold_holdout.py`：保留評価セットの仕組み（P20・5.4節）。出発点の台帳が
+  開発用18件（v3）を足し終えた状態と一致すること、正解の値が無い・承認されていない項目が
+  あるかぎり評価が止まること、複数の行為を含む条文の判定（P25。合成の項目で確かめる）
 - `test_recompute_metrics.py`：済んだ評価の生データからv0.5の指標を計算し直す処理（B5）
 
 元のDMNと第14条の条文本文は`tests/fixtures/`にコミットしてあるため（D42）、

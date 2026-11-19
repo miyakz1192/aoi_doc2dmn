@@ -274,6 +274,29 @@ class Registry:
                 )
         return out
 
+    def routes_for_request(self, actor: str, action: str) -> list[dict]:
+        """実行時に actor × action の要求で評価する行を、層1から作る(D81・D75)。
+
+        1つの actor × action に判定が複数付いてよい(D81)ので、`entry_points` が
+        一致する判定ごとに1行を作る。各行の `inherited_decisions` は、Action 台帳の
+        祖先の Action の判定(層1の entry_points で解決する。D75・D79(b))。
+
+        ルーティング表は IR ごとの4点セットとして作られるが、実行時に見るのは
+        すべての IR の行を合わせたものである。登録簿の層1は、その合わせたものと
+        同じ情報を持つ(行を作らない抽象的な Action の判定も持つ。D79(b))。
+        """
+        inherited: list[dict] = []
+        for ancestor in self.action_ancestors(action):
+            for decision in self.decisions_of_action(ancestor):
+                if decision not in inherited:
+                    inherited.append(decision)
+        rows: list[dict] = []
+        for point in self.entry_points_of_action(action):
+            if point.get("actor") != actor:
+                continue
+            rows.append(dict(point, inherited_decisions=[dict(d) for d in inherited]))
+        return rows
+
     def find_fact(self, variable: str) -> Optional[dict]:
         """層3のエントリを fact 名で引く。"""
         for entry in self.fact_registry:
