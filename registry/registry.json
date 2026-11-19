@@ -735,7 +735,7 @@
   "action_ledger": [
     {
       "name": "送信",
-      "definition": "電子的に宛先へ送ること",
+      "definition": "データや情報を、電子的に宛先へ送ること（転送を含む）",
       "kind": "concrete",
       "parent": null,
       "excludes": [],
@@ -751,7 +751,7 @@
         "clause_ref": "あおいの既存DMN(条文由来ではない)",
         "registered_by": "bootstrap",
         "registered_at": "2026-10-23T00:00:00+00:00",
-        "note": "名前の出典: registry/dmn/aoi_transmission.dmn 送信可否判定の reason_code「外部送信対象外」と、層1 dt_transmission の entry_points(出典の語は「外部送信」)。v1.11 の D82 で名前を「送信」に改めた(外部送信とデータ送信を1つにまとめる)。定義の文は前段設計書 v0.6 の図3(「電子的に宛先へ送ること」)。定義の文そのものは DMN にも登録簿にも無いので definition_status=provisional(PU4)"
+        "note": "名前の出典: registry/dmn/aoi_transmission.dmn 送信可否判定の reason_code「外部送信対象外」と、層1 dt_transmission の entry_points(出典の語は「外部送信」)。v1.11 の D82 で名前を「送信」に改めた(外部送信とデータ送信を1つにまとめる)。定義の文は第33回追補のタスクE1 の表(Kazuhiro 承認 2026-11-20)。定義の文そのものは DMN にも登録簿にも無いので definition_status=provisional(PU4)"
       }
     }
   ]

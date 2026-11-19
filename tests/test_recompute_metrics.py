@@ -83,3 +83,30 @@ def test_p24_removes_the_only_surface_gate_of_round32(metrics):
         if r["surface_in_clause_before"] != r["surface_in_clause_after"]
     ]
     assert changed == ["mhlw_r7dec_art21_3"]
+
+
+def test_reclassifying_round32_with_the_v3_answers():
+    """追補 タスクE3: 第32回の出力を v3 の正解で分類し直す(LLM は回さない)。
+
+    D82 で名前を読み替えても、第32回の4分類は1件も変わらない。項目9 は v3 で正解が
+    既存の送信になったが、出力(提供=親)は v2 と同じく過剰適用のままである。
+    """
+    from src.stage3_frontstage.recompute_metrics import reclassify
+
+    result = json.loads(
+        (ROOT / "docs" / "eval" / "action_eval_20261108.json").read_text(encoding="utf-8")
+    )
+    gold_v3 = json.loads(
+        (ROOT / "testdata" / "action_gold" / "action_gold_v3.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    out = reclassify(result, gold_v3, ROOT / "registry" / "registry.json")
+    assert out["slipped"] == 0
+    assert out["by_verdict"] == {
+        "correct": 13, "mis_merge": 2, "under_applied": 0, "over_applied": 2, "missed": 1
+    }
+    assert out["changed"] == []
+    item9 = out["rows"][8]
+    assert (item9["expected"], item9["expected_is_new"], item9["actual"]) == ("送信", False, "提供")
+    assert item9["verdict_v3"] == "over_applied"

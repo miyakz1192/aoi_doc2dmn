@@ -135,6 +135,84 @@ def recompute(result: dict, gold: dict) -> dict:
     }
 
 
+# IR v2 設計書 D82 の名前の対応(旧 → 新)。第32回の出力は旧い名前で書かれている
+D82_RENAME = {
+    "特権操作": "操作", "施設物品使用": "使用", "情報提供": "提供", "口頭伝達": "伝達",
+    "アカウント共用": "共有", "データ取り出し": "取り出し",
+    "外部送信": "送信", "データ送信": "送信",
+}
+
+
+def reclassify(result: dict, gold_v3: dict, registry_path: str | Path) -> dict:
+    """第32回の出力を、v3 の正解(v0.6 の名前)で分類し直す(第33回追補 タスクE3)。
+
+    **LLM は回さない。**第32回の出力の Action 名を D82 の対応で読み替え、v3 の正解と
+    v3 の台帳(教師ありで1件ずつ足す)で4分類をやり直す。ゲートは第32回に立ったもの
+    そのままである(名前を読み替えてもゲートの立ち方は変わらない、という仮定を置く)。
+    """
+    from types import SimpleNamespace
+
+    from .run_action_eval import CLASS_LABELS, SEVERE, classify, load_ledger, teach
+
+    ledger = load_ledger(gold_v3, registry_path)
+    by_id = {i["clause_id"]: i for i in result["items"]}
+    rows: list[dict] = []
+    for item in gold_v3["items"]:
+        old = by_id[item["clause_id"]]
+        actual_name = D82_RENAME.get(old["actual"]["normalized"], old["actual"]["normalized"])
+        fake = SimpleNamespace(
+            action=SimpleNamespace(normalized=actual_name, is_new=old["actual"]["is_new"])
+        )
+        teach(ledger, item)  # 正解を足してから分類する(run_action_eval と同じ順)
+        verdict = classify(item, fake, ledger)
+        gates = old["gates"]
+        severe = verdict in SEVERE
+        suspicion = [g for g in gates if g in SUSPICION_GATES]
+        rows.append(
+            {
+                "order": item["order"],
+                "clause_id": item["clause_id"],
+                "expected": item["expected"]["normalized"],
+                "expected_is_new": item["expected"]["is_new"],
+                "actual": actual_name,
+                "actual_is_new": old["actual"]["is_new"],
+                "verdict_v2": old["verdict"],
+                "verdict_v3": verdict,
+                "label_v2": old["verdict_label"],
+                "label_v3": CLASS_LABELS[verdict],
+                "gates": gates,
+                "severe": severe,
+                "slipped": severe and not gates,
+                "false_alarm_gates": suspicion if verdict == "correct" else [],
+            }
+        )
+    by_verdict = {k: sum(1 for r in rows if r["verdict_v3"] == k) for k in CLASS_LABELS}
+    return {
+        "items": len(rows),
+        "by_verdict": by_verdict,
+        "severe": sum(1 for r in rows if r["severe"]),
+        "slipped": sum(1 for r in rows if r["slipped"]),
+        "false_alarm_items": sum(1 for r in rows if r["false_alarm_gates"]),
+        "changed": [r for r in rows if r["verdict_v2"] != r["verdict_v3"]],
+        "rows": rows,
+    }
+
+
+def print_reclassify(out: dict) -> None:
+    print("== 第32回の出力を v3 の正解で分類し直した結果(追補 タスクE3。LLM は回していない) ==")
+    print(f"  件数: {out['items']}")
+    print(f"  すり抜け: {out['slipped']}件／重大な誤り: {out['severe']}件")
+    print("  " + "・".join(f"{k} {v}" for k, v in out["by_verdict"].items()))
+    print(f"  誤報(疑いのゲート): {out['false_alarm_items']}件")
+    for r in out["rows"]:
+        mark = "" if r["verdict_v2"] == r["verdict_v3"] else "  ← 変わった"
+        print(
+            f"  [{r['order']:>2}] 正解 {r['expected']}(new={r['expected_is_new']}) "
+            f"出力 {r['actual']}(new={r['actual_is_new']}) "
+            f"{r['label_v2']} → {r['label_v3']}{mark}"
+        )
+
+
 def print_report(out: dict) -> None:
     print("== 第32回の生データで計算し直した指標(タスクB5。LLM は回していない) ==")
     print(f"  件数: {out['items']}")
@@ -208,7 +286,26 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--result", default=RESULT_PATH)
     parser.add_argument("--gold", default=GOLD_PATH)
     parser.add_argument("--out", default=None, help="計算し直した指標を書き出す JSON")
+    parser.add_argument(
+        "--reclassify-v3",
+        default=None,
+        metavar="GOLD_V3",
+        help="第32回の出力を v3 の正解で分類し直す(追補 タスクE3)",
+    )
+    parser.add_argument("--registry", default="registry/registry.json")
     args = parser.parse_args(argv)
+
+    if args.reclassify_v3:
+        result = json.loads(Path(args.result).read_text(encoding="utf-8"))
+        gold_v3 = json.loads(Path(args.reclassify_v3).read_text(encoding="utf-8"))
+        out = reclassify(result, gold_v3, args.registry)
+        print_reclassify(out)
+        if args.out:
+            Path(args.out).write_text(
+                json.dumps(out, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+            )
+            print(f"\n書き出し: {args.out}")
+        return 0
 
     result = json.loads(Path(args.result).read_text(encoding="utf-8"))
     gold = json.loads(Path(args.gold).read_text(encoding="utf-8"))

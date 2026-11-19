@@ -639,3 +639,45 @@ def test_the_registry_builds_every_row_for_a_request(child_registry):
         ]
     # 別の actor の要求には行が無い
     assert registry.routes_for_request("別のエージェント", "口頭伝達") == []
+
+
+def test_the_bundle_keeps_separate_rows_and_c8_covers_both(simple_ir, child_registry):
+    """D81(追補 タスクE2): 4点セットのルーティング表も、別々の decision_id の行を
+    まとめない。C8 は両方の行の事実を見る。
+    """
+    registry = child_registry.copy()
+    second = dict(registry.decision_tables[0])
+    second.update(
+        decision_table_id="dt_verbal_2",
+        decision_id="decision_verbal_2",
+        decision_name="口頭伝達可否判定2",
+        input_columns=["phone_match"],
+        depends_on_inputs=["phone_match"],
+    )
+    registry.decision_tables = list(registry.decision_tables) + [second]
+    registry.fact_registry = list(registry.fact_registry) + [
+        {
+            **passthrough_fact("phone_match", ["一致", "不一致"], "patient.phone").to_json(),
+            "defined_by": "既存規程 第0条",
+            "used_by": ["dt_verbal_2"],
+            "provenance": make_provenance("既存規程 第0条").to_json(),
+            "history": [],
+        }
+    ]
+    bundle = generate_wiring_bundle(_with_action(simple_ir, "情報提供"), registry=registry)
+    rows = bundle.routing_table["routes"]
+    assert [(r["action"], r["decision_id"]) for r in rows] == [
+        ("口頭伝達", "decision_verbal"),
+        ("口頭伝達", "decision_verbal_2"),
+    ]
+    assert rows[0]["required_facts"] == ["birth_match", "role", "environment"]
+    assert rows[1]["required_facts"] == ["phone_match", "role", "environment"]
+    # バインディング設定は両方の行の事実を持つ(C8 を通っている)
+    assert {f["variable"] for f in bundle.bindings["facts"]} == {
+        "birth_match", "phone_match", "role", "environment"
+    }
+    # 2行目の事実がバインディング設定から漏れたら C8 が止める
+    bindings = dict(bundle.bindings)
+    bindings["facts"] = [f for f in bundle.bindings["facts"] if f["variable"] != "phone_match"]
+    with pytest.raises(SchemaWiringError, match="C8検証失敗"):
+        _check_c8_routing_matches_bindings(bundle.routing_table, bindings)

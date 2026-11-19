@@ -3,23 +3,63 @@
     "purpose": "Action 正規化の**保留評価セット**(前段設計書 P20・5.4節)。設計を固めてから1回だけ流し、結果を見てプロンプト・規則・正解のどれも直さない。",
     "split": "holdout",
     "split_note": "保留用(holdout)。開発用は action_gold_v3.json(split=dev)。",
-    "status": "skeleton",
-    "values_pending": "**正解の値はまだ入っていない。**expected(と、1文に複数の行為がある項目の expected_alternatives)・新規の Action の definition・ledger_updates は、Kazuhiro さんのレビューの後に web Claude の追補で受け取って入れる。このファイルにあるのは、条文(入力)・出典・context(入力)・出発点の台帳だけである。",
+    "status": "approved",
     "items": 14,
-    "dropped": {
-      "clause_id": "ipa_secguide_v4_5_6_transfer_log",
-      "reason": "社外への転送の後に履歴を残す条文で、手続き的(③b)として外した(前段設計書 v0.6 5.4節・6.6節)。15件 → 14件"
-    },
     "supervised": "教師あり。1件を正規化したら、前段の出力ではなく expected(並びのときはすべて)の Action を台帳に足してから次へ進む(P13・P25)。",
     "ledger_start": "開発用18件(action_gold_v3)の正解をすべて足し終えた状態(11件)。ledger_seed に固定し、v3 から作り直して一致することを tests/test_action_gold_holdout.py で確かめる。",
     "alternatives_note": "1文に複数の行為がある条文は expected に代表を書き、残りを expected_alternatives に並べる。どれか1つと一致すれば正しい(P25)。",
     "approval_note": "run_action_eval は split=holdout で、正解の値が入っていない項目か、review.approved_by が入っていない項目が1件でもあれば止まる(第33回4.3節)。",
-    "context_note": "context は第33回 HANDOFF 4.1節が指定した3件(表のセル2件・箇条書きの親文1件)に、原典から逐語・出典つきで入れた入力である。正解の値ではない。"
+    "context_note": "context は第33回 HANDOFF 4.1節が指定した3件(表のセル2件・箇条書きの親文1件)に、原典から逐語・出典つきで入れた入力である。正解の値ではない。",
+    "values": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)。番号は第33回のまま(9は欠番)。",
+    "labels": "正解ラベルは14件とも ハード制約 × 宣言的(項目ごとの oracle_labels)",
+    "excluded": [
+      {
+        "clause_id": "ipa_secguide_v4_5_6_transfer_log",
+        "reason": "手続き的(転送の後に送信履歴を残す。③b)。前段設計書 v0.6 6.6節"
+      },
+      {
+        "clause_id": "ipa_secguide_v4_6_7_item4",
+        "reason": "エスカレーション基準になる見込み(承認を要する型)"
+      },
+      {
+        "clause_id": "ipa_secguide_v4_6_3",
+        "reason": "エスカレーション基準になる見込み(承認を要する型)"
+      },
+      {
+        "clause_id": "ipa_secguide_v4_6_4",
+        "reason": "エスカレーション基準になる見込み(承認を要する型)"
+      },
+      {
+        "clause_id": "ipa_secguide_v4_6_6",
+        "reason": "エスカレーション基準になる見込み(承認を要する型)"
+      },
+      {
+        "clause_id": "ipa_secguide_v4_2_3_1",
+        "reason": "原典に選択肢(「/」)が残る(D72)"
+      },
+      {
+        "clause_id": "ipa_secguide_v4_7_3_attach",
+        "reason": "原典に選択肢(「/」)が残る(D72)"
+      },
+      {
+        "clause_id": "ipa_secguide_v4_6_7_item1",
+        "reason": "規範そのものが評価の判断(必要最低限の権限。D51)"
+      },
+      {
+        "clause_id": "ipa_secguide_v4_6_7_item2",
+        "reason": "規範そのものが評価の判断(必要最低限の者。D51)"
+      },
+      {
+        "clause_id": "mhlw_r7dec_art11_2",
+        "reason": "規範そのものが評価の判断(不正な行為。D51)"
+      }
+    ],
+    "excluded_note": "外した10件。項目9は追補4章のとおり。ほかの9件は、前段設計書 5.4節の3区分(エスカレーション基準4件・D72 2件・評価の判断3件)を候補データ(candidates_round3.json)の本文に当てて振り分けた(レビュー資料 第2版は手元に無い)"
   },
   "ledger_seed": [
     {
       "name": "送信",
-      "definition": "電子的に宛先へ送ること",
+      "definition": "データや情報を、電子的に宛先へ送ること（転送を含む）",
       "kind": "concrete",
       "parent": "提供",
       "excludes": [],
@@ -46,12 +86,12 @@
         "clause_ref": "あおいの既存DMN(条文由来ではない)",
         "registered_by": "bootstrap",
         "registered_at": "2026-10-23T00:00:00+00:00",
-        "note": "名前の出典: registry/dmn/aoi_transmission.dmn 送信可否判定の reason_code「外部送信対象外」と、層1 dt_transmission の entry_points(出典の語は「外部送信」)。v1.11 の D82 で名前を「送信」に改めた(外部送信とデータ送信を1つにまとめる)。定義の文は前段設計書 v0.6 の図3(「電子的に宛先へ送ること」)。定義の文そのものは DMN にも登録簿にも無いので definition_status=provisional(PU4)"
+        "note": "名前の出典: registry/dmn/aoi_transmission.dmn 送信可否判定の reason_code「外部送信対象外」と、層1 dt_transmission の entry_points(出典の語は「外部送信」)。v1.11 の D82 で名前を「送信」に改めた(外部送信とデータ送信を1つにまとめる)。定義の文は第33回追補のタスクE1 の表(Kazuhiro 承認 2026-11-20)。定義の文そのものは DMN にも登録簿にも無いので definition_status=provisional(PU4)"
       }
     },
     {
       "name": "操作",
-      "definition": "特権/管理者権限で情報システムを操作すること",
+      "definition": "情報システムや機器を動かしたり、設定を変えたりすること",
       "kind": "concrete",
       "parent": null,
       "excludes": [],
@@ -91,7 +131,7 @@
     },
     {
       "name": "使用",
-      "definition": "会社の施設や物品を使うこと",
+      "definition": "物・設備・サービスを使うこと",
       "kind": "concrete",
       "parent": null,
       "excludes": [],
@@ -216,7 +256,7 @@
     },
     {
       "name": "伝達",
-      "definition": "相手に伝えること",
+      "definition": "情報を、相手に伝えること",
       "kind": "concrete",
       "parent": "提供",
       "excludes": [],
@@ -255,7 +295,7 @@
     },
     {
       "name": "共有",
-      "definition": "他の人が使える・見られる状態にすること",
+      "definition": "物や情報を、他の人も使える・見られる状態にすること",
       "kind": "concrete",
       "parent": "提供",
       "excludes": [],
@@ -455,10 +495,32 @@
         "locator": "P0136.1"
       },
       "text": "利用者の認証に用いるアカウントは、利用者1名につき1つを発行する。",
-      "expected": null,
+      "expected": {
+        "surface": "利用者1名につき1つを発行",
+        "normalized": "発行",
+        "is_new": true,
+        "core_verb": "発行",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "利用者が使うものを作って渡すこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "利用者1名につき1つを発行",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+        }
+      },
       "review": {
-        "approved_by": null,
-        "reviewed_at": null
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-20"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
       }
     },
     {
@@ -473,10 +535,31 @@
         "locator": "P0137.1"
       },
       "text": "同一アカウントの他者との共有および複数の利用者が共有するアカウントの発行を禁止する。",
-      "expected": null,
+      "expected": {
+        "surface": "同一アカウントの他者との共有",
+        "normalized": "共有",
+        "is_new": false,
+        "core_verb": "共有",
+        "kind": "concrete",
+        "parent": "提供"
+      },
+      "expected_alternatives": [
+        {
+          "surface": "複数の利用者が共有するアカウントの発行",
+          "normalized": "発行",
+          "is_new": false,
+          "core_verb": "発行",
+          "kind": "concrete",
+          "parent": null
+        }
+      ],
       "review": {
-        "approved_by": null,
-        "reviewed_at": null
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-20"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
       }
     },
     {
@@ -511,10 +594,42 @@
           "basis": "verbatim"
         }
       ],
-      "expected": null,
+      "expected": {
+        "surface": "情報機器・設備の無断操作",
+        "normalized": "操作",
+        "is_new": false,
+        "core_verb": "操作",
+        "kind": "concrete",
+        "parent": null
+      },
+      "expected_alternatives": [
+        {
+          "surface": "無断持出し",
+          "normalized": "持出し",
+          "is_new": true,
+          "core_verb": "持出し",
+          "kind": "concrete",
+          "parent": null,
+          "definition": {
+            "text": "物を、決められた場所の外へ持って出ること",
+            "status": "provisional",
+            "basis": [
+              {
+                "quote": "無断持出し",
+                "basis": "verbatim"
+              }
+            ],
+            "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+          }
+        }
+      ],
       "review": {
-        "approved_by": null,
-        "reviewed_at": null
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-20"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
       }
     },
     {
@@ -549,10 +664,32 @@
           "basis": "verbatim"
         }
       ],
-      "expected": null,
+      "expected": {
+        "surface": "情報記憶媒体の無断持込み",
+        "normalized": "持込み",
+        "is_new": true,
+        "core_verb": "持込み",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "物を、決められた場所の中へ持って入ること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "情報記憶媒体の無断持込み",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+        }
+      },
       "review": {
-        "approved_by": null,
-        "reviewed_at": null
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-20"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
       }
     },
     {
@@ -567,10 +704,21 @@
         "locator": "P0449.1"
       },
       "text": "また、私有機器への極秘情報及び社外秘情報のダウンロードは原則禁止とする。",
-      "expected": null,
+      "expected": {
+        "surface": "私有機器への極秘情報及び社外秘情報のダウンロード",
+        "normalized": "取り出し",
+        "is_new": false,
+        "core_verb": "ダウンロード",
+        "kind": "concrete",
+        "parent": null
+      },
       "review": {
-        "approved_by": null,
-        "reviewed_at": null
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-20"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
       }
     },
     {
@@ -591,18 +739,34 @@
           "where": "4.技術的対策 2.3.3 の箇条書きの親文",
           "locator": "P0695.1",
           "basis": "verbatim"
-        },
-        {
-          "text": "2.3 私有IT機器・電子媒体の利用",
-          "where": "4.技術的対策 2.3 の節の見出し",
-          "locator": "P0683.1",
-          "basis": "verbatim"
         }
       ],
-      "expected": null,
+      "expected": {
+        "surface": "社外秘又は極秘の情報資産の保存",
+        "normalized": "保存",
+        "is_new": true,
+        "core_verb": "保存",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "データを、機器や媒体に記録して残すこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "社外秘又は極秘の情報資産の保存",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+        }
+      },
       "review": {
-        "approved_by": null,
-        "reviewed_at": null
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-20"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
       }
     },
     {
@@ -617,10 +781,21 @@
         "locator": "P0712.1"
       },
       "text": "会社で契約したサービス社外のWi-Fiサービスの利用を禁止する。",
-      "expected": null,
+      "expected": {
+        "surface": "Wi-Fiサービスの利用",
+        "normalized": "使用",
+        "is_new": false,
+        "core_verb": "利用",
+        "kind": "concrete",
+        "parent": null
+      },
       "review": {
-        "approved_by": null,
-        "reviewed_at": null
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-20"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
       }
     },
     {
@@ -635,14 +810,25 @@
         "locator": "P0099.1"
       },
       "text": "社外秘又は極秘の情報ファイルを社外に共有する場合は、秘密保持に関する合意をした相手とのみ共有する。",
-      "expected": null,
+      "expected": {
+        "surface": "社外秘又は極秘の情報ファイルを社外に共有",
+        "normalized": "共有",
+        "is_new": false,
+        "core_verb": "共有",
+        "kind": "concrete",
+        "parent": "提供"
+      },
       "review": {
-        "approved_by": null,
-        "reviewed_at": null
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-20"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
       }
     },
     {
-      "order": 9,
+      "order": 10,
       "clause_id": "ipa_secguide_v4_5_6_outdoor",
       "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 5.6 情報資産の社外持ち出し（箇条書き）",
       "source": {
@@ -653,14 +839,46 @@
         "locator": "P0097.1"
       },
       "text": "屋外でネットワークへ接続して極秘又は社外秘の情報資産を送受信する場合は、暗号化する。",
-      "expected": null,
+      "expected": {
+        "surface": "極秘又は社外秘の情報資産を送受信",
+        "normalized": "送信",
+        "is_new": false,
+        "core_verb": "送受信",
+        "kind": "concrete",
+        "parent": "提供"
+      },
+      "expected_alternatives": [
+        {
+          "surface": "極秘又は社外秘の情報資産を送受信",
+          "normalized": "受信",
+          "is_new": true,
+          "core_verb": "送受信",
+          "kind": "concrete",
+          "parent": null,
+          "definition": {
+            "text": "送られてきた情報を受け取ること",
+            "status": "provisional",
+            "basis": [
+              {
+                "quote": "極秘又は社外秘の情報資産を送受信",
+                "basis": "verbatim"
+              }
+            ],
+            "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+          }
+        }
+      ],
       "review": {
-        "approved_by": null,
-        "reviewed_at": null
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-20"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
       }
     },
     {
-      "order": 10,
+      "order": 11,
       "clause_id": "ipa_secguide_v4_phys_3_phone",
       "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
       "source": {
@@ -671,14 +889,25 @@
         "locator": "P0592.1"
       },
       "text": "外線受話時の際に相手が不審な場合は、従業員の個人情報を伝えてはならない。",
-      "expected": null,
+      "expected": {
+        "surface": "従業員の個人情報を伝え",
+        "normalized": "伝達",
+        "is_new": false,
+        "core_verb": "伝え",
+        "kind": "concrete",
+        "parent": "提供"
+      },
       "review": {
-        "approved_by": null,
-        "reviewed_at": null
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-20"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
       }
     },
     {
-      "order": 11,
+      "order": 12,
       "clause_id": "ipa_secguide_v4_phys_3_photo",
       "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
       "source": {
@@ -689,14 +918,57 @@
         "locator": "P0590.1"
       },
       "text": "室内での撮影、録音は禁止する。業務上必要な場合は、情報セキュリティ部門責任者の許可を得ること。",
-      "expected": null,
+      "expected": {
+        "surface": "室内での撮影、録音",
+        "normalized": "撮影",
+        "is_new": true,
+        "core_verb": "撮影",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "映像を機器で記録すること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "室内での撮影、録音",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+        }
+      },
+      "expected_alternatives": [
+        {
+          "surface": "室内での撮影、録音",
+          "normalized": "録音",
+          "is_new": true,
+          "core_verb": "録音",
+          "kind": "concrete",
+          "parent": null,
+          "definition": {
+            "text": "音声を機器で記録すること",
+            "status": "provisional",
+            "basis": [
+              {
+                "quote": "室内での撮影、録音",
+                "basis": "verbatim"
+              }
+            ],
+            "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+          }
+        }
+      ],
       "review": {
-        "approved_by": null,
-        "reviewed_at": null
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-20"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
       }
     },
     {
-      "order": 12,
+      "order": 13,
       "clause_id": "mhlw_r7dec_art11_3",
       "clause_ref": "厚生労働省「モデル就業規則」解説版 第11条（遵守事項）第3号",
       "source": {
@@ -707,14 +979,36 @@
         "locator": "T14.R1.C1.L5"
       },
       "text": "勤務中は職務に専念し、正当な理由なく勤務場所を離れないこと。",
-      "expected": null,
+      "expected": {
+        "surface": "勤務場所を離れ",
+        "normalized": "離席",
+        "is_new": true,
+        "core_verb": "離れ",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "いる場所から離れること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "勤務場所を離れ",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+        }
+      },
       "review": {
-        "approved_by": null,
-        "reviewed_at": null
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-20"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
       }
     },
     {
-      "order": 13,
+      "order": 14,
       "clause_id": "mhlw_r7dec_art16_1",
       "clause_ref": "厚生労働省「モデル就業規則」解説版 第16条（個人情報保護）第1項",
       "source": {
@@ -725,14 +1019,46 @@
         "locator": "T19.R1.C1.L2"
       },
       "text": "労働者は、会社及び取引先等に関する情報の管理に十分注意を払うとともに、自らの業務に関係のない情報を不当に取得してはならない。",
-      "expected": null,
+      "expected": {
+        "surface": "自らの業務に関係のない情報を不当に取得",
+        "normalized": "取得",
+        "is_new": true,
+        "core_verb": "取得",
+        "kind": "abstract",
+        "parent": null,
+        "definition": {
+          "text": "情報を手に入れること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "自らの業務に関係のない情報を不当に取得",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+        }
+      },
+      "ledger_updates": [
+        {
+          "name": "取り出し",
+          "parent": "取得"
+        },
+        {
+          "name": "受信",
+          "parent": "取得"
+        }
+      ],
       "review": {
-        "approved_by": null,
-        "reviewed_at": null
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-20"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
       }
     },
     {
-      "order": 14,
+      "order": 15,
       "clause_id": "mhlw_r7dec_art58_3_5",
       "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第5号",
       "source": {
@@ -743,10 +1069,32 @@
         "locator": "T81.R1.C1.L9"
       },
       "text": "受動喫煙を望まない者を喫煙可能な場所に連れて行かないこと。",
-      "expected": null,
+      "expected": {
+        "surface": "喫煙可能な場所に連れて行か",
+        "normalized": "同伴",
+        "is_new": true,
+        "core_verb": "連れて行",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "人を連れて、ある場所へ行くこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "喫煙可能な場所に連れて行か",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+        }
+      },
       "review": {
-        "approved_by": null,
-        "reviewed_at": null
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-20"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
       }
     }
   ]

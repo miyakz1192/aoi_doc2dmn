@@ -307,17 +307,24 @@ Trace（抜き出し・選択・理由・選ばなかったActionとその理由
 旧い名前のまま残してある。v3はv2の名前・段・親・定義をD82の対応表で改めたもので、
 外部送信とデータ送信を「送信」にまとめたため、**項目9（転送）の正解が既存の送信になった**。
 
-保留用のファイルは**仕組みだけの形**で、正解の値（`expected`・`expected_alternatives`・
-新規のActionの`definition`・`ledger_updates`）はまだ入っていない（Kazuhiroさんのレビューの
-後に追補で受け取る）。**正解の値が入っていない項目か、`review.approved_by`が入っていない
-項目が1件でもあれば`run_action_eval`が止まる**（第33回4.3節。誤って未確定の正解で流すと、
-その条文は二度と保留用に使えない）。保留用の出発点の台帳は`ledger_seed`に固定してあり、
-`action_gold_v3`から作り直して一致することを`tests/test_action_gold_holdout.py`が確かめる。
+保留用の正解は第33回追補 4章の表のとおりで、14件すべてKazuhiroさんが承認済み（2026-11-20）。
+番号は第33回のまま（9は欠番）で、外した10件は`_meta.excluded`に理由とともにある。
+**正解の値が入っていない項目か、`review.approved_by`が入っていない項目が1件でもあれば
+`run_action_eval`が止まる**（第33回4.3節。誤って未確定の正解で流すと、その条文は二度と
+保留用に使えない）。保留用の出発点の台帳は`ledger_seed`に固定してあり、`action_gold_v3`から
+作り直して一致することを`tests/test_action_gold_holdout.py`が確かめる。
+
+**保留評価は1回だけ流す**（運用メモの止まる条件 S2。実行の直前で止まり、Kazuhiroさんの
+「はい」を待つ）。進め方の約束は`docs/design/aoi_doc2dmn_operating_rules.md`にある。
 
 ```bash
 # 済んだ評価の生データから、v0.5 の指標を計算し直す（LLM は回さない）
 .venv/bin/python3 -m src.stage3_frontstage.recompute_metrics
 ```
+
+`--reclassify-v3 testdata/action_gold/action_gold_v3.json`を付けると、第32回の出力の名前を
+D82で読み替えてv3の正解で分類し直す（結果は`docs/eval/action_eval_20261108_reclassified_v3.json`。
+4分類は1件も変わらない）。
 
 第32回の生データに当てた結果は`docs/eval/action_eval_20261108_metrics_v05.json`にある
 （人に回ったのは15/18件・自動で通ったのは3件、疑いのゲートの適合率5/9、新規候補の段の

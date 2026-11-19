@@ -6,9 +6,9 @@
     "hierarchy_approved_at": "2026-11-08",
     "hierarchy_basis": "2026-11-08 の案X(Action の階層＋禁止の継承)。段(kind)と親(parent)は人が承認するものなので name_status=approved として記録する(D60・D73)。定義は Claude の案なので definition_status=provisional のまま(P18)。",
     "definitions_from": "第31回 HANDOFF 4.1節(前段設計書 P16・4.6節に従って書き直した定義)",
-    "renamed_at": "2026-11-18",
-    "renamed_basis": "IR v2 設計書 v1.11 の D80〜D82・前段設計書 v0.6 の P26・3.4節の表。名前は行為の種類だけにし、対象・権限・宛先・副詞の手段は決定表の列にする。外部送信とデータ送信は「送信」に1つにまとめ、共有(旧: アカウント共用)を提供の子として足した(3.4節の表)。Kazuhiro が D82 として再承認した",
-    "definitions_note": "提供・送信・伝達・共有の定義は前段設計書 v0.6 の図3の文。操作・使用は旧い名前の定義のままで(対象・権限を含んでおり D80 に合わない)、D80 に合わせた定義は追補で受け取る。この評価(run_ir_gold)は LLM を使わないので、定義は結果に影響しない"
+    "renamed_at": "2026-11-20",
+    "renamed_basis": "IR v2 設計書 v1.11 の D80〜D82・前段設計書 v0.6 の P26・3.4節の表。名前は行為の種類だけにし、対象・権限・宛先・副詞の手段は決定表の列にする。外部送信とデータ送信は「送信」に1つにまとめ、共有(旧: アカウント共用)を提供の子として足した(3.4節の表)。Kazuhiro が 2026-11-20 に承認した(第33回追補 タスクE1)",
+    "definitions_note": "提供・送信・伝達・共有・操作・使用の定義は第33回追補 2章 タスクE1 の表(Kazuhiro 承認 2026-11-20)。労働指示はそのまま。この評価(run_ir_gold)は LLM を使わないので、定義は結果に影響しない"
   },
   "entries": [
     {
@@ -27,7 +27,7 @@
     },
     {
       "name": "送信",
-      "definition": "電子的に宛先へ送ること",
+      "definition": "データや情報を、電子的に宛先へ送ること（転送を含む）",
       "kind": "concrete",
       "parent": "提供",
       "excludes": [],
@@ -41,7 +41,7 @@
     },
     {
       "name": "伝達",
-      "definition": "相手に伝えること",
+      "definition": "情報を、相手に伝えること",
       "kind": "concrete",
       "parent": "提供",
       "excludes": [],
@@ -55,7 +55,7 @@
     },
     {
       "name": "共有",
-      "definition": "他の人が使える・見られる状態にすること",
+      "definition": "物や情報を、他の人も使える・見られる状態にすること",
       "kind": "concrete",
       "parent": "提供",
       "excludes": [],
@@ -69,7 +69,7 @@
     },
     {
       "name": "操作",
-      "definition": "特権/管理者権限で情報システムを操作すること",
+      "definition": "情報システムや機器を動かしたり、設定を変えたりすること",
       "kind": "concrete",
       "parent": null,
       "excludes": [],
@@ -79,12 +79,11 @@
       "name_status": "approved",
       "definition_status": "provisional",
       "approved_by": "Kazuhiro",
-      "definition_pending": "旧い名前の定義のまま。D80 に合わせた定義は追補で受け取る",
       "note": "ゴールデンパスの Action(旧: 特権操作)。権限は列(requested_privilege)で判定する(D80。PU1 は v0.6 で解消)"
     },
     {
       "name": "使用",
-      "definition": "会社の施設や物品を使うこと",
+      "definition": "物・設備・サービスを使うこと",
       "kind": "concrete",
       "parent": null,
       "excludes": [],
@@ -94,7 +93,6 @@
       "name_status": "approved",
       "definition_status": "provisional",
       "approved_by": "Kazuhiro",
-      "definition_pending": "旧い名前の定義のまま。D80 に合わせた定義は追補で受け取る",
       "note": "第11条①の Action(旧: 施設物品使用)。対象は列にする(D80)"
     },
     {

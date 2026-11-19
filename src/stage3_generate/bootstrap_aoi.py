@@ -143,7 +143,7 @@ ENTRY_POINTS_SOURCE = (
 # 要求する具体的な行為なので concrete。親(提供)は、正解 IR の評価の中で台帳に
 # 入るので、初期登録では None のままにする(第31回 HANDOFF 2章 タスクA2)。
 #
-# 定義は前段設計書 v0.6 の図3の文(「電子的に宛先へ送ること」)を使う。v1.10 までの
+# 定義は第33回追補のタスクE1 の表(Kazuhiro 承認 2026-11-20)の文を使う。v1.10 までの
 # 定義(「あおいが、患者に関する情報を、患者や代理人に電子的に送ること」)は、主体・
 # 対象・宛先を含んでいて D80 に合わない。
 # 承認の状態は名前と定義で分ける(P18)。どちらも人のレビューを経ていないので
@@ -151,7 +151,7 @@ ENTRY_POINTS_SOURCE = (
 ACTION_LEDGER_SEED: list[dict] = [
     {
         "name": "送信",
-        "definition": "電子的に宛先へ送ること",
+        "definition": "データや情報を、電子的に宛先へ送ること（転送を含む）",
         "kind": ACTION_CONCRETE,
         "parent": None,
         "excludes": [],
@@ -166,8 +166,8 @@ ACTION_LEDGER_SOURCE = (
     "名前の出典: registry/dmn/aoi_transmission.dmn 送信可否判定の reason_code"
     "「外部送信対象外」と、層1 dt_transmission の entry_points"
     "(出典の語は「外部送信」)。v1.11 の D82 で名前を「送信」に改めた"
-    "(外部送信とデータ送信を1つにまとめる)。定義の文は前段設計書 v0.6 の図3"
-    "(「電子的に宛先へ送ること」)。定義の文そのものは DMN にも登録簿にも無いので "
+    "(外部送信とデータ送信を1つにまとめる)。定義の文は第33回追補のタスクE1 の表"
+    "(Kazuhiro 承認 2026-11-20)。定義の文そのものは DMN にも登録簿にも無いので "
     "definition_status=provisional(PU4)"
 )
 

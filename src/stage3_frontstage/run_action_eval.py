@@ -348,7 +348,7 @@ def judge(item: dict, result: ActionNormalizationResult, ledger: ActionLedger) -
     return ItemResult(
         order=item["order"],
         clause_id=item["clause_id"],
-        group=item["group"],
+        group=item.get("group", ""),
         expected=item["expected"],
         expectations=options,
         matched=matched,
@@ -617,10 +617,11 @@ def run(
     results: list[ItemResult] = []
     ledger_log: list[dict] = []
     errors: list[dict] = []
-    for item in items:
+    for index, item in enumerate(items, start=1):
         if verbose:
+            # 保留用は第33回の番号のまま(9は欠番)なので、進み具合と項目の番号を分けて出す
             print(
-                f"[{item['order']:>2}/{len(items)}] {item['clause_id']} "
+                f"[{index:>2}/{len(items)}] 項目{item['order']} {item['clause_id']} "
                 f"(台帳 {len(ledger.entries)}件) ...",
                 flush=True,
             )

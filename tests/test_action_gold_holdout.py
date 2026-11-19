@@ -3,16 +3,16 @@
 第33回 HANDOFF パートC。保留用の正解は、設計を固めてから**1回だけ**流すもので、
 結果を見てプロンプト・規則・正解のどれも直さない(P20・5.4節)。
 
-**正解の値(expected・expected_alternatives・definition・ledger_updates)は
-web Claude の追補で受け取る。**ファイルにあるのは条文・出典・context(入力)と
-出発点の台帳だけで、ここで確かめるのは仕組みである。
+正解の値は第33回追補 4章の表(Kazuhiro 承認 2026-11-20)のとおりに入れた。ここでは
+仕組みに加えて、ファイルの値が追補の表と一致することを確かめる。
 
 | 確かめること | 根拠 |
 | --- | --- |
 | split が holdout で、開発用は dev | P20・4.2節 |
-| 14件が候補データの条文を逐語で写したもので、手続き的な1件を外してある | 5.4節・6.6節(v0.6) |
+| 14件が候補データの条文を逐語で写したもので、番号は第33回のまま(9は欠番) | 5.4節・6.6節(v0.6)・追補4章 |
+| 正解が追補4章の表どおりで、全件承認済み | 追補4章 |
 | 出発点の台帳が、開発用18件(v3)を足し終えた状態と一致する | 第33回4.1節 |
-| 正解の値が無い・承認されていない項目があるかぎり評価が止まる | 第33回4.3節 |
+| 正解の値が無い・承認されていない項目が1件でもあれば評価が止まる | 第33回4.3節 |
 | 複数の行為を含む条文の判定(どれか1つと一致すれば正しい) | P25 |
 """
 from __future__ import annotations
@@ -78,8 +78,13 @@ def test_holdout_has_fourteen_items_without_the_procedural_one(holdout):
         "mhlw_r7dec_art58_3_5",
     ]
     assert "ipa_secguide_v4_5_6_transfer_log" not in ids
-    assert holdout["_meta"]["dropped"]["clause_id"] == "ipa_secguide_v4_5_6_transfer_log"
-    assert [i["order"] for i in holdout["items"]] == list(range(1, 15))
+    # 番号は第33回のまま(9は欠番。追補4章)
+    assert [i["order"] for i in holdout["items"]] == [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15]
+    # 外した10件を理由とともに記録する
+    excluded = holdout["_meta"]["excluded"]
+    assert len(excluded) == 10
+    assert excluded[0]["clause_id"] == "ipa_secguide_v4_5_6_transfer_log"
+    assert all(e["reason"] for e in excluded)
 
 
 def test_the_clause_text_comes_verbatim_from_the_candidates(holdout):
@@ -98,14 +103,60 @@ def test_the_clause_text_comes_verbatim_from_the_candidates(holdout):
         assert item["source"]["locator"] == candidate["source"]["locator"]
 
 
-def test_no_answer_value_is_filled_in_yet(holdout):
-    """正解の値は追補で受け取る。ファイルには入力と出発点の台帳しか無いこと。"""
-    assert holdout["_meta"]["status"] == "skeleton"
+# 追補4章の表(番号 → (正解の並び[(名前, 新規か, 段, 親, 中心の動詞)], ledger_updates))
+ADDENDUM = {
+    1: ([("発行", True, "concrete", None, "発行")], None),
+    2: ([("共有", False, "concrete", "提供", "共有"), ("発行", False, "concrete", None, "発行")], None),
+    3: ([("操作", False, "concrete", None, "操作"), ("持出し", True, "concrete", None, "持出し")], None),
+    4: ([("持込み", True, "concrete", None, "持込み")], None),
+    5: ([("取り出し", False, "concrete", None, "ダウンロード")], None),
+    6: ([("保存", True, "concrete", None, "保存")], None),
+    7: ([("使用", False, "concrete", None, "利用")], None),
+    8: ([("共有", False, "concrete", "提供", "共有")], None),
+    10: ([("送信", False, "concrete", "提供", "送受信"), ("受信", True, "concrete", None, "送受信")], None),
+    11: ([("伝達", False, "concrete", "提供", "伝え")], None),
+    12: ([("撮影", True, "concrete", None, "撮影"), ("録音", True, "concrete", None, "録音")], None),
+    13: ([("離席", True, "concrete", None, "離れ")], None),
+    14: ([("取得", True, "abstract", None, "取得")], [("取り出し", "取得"), ("受信", "取得")]),
+    15: ([("同伴", True, "concrete", None, "連れて行")], None),
+}
+
+
+def test_the_answers_match_the_addendum_table(holdout):
+    """追補4章: 正解・段・親・中心の動詞・ledger_updates が表のとおりであること。"""
     for item in holdout["items"]:
-        assert item["expected"] is None, item["clause_id"]
-        for key in ("expected_alternatives", "definition", "ledger_updates", "note"):
-            assert key not in item, (item["clause_id"], key)
-        assert item["review"] == {"approved_by": None, "reviewed_at": None}
+        line, updates = ADDENDUM[item["order"]]
+        got = [
+            (e["normalized"], e["is_new"], e["kind"], e["parent"], e["core_verb"])
+            for e in expectations(item)
+        ]
+        assert got == line, item["order"]
+        assert [(u["name"], u["parent"]) for u in item.get("ledger_updates", [])] == (
+            updates or []
+        ), item["order"]
+        # 新規の Action には定義がある(並びのときは要素ごとに)
+        for e in expectations(item):
+            if e["is_new"]:
+                assert e["definition"]["text"], (item["order"], e["normalized"])
+
+
+def test_every_item_is_approved_with_the_hard_declarative_label(holdout):
+    """追補4章: 全件 Kazuhiro が 2026-11-20 に承認、ラベルはハード制約 × 宣言的。"""
+    for item in holdout["items"]:
+        assert item["review"] == {"approved_by": "Kazuhiro", "reviewed_at": "2026-11-20"}
+        assert item["oracle_labels"] == {"axis1": "ハード制約", "axis2": "宣言的"}
+    check_holdout_is_approved(holdout)  # 止まらない
+
+
+def test_every_expected_surface_is_reachable(holdout):
+    """P4・P24: 正解の語句は条文の部分文字列で、中心の動詞を含むこと。"""
+    from src.stage3_frontstage.modality import strip_parentheses
+
+    for item in holdout["items"]:
+        clause = strip_parentheses(item["text"])
+        for e in expectations(item):
+            assert strip_parentheses(e["surface"]) in clause, (item["order"], e["surface"])
+            assert e["core_verb"] in e["surface"], (item["order"], e["surface"])
 
 
 def test_the_starting_ledger_is_the_dev_set_taught_to_the_end(holdout, dev):
@@ -134,7 +185,7 @@ def test_the_starting_ledger_uses_the_v06_names(holdout):
 
 
 def test_the_items_that_need_context_have_it_verbatim_with_a_locator(holdout):
-    """4.1節: context は入力。表の見出し・箇条書きの親文を逐語・出典つきで入れる。"""
+    """追補4章: 項目3・4(表の見出し)と項目6(箇条書きの親文)に、逐語・出典つきで入れる。"""
     with_context = {
         i["clause_id"]: i["context"] for i in holdout["items"] if i.get("context")
     }
@@ -142,6 +193,10 @@ def test_the_items_that_need_context_have_it_verbatim_with_a_locator(holdout):
         "ipa_secguide_v4_2_3_3_store",
         "ipa_secguide_v4_phys_1_2_level2",
         "ipa_secguide_v4_phys_1_2_level3_carry_in",
+    ]
+    store = with_context["ipa_secguide_v4_2_3_3_store"]
+    assert [c["text"] for c in store] == [
+        "利用期間中は、利用するIT機器や電子媒体に以下に該当する機能がある場合には実行する。"
     ]
     for context in with_context.values():
         for entry in context:
@@ -155,37 +210,20 @@ def test_the_items_that_need_context_have_it_verbatim_with_a_locator(holdout):
 # --------------------------------------------------------------------------
 
 
-def _filled(holdout: dict, *, approved: bool) -> dict:
-    """テストのために、全件に仮の正解の値(と承認者)を入れた写しを作る。"""
-    out = copy.deepcopy(holdout)
-    for item in out["items"]:
-        item["expected"] = {"surface": "x", "normalized": "x", "is_new": True,
-                            "core_verb": "x", "kind": "concrete", "parent": None}
-        item["review"]["approved_by"] = "Kazuhiro" if approved else None
-    return out
-
-
 def test_a_holdout_set_without_answer_values_stops_the_evaluation(holdout):
-    """今の状態(正解の値が無い)では評価を流さない。"""
+    """4.3節: 正解の値が1件でも欠ければ評価を流さない。"""
+    broken = copy.deepcopy(holdout)
+    broken["items"][0]["expected"] = None
     with pytest.raises(HoldoutNotApproved, match="正解の値が入っていない"):
-        check_holdout_is_approved(holdout)
+        check_holdout_is_approved(broken)
 
 
 def test_an_unapproved_holdout_set_stops_the_evaluation(holdout):
-    """4.3節: 値が入っていても、未承認の項目が1件でもあれば流さない。"""
-    with pytest.raises(HoldoutNotApproved, match="承認されていない"):
-        check_holdout_is_approved(_filled(holdout, approved=False))
-    approved = _filled(holdout, approved=True)
-    check_holdout_is_approved(approved)
-    # 1件でも欠ければまた止まり、その clause_id が出る
-    approved["items"][7]["review"]["approved_by"] = None
+    """4.3節: 未承認の項目が1件でもあれば流さず、その clause_id を出す。"""
+    broken = copy.deepcopy(holdout)
+    broken["items"][7]["review"]["approved_by"] = None
     with pytest.raises(HoldoutNotApproved, match="ipa_secguide_v4_5_6_share"):
-        check_holdout_is_approved(approved)
-    # 値が1件でも欠ければ止まる
-    approved = _filled(holdout, approved=True)
-    approved["items"][0]["expected"] = None
-    with pytest.raises(HoldoutNotApproved, match="正解の値"):
-        check_holdout_is_approved(approved)
+        check_holdout_is_approved(broken)
 
 
 def test_the_dev_set_is_not_stopped_by_the_holdout_check(dev):
