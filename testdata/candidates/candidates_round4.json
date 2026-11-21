@@ -1,0 +1,534 @@
+{
+  "_meta": {
+    "purpose": "HANDOFF_20261122_round38_to_claudecode.md パートE(Q4・D65)に基づく、新しい保留用の候補。前段(Action 正規化)は流していない。正解の案・②の分類器の結果は入れていない(保留用として使えなくなるため。HANDOFF 6章)",
+    "task": "round38_partE",
+    "status": "pending_human_review",
+    "not_run": [
+      "前段(Action 正規化)をこの候補に流していない",
+      "正解の案(Action・ラベル)を付けていない",
+      "②の分類器(軸1・軸2)にかけていない。かける場合は別ファイルに分ける"
+    ],
+    "selection_note": "候補37件(candidates_round3.json)および既に正解を作った条文と重ならないものだけを選んだ。ハード制約 × 宣言的になりそうなものを中心に、(1)1文に複数の行為、(2)使役の条文、(3)既存の Action と同義の動詞、(4)台帳に無い新しい動詞が偏らずに入るようにした",
+    "mix": {
+      "使役の条文": [
+        "ipa_secguide_v4_personnel_6_4_3_lock",
+        "ipa_secguide_v4_2_3_3_operate_hours",
+        "mhlw_r7dec_art58_3_2",
+        "mhlw_r7dec_art3_1",
+        "mhlw_r7dec_art8_2",
+        "mhlw_r7dec_art9_2",
+        "mhlw_r7dec_art23_3"
+      ],
+      "1文に複数の行為": [
+        "ipa_secguide_v4_6_1_3",
+        "ipa_secguide_v4_6_2_2",
+        "ipa_secguide_v4_personnel_6_4_2_cloud",
+        "ipa_secguide_v4_personnel_6_4_1_mail",
+        "ipa_secguide_v4_personnel_6_4_3_input",
+        "ipa_secguide_v4_phys_5_1_cleardesk",
+        "mhlw_r7dec_art58_3_7",
+        "mhlw_r7dec_art9_2",
+        "mhlw_r7dec_art17_1"
+      ],
+      "既存の Action と同義の動詞": [
+        "ipa_secguide_v4_6_2_2",
+        "ipa_secguide_v4_6_5_outdoor",
+        "ipa_secguide_v4_2_2_mobile_code",
+        "ipa_secguide_v4_personnel_6_4_2_cloud",
+        "ipa_secguide_v4_personnel_6_4_4_leave",
+        "mhlw_r7dec_art58_3_7",
+        "mhlw_r7dec_art3_1"
+      ],
+      "台帳に無い新しい動詞": [
+        "ipa_secguide_v4_6_1_3",
+        "ipa_secguide_v4_6_10_password_reuse",
+        "ipa_secguide_v4_7_1_link",
+        "ipa_secguide_v4_2_2_public_order",
+        "ipa_secguide_v4_personnel_6_2_1_install",
+        "ipa_secguide_v4_personnel_6_2_2_modify",
+        "ipa_secguide_v4_personnel_6_4_3_input",
+        "ipa_secguide_v4_personnel_6_4_4_discard",
+        "ipa_secguide_v4_phys_5_1_cleardesk",
+        "ipa_secguide_v4_2_3_4_connect",
+        "mhlw_r7dec_art58_3_3",
+        "mhlw_r7dec_art11_4",
+        "mhlw_r7dec_art16_2",
+        "mhlw_r7dec_art17_1",
+        "mhlw_r7dec_art8_2",
+        "mhlw_r7dec_art65_2"
+      ]
+    },
+    "id_note": "候補の ID は改名しない(D72)。IPA の ID は節番号、厚労の ID は条・項・号から付けた",
+    "slash_note": "原典に「/」で並んだ選択肢が残る条文は選んでいない(D72)。候補 ipa_secguide_v4_2_3_4_connect と同じ節にある「社内LANへの接続は禁止する/する場合はシステム管理者の許可を得る。」(P0721.1)は、この理由で外した",
+    "labeling_note": "**軸1・軸2の正解ラベルは付けていない。**正解の作成は web Claude が行う(運用メモ 3章: 2案を独立に作り、差分を Kazuhiro さんが精読する)",
+    "topics": [
+      {
+        "topic": "認証とパスワードの扱い",
+        "count": 4,
+        "reason": "「利用」など既存の Action(使用)と同義の動詞と、台帳に無い動詞(付与・使い回し)が混ざる"
+      },
+      {
+        "topic": "インターネットとクラウドの利用",
+        "count": 4,
+        "reason": "1文に複数の行為が並ぶ条文(送受信・保存・共有)と、台帳に無い動詞(アクセス・実行)が入る"
+      },
+      {
+        "topic": "機器へのソフトウェア導入と改造",
+        "count": 2,
+        "reason": "台帳に無い動詞(インストール・改造)だけの条文。括弧の扱い(P24)も試せる"
+      },
+      {
+        "topic": "テレワーク中の情報の扱い",
+        "count": 3,
+        "reason": "使役の条文(操作させない)と、1文に複数の行為が入る条文を含む"
+      },
+      {
+        "topic": "外出時の機器・書類の扱い",
+        "count": 3,
+        "reason": "既存の Action(放置)と同じ動詞の条文と、台帳に無い動詞(廃棄・保管・施錠)が混ざる"
+      },
+      {
+        "topic": "私有IT機器の社内利用と接続",
+        "count": 2,
+        "reason": "使役の条文(稼働させる)と、台帳に無い動詞(接続)"
+      },
+      {
+        "topic": "安全衛生の遵守事項",
+        "count": 4,
+        "reason": "第58条の未使用の号と第59条第2項。台帳に無い動詞が多く、「置く」は既存(放置)と同義になりうる"
+      },
+      {
+        "topic": "情報と物品の返却・記録",
+        "count": 3,
+        "reason": "台帳に無い動詞(返却・打刻・記録)。第11条・第16条の未使用の号"
+      },
+      {
+        "topic": "就業・出向・休職の指示",
+        "count": 5,
+        "reason": "使役の条文が4件。既存の Action「労働指示」の動詞(従事させ・就業させ)と同義かどうかを試せる"
+      }
+    ]
+  },
+  "candidates": [
+    {
+      "candidate_id": "ipa_secguide_v4_6_1_3",
+      "topic": "認証とパスワードの扱い",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "1.組織的対策 6.1 アクセス制御方針（箇条書き・アクセス権の分散）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0127.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round38_partE",
+      "text_raw": "特定の情報資産へのアクセス権が、同一人物に集中することで発生し得る不正行為等を考慮し、複数名に分散してアクセス権を付与する。",
+      "note": "行為は「アクセス権を付与する」。台帳に無い動詞で、1文に「集中を考慮する」と「分散して付与する」が入っている"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_6_2_2",
+      "topic": "認証とパスワードの扱い",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "1.組織的対策 6.2.2 多要素認証",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0142.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round38_partE",
+      "text_raw": "多要素認証の使用に当たっては、以下のいずれかの要素から2種類以上を選択し、利用すること。",
+      "note": "行為は「選択し、利用する」。「利用」は既存の Action「使用」と同義の動詞になりうる"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_6_5_outdoor",
+      "topic": "認証とパスワードの扱い",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "1.組織的対策 6.5 パスワードの設定（箇条書き・屋外での利用）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0163.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round38_partE",
+      "text_raw": "屋外で利用する場合は、他者が画面を盗み見可能な環境で利用しない。",
+      "note": "行為は「利用しない」。条件「他者が画面を盗み見可能な環境で」が付く"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_6_10_password_reuse",
+      "topic": "認証とパスワードの扱い",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "1.組織的対策 6.10 利用者アカウント・パスワードの条件（表・一般利用者アカウント列／パスワード運用行）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "T6.R4.C2.L9",
+        "extraction_note": "原典の表のセルから逐語で写した。箇条書きの中黒・番号の表記のみ落とした"
+      },
+      "task": "round38_partE",
+      "text_raw": "機器やサービス間でのパスワードの使い回しをしない",
+      "note": "行為は「使い回しをしない」。台帳に無い動詞"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_7_1_link",
+      "topic": "インターネットとクラウドの利用",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "1.組織的対策 7.1 オンラインサービス（箇条書き・リンクへのアクセス）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0190.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round38_partE",
+      "text_raw": "電子メールに記載されているリンクや、他のウェブサイト等に設置されているリンクは、偽サイトへの誘導である可能性があるためアクセスしない。",
+      "note": "行為は「アクセスしない」。台帳に無い動詞"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_2_2_public_order",
+      "topic": "インターネットとクラウドの利用",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "4.技術的対策 2.2 インターネットの利用（ウェブ閲覧）（箇条書き）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0677.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round38_partE",
+      "text_raw": "公序良俗に反するサイトへのアクセスを禁止する。",
+      "note": "行為は「アクセスを禁止する」。対象が「公序良俗に反するサイト」"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_2_2_mobile_code",
+      "topic": "インターネットとクラウドの利用",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "4.技術的対策 2.2 インターネットの利用（ウェブ閲覧）（箇条書き・モバイルコード）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0681.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round38_partE",
+      "text_raw": "信頼できるサイトから署名付きのモバイルコードをダウンロードする場合を除き、モバイルコード(クライアントパソコン側で動作するプログラム)を実行しない。",
+      "note": "行為は「実行しない」。例外の中に「ダウンロードする場合」があり、既存の Action「取り出し」と同義の動詞が同じ文に出る"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_personnel_6_4_2_cloud",
+      "topic": "インターネットとクラウドの利用",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "2.人的対策 6.4.2 クラウド・SNSの利用（箇条書き）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0512.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round38_partE",
+      "text_raw": "業務関連データの送受信、保存、共有に利用しない。",
+      "note": "1文に「送受信」「保存」「共有」の3つが並ぶ。どれも既存の Action(送信・受信・保存・共有)と同じか同義の動詞"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_personnel_6_2_1_install",
+      "topic": "機器へのソフトウェア導入と改造",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "2.人的対策 6.2.1 社有機器を利用する場合（箇条書き）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0462.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round38_partE",
+      "text_raw": "社内標準外ソフトウェアのインストールは禁止する。",
+      "note": "行為は「インストールを禁止する」。台帳に無い動詞"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_personnel_6_2_2_modify",
+      "topic": "機器へのソフトウェア導入と改造",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "2.人的対策 6.2.2 私有機器を利用する場合（箇条書き）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0490.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round38_partE",
+      "text_raw": "不正な改造を行うことを禁止する（脱獄・root化）。",
+      "note": "行為は「改造を行うことを禁止する」。括弧に例(脱獄・root化)が付く(P24 の括弧の扱いを試せる)"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_personnel_6_4_1_mail",
+      "topic": "テレワーク中の情報の扱い",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "2.人的対策 6.4.1 電子メール・ウェブサイトの利用（箇条書き）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0505.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round38_partE",
+      "text_raw": "個人のメールアカウントを利用するときには、安易に添付ファイルを開いたリンクを参照しない。",
+      "note": "1文に「利用する」「添付ファイルを開く」「リンクを参照する」が入る"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_personnel_6_4_3_lock",
+      "topic": "テレワーク中の情報の扱い",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "2.人的対策 6.4.3 在宅時の注意（箇条書き）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0518.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round38_partE",
+      "text_raw": "離席時にスクリーンセーバーや画面をロックし他者（家族を含む）にテレワーク用の情報機器を操作させない。",
+      "note": "**使役**の条文(「操作させない」)。既存の Action「操作」と同じ動詞だが、使役なので別の行為になる(P28)。1文に「ロックする」も入る"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_personnel_6_4_3_input",
+      "topic": "テレワーク中の情報の扱い",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "2.人的対策 6.4 勤務中のルール（表・公衆Wi-Fi列／注意事項行）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "T21.R5.C3.L2",
+        "extraction_note": "原典の表のセルから逐語で写した。箇条書きの中黒・番号の表記のみ落とした"
+      },
+      "task": "round38_partE",
+      "text_raw": "ID・パスワードなどの認証情報、会社の重要情報、個人情報などの重要情報を入力・表示しない",
+      "note": "行為は「入力・表示しない」。台帳に無い動詞が2つ並ぶ"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_personnel_6_4_4_leave",
+      "topic": "外出時の機器・書類の扱い",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "2.人的対策 6.4.4 外出時の注意（箇条書き）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0524.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round38_partE",
+      "text_raw": "機器や書類は目の届く範囲に置き放置しない。",
+      "note": "行為は「置き放置しない」。既存の Action「放置」と同じ動詞"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_personnel_6_4_4_discard",
+      "topic": "外出時の機器・書類の扱い",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "2.人的対策 6.4.4 外出時の注意（箇条書き）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0527.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round38_partE",
+      "text_raw": "外出先で書類やCD・DVDなどの媒体を廃棄しない。",
+      "note": "行為は「廃棄しない」。台帳に無い動詞"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_phys_5_1_cleardesk",
+      "topic": "外出時の機器・書類の扱い",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "3.物理的対策 5.1 クリアデスク（箇条書き）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0606.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round38_partE",
+      "text_raw": "退社時又は使用しないときには電源を切り、机の引き出しに保管し、施錠する。",
+      "note": "1文に「電源を切る」「保管する」「施錠する」の3つが入る。どれも台帳に無い動詞"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_2_3_3_operate_hours",
+      "topic": "私有IT機器の社内利用と接続",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0715.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round38_partE",
+      "text_raw": "機器は原則として勤務時間のみ稼働させる。",
+      "note": "**使役**の条文(「稼働させる」)。台帳に無い動詞"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_2_3_4_connect",
+      "topic": "私有IT機器の社内利用と接続",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "4.技術的対策 2.3.4 社内での利用（箇条書き）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0722.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round38_partE",
+      "text_raw": "充電を除き、社内のパソコンやサーバーへの接続は禁止する。",
+      "note": "行為は「接続を禁止する」。台帳に無い動詞。例外「充電を除き」が付く"
+    },
+    {
+      "candidate_id": "mhlw_r7dec_art59_2",
+      "topic": "安全衛生の遵守事項",
+      "source": {
+        "name": "厚生労働省「モデル就業規則」解説版",
+        "section": "第59条（健康診断）第2項",
+        "url": "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/zenbun/index.html",
+        "locator": "T82.R1.C1.L4",
+        "extraction_note": "原典の表のセルから逐語で写した。箇条書きの中黒・番号の表記のみ落とした"
+      },
+      "task": "round38_partE",
+      "text_raw": "前項の健康診断のほか、法令で定められた有害業務に従事する労働者に対しては、特別の項目について、定期に健康診断を行う。",
+      "note": "行為は「健康診断を行う」。条文に「有害業務に従事する労働者」とあり、既存の Action「労働指示」の動詞「従事させ」の使役でない形が同じ文に出る(P28・P29 を試せる)"
+    },
+    {
+      "candidate_id": "mhlw_r7dec_art58_3_2",
+      "topic": "安全衛生の遵守事項",
+      "source": {
+        "name": "厚生労働省「モデル就業規則」解説版",
+        "section": "第58条（遵守事項）第3項第2号",
+        "url": "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/zenbun/index.html",
+        "locator": "T81.R1.C1.L6",
+        "extraction_note": "原典の表のセルから逐語で写した。箇条書きの中黒・番号の表記のみ落とした"
+      },
+      "task": "round38_partE",
+      "text_raw": "安全装置を取り外したり、その効力を失わせるようなことはしないこと。",
+      "note": "行為は「取り外す」「効力を失わせる」。後者は**使役**の形"
+    },
+    {
+      "candidate_id": "mhlw_r7dec_art58_3_3",
+      "topic": "安全衛生の遵守事項",
+      "source": {
+        "name": "厚生労働省「モデル就業規則」解説版",
+        "section": "第58条（遵守事項）第3項第3号",
+        "url": "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/zenbun/index.html",
+        "locator": "T81.R1.C1.L7",
+        "extraction_note": "原典の表のセルから逐語で写した。箇条書きの中黒・番号の表記のみ落とした"
+      },
+      "task": "round38_partE",
+      "text_raw": "保護具の着用が必要な作業については、必ず着用すること。",
+      "note": "行為は「着用する」。台帳に無い動詞。条件「保護具の着用が必要な作業については」が付く"
+    },
+    {
+      "candidate_id": "mhlw_r7dec_art58_3_7",
+      "topic": "安全衛生の遵守事項",
+      "source": {
+        "name": "厚生労働省「モデル就業規則」解説版",
+        "section": "第58条（遵守事項）第3項第7号",
+        "url": "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/zenbun/index.html",
+        "locator": "T81.R1.C1.L11",
+        "extraction_note": "原典の表のセルから逐語で写した。箇条書きの中黒・番号の表記のみ落とした"
+      },
+      "task": "round38_partE",
+      "text_raw": "常に整理整頓に努め、通路、避難口又は消火設備のある所に物品を置かないこと。",
+      "note": "1文に「整理整頓に努める」と「物品を置かない」が入る。「置く」は既存の Action「放置」と同義の動詞になりうる"
+    },
+    {
+      "candidate_id": "mhlw_r7dec_art11_4",
+      "topic": "情報と物品の返却・記録",
+      "source": {
+        "name": "厚生労働省「モデル就業規則」解説版",
+        "section": "第11条（遵守事項）第4号",
+        "url": "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/zenbun/index.html",
+        "locator": "T14.R1.C1.L6",
+        "extraction_note": "原典の表のセルから逐語で写した。箇条書きの中黒・番号の表記のみ落とした"
+      },
+      "task": "round38_partE",
+      "text_raw": "会社の名誉や信用を損なう行為をしないこと。",
+      "note": "行為は「会社の名誉や信用を損なう行為をしない」。行為の種類が広く、台帳に無い動詞"
+    },
+    {
+      "candidate_id": "mhlw_r7dec_art16_2",
+      "topic": "情報と物品の返却・記録",
+      "source": {
+        "name": "厚生労働省「モデル就業規則」解説版",
+        "section": "第16条（個人情報保護）第2項",
+        "url": "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/zenbun/index.html",
+        "locator": "T19.R1.C1.L3",
+        "extraction_note": "原典の表のセルから逐語で写した。箇条書きの中黒・番号の表記のみ落とした"
+      },
+      "task": "round38_partE",
+      "text_raw": "労働者は、職場又は職種を異動あるいは退職するに際して、自らが管理していた会社及び取引先等に関するデータ・情報書類等を速やかに返却しなければならない。",
+      "note": "行為は「返却する」。台帳に無い動詞。第16条第1項は第37回の保留用で使った"
+    },
+    {
+      "candidate_id": "mhlw_r7dec_art17_1",
+      "topic": "情報と物品の返却・記録",
+      "source": {
+        "name": "厚生労働省「モデル就業規則」解説版",
+        "section": "第17条（始業及び終業時刻の記録）",
+        "url": "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/zenbun/index.html",
+        "locator": "T20.R1.C1.L2",
+        "extraction_note": "原典の表のセルから逐語で写した。箇条書きの中黒・番号の表記のみ落とした"
+      },
+      "task": "round38_partE",
+      "text_raw": "労働者は、始業及び終業時にタイムカードを自ら打刻し、始業及び終業の時刻を記録しなければならない。",
+      "note": "1文に「自ら打刻する」と「記録する」が入る。どちらも台帳に無い動詞"
+    },
+    {
+      "candidate_id": "mhlw_r7dec_art3_1",
+      "topic": "就業・出向・休職の指示",
+      "source": {
+        "name": "厚生労働省「モデル就業規則」解説版",
+        "section": "第3条（規則の遵守）",
+        "url": "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/zenbun/index.html",
+        "locator": "T5.R1.C1.L2",
+        "extraction_note": "原典の表のセルから逐語で写した。箇条書きの中黒・番号の表記のみ落とした"
+      },
+      "task": "round38_partE",
+      "text_raw": "会社は、この規則に定める労働条件により、労働者に就業させる義務を負う。また、労働者は、この規則を遵守しなければならない。",
+      "note": "**使役**の条文(「就業させる義務を負う」)。既存の Action「労働指示」の過去の動詞(従事させ・就業させ)と同義の動詞になりうる。原典の規程例のセルに条番号の表記は無く、解説側の見出し(P0068「第　３条（規則の遵守）」)から第3条と判断した"
+    },
+    {
+      "candidate_id": "mhlw_r7dec_art8_2",
+      "topic": "就業・出向・休職の指示",
+      "source": {
+        "name": "厚生労働省「モデル就業規則」解説版",
+        "section": "第8条（人事異動）第2項",
+        "url": "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/zenbun/index.html",
+        "locator": "T11.R1.C1.L3",
+        "extraction_note": "原典の表のセルから逐語で写した。箇条書きの中黒・番号の表記のみ落とした"
+      },
+      "task": "round38_partE",
+      "text_raw": "会社は、業務上必要がある場合に、労働者を在籍のまま関係会社へ出向させることがある。",
+      "note": "**使役**の条文(「出向させる」)。台帳に無い動詞"
+    },
+    {
+      "candidate_id": "mhlw_r7dec_art9_2",
+      "topic": "就業・出向・休職の指示",
+      "source": {
+        "name": "厚生労働省「モデル就業規則」解説版",
+        "section": "第9条（休職）第2項",
+        "url": "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/zenbun/index.html",
+        "locator": "T12.R1.C1.L6",
+        "extraction_note": "原典の表のセルから逐語で写した。箇条書きの中黒・番号の表記のみ落とした"
+      },
+      "task": "round38_partE",
+      "text_raw": "休職期間中に休職事由が消滅したときは、原則として元の職務に復帰させる。ただし、元の職務に復帰させることが困難又は不適当な場合には、他の職務に就かせることがある。",
+      "note": "**使役**の条文(「復帰させる」「就かせる」)。1文に2つの行為が入る"
+    },
+    {
+      "candidate_id": "mhlw_r7dec_art23_3",
+      "topic": "就業・出向・休職の指示",
+      "source": {
+        "name": "厚生労働省「モデル就業規則」解説版",
+        "section": "第23条（年次有給休暇）第3項",
+        "url": "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/zenbun/index.html",
+        "locator": "T38.R1.C1.L4",
+        "extraction_note": "原典の表のセルから逐語で写した。箇条書きの中黒・番号の表記のみ落とした"
+      },
+      "task": "round38_partE",
+      "text_raw": "第１項又は第２項の年次有給休暇は、労働者があらかじめ請求する時季に取得させる。ただし、労働者が請求した時季に年次有給休暇を取得させることが事業の正常な運営を妨げる場合は、他の時季に取得させることがある。",
+      "note": "**使役**の条文(「取得させる」)。ただし書きで「他の時季に取得させることがある」と続く"
+    },
+    {
+      "candidate_id": "mhlw_r7dec_art65_2",
+      "topic": "就業・出向・休職の指示",
+      "source": {
+        "name": "厚生労働省「モデル就業規則」解説版",
+        "section": "第65条（教育訓練）第2項",
+        "url": "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/zenbun/index.html",
+        "locator": "T88.R1.C1.L3",
+        "extraction_note": "原典の表のセルから逐語で写した。箇条書きの中黒・番号の表記のみ落とした"
+      },
+      "task": "round38_partE",
+      "text_raw": "労働者は、会社から教育訓練を受講するよう指示された場合には、特段の事由がない限り教育訓練を受けなければならない。",
+      "note": "行為は「教育訓練を受ける」。台帳に無い動詞。条件「指示された場合には」「特段の事由がない限り」が付く"
+    }
+  ]
+}
