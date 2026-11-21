@@ -295,3 +295,111 @@ def test_the_axis_labels_are_in_testdata_clauses(holdout):
         assert clause["oracle"]["axis2"] == "宣言的"
         assert clause["text_raw"] == item["text"]
         assert clause["holdout_order"] == item["order"]
+
+
+# --------------------------------------------------------------------------
+# 第38回 パートC: 開発用の正解 v4(使役の動詞)と dev2(旧保留用を開発用に移す)
+# --------------------------------------------------------------------------
+
+V4_PATH = GOLD_DIR / "action_gold_v4.json"
+DEV2_PATH = GOLD_DIR / "action_gold_dev2_v1.json"
+
+# タスクC1: 使役の条文3件(第21条第3項・第25条第2項・第21条第4項)
+CAUSATIVE_ITEMS = {
+    "mhlw_r7dec_art21_3": ("従事", "従事させ"),
+    "mhlw_r7dec_art25_2": ("就業", "就業させ"),
+    "mhlw_r7dec_art21_4": ("従事", "従事させ"),
+}
+
+
+@pytest.fixture(scope="module")
+def dev_v4() -> dict:
+    return json.loads(V4_PATH.read_text(encoding="utf-8"))
+
+
+@pytest.fixture(scope="module")
+def dev2() -> dict:
+    return json.loads(DEV2_PATH.read_text(encoding="utf-8"))
+
+
+def test_v4_only_changes_the_core_verb_of_the_causative_clauses(dev_v4, dev):
+    """タスクC1: v4 で変えるのは中心の動詞だけ(名前・段・親・is_new は v3 のまま)。"""
+    assert dev_v4["_meta"]["split"] == "dev"
+    assert len(dev_v4["items"]) == len(dev["items"]) == 18
+    for new_item, old_item in zip(dev_v4["items"], dev["items"]):
+        assert new_item["clause_id"] == old_item["clause_id"]
+        new_exp, old_exp = new_item["expected"], old_item["expected"]
+        pair = CAUSATIVE_ITEMS.get(new_item["clause_id"])
+        if pair:
+            before, after = pair
+            assert old_exp["core_verb"] == before
+            assert new_exp["core_verb"] == after
+        else:
+            assert new_exp["core_verb"] == old_exp["core_verb"], new_item["clause_id"]
+        for key in ("normalized", "is_new", "kind", "parent", "surface"):
+            assert new_exp[key] == old_exp[key], (new_item["clause_id"], key)
+
+
+def test_the_causative_verb_is_verbatim_in_the_surface(dev_v4):
+    """P28: 使役を付けた動詞も、正解の語句の中に逐語である。"""
+    for item in dev_v4["items"]:
+        for e in expectations(item):
+            assert e["core_verb"] in e["surface"], (item["order"], e["core_verb"])
+
+
+def test_a_causative_clause_does_not_match_the_plain_verb_in_the_ledger(dev_v4):
+    """P28: v4 の使役の動詞は、台帳の使役でない動詞とは一致しない。"""
+    from src.stage3_frontstage.action_normalizer import core_verbs_match
+
+    assert core_verbs_match("従事させ", ["従事"])[0] is False
+    assert core_verbs_match("就業させ", ["就業"])[0] is False
+    # 台帳に育った「労働指示」の過去の動詞とは一致する
+    ledger = load_ledger(dev_v4, REGISTRY_PATH)
+    for item in dev_v4["items"]:
+        teach(ledger, item)
+    verbs = ledger.find("労働指示").core_verbs()
+    # 第21条第3項・第25条第2項・第21条第4項の3件分(語句は違うので3件残る)
+    assert verbs == ["従事させ", "就業させ", "従事させ"]
+    assert core_verbs_match("従事させ", verbs)[0] is True
+
+
+def test_dev2_is_the_old_holdout_moved_to_development(dev2, holdout):
+    """タスクC2・W3: 旧保留用を写して split=dev にし、元のファイルは残す。"""
+    assert dev2["_meta"]["split"] == "dev"
+    assert holdout["_meta"]["split"] == "holdout"
+    assert dev2["_meta"]["ledger_source"] == "seed"
+    assert [i["clause_id"] for i in dev2["items"]] == [
+        i["clause_id"] for i in holdout["items"]
+    ]
+    for new_item, old_item in zip(dev2["items"], holdout["items"]):
+        assert new_item["text"] == old_item["text"]
+        assert new_item["expected"] == old_item["expected"]
+        assert new_item.get("expected_alternatives") == old_item.get(
+            "expected_alternatives"
+        )
+
+
+def test_dev2_starts_from_the_v4_ledger(dev2, dev_v4):
+    """タスクC2: dev2 の出発点は v4 の18件を足し終えた台帳(使役の直しが入る)。"""
+    ledger = load_ledger(dev_v4, REGISTRY_PATH)
+    for item in dev_v4["items"]:
+        teach(ledger, item)
+    assert ledger.to_json() == dev2["ledger_seed"]
+    assert len(dev2["ledger_seed"]) == 11
+    seeded = ActionLedger.from_json(dev2["ledger_seed"])
+    assert seeded.find("労働指示").core_verbs() == ["従事させ", "就業させ", "従事させ"]
+
+
+def test_dev2_is_not_stopped_by_the_holdout_check(dev2):
+    """タスクC2: 承認前に止まる検査は split=holdout のときだけ働く。"""
+    check_holdout_is_approved(dev2)
+    broken = copy.deepcopy(dev2)
+    broken["items"][0]["review"]["approved_by"] = None
+    check_holdout_is_approved(broken)  # dev なので止まらない
+
+
+def test_dev2_loads_its_ledger_from_the_seed(dev2):
+    """`_meta.ledger_source` が seed なら、登録簿ではなく ledger_seed から作る。"""
+    ledger = load_ledger(dev2, REGISTRY_PATH)
+    assert len(ledger.entries) == 11
+    assert ledger.find("提供").kind == "abstract"

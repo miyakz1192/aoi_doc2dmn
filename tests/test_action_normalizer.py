@@ -98,18 +98,14 @@ def _responses(
     proposal: dict | None = None,
     considered: list[dict] | None = None,
 ) -> list[dict]:
-    """k=1 の呼び出し(抜き出し → 選択 →(該当なしなら)候補)の応答を組み立てる。"""
+    """k=1 の呼び出しの応答を組み立てる(v0.7 の手順。P27)。
+
+    1回目は抜き出し(手順1)。2回目は**同義語の判定**(手順3c)で、`choice` に台帳の
+    名前を渡すと「同義語である」と答え、`NO_MATCH` を渡すと同義語なしになる。
+    手順3a(動詞の一致)で寄った場合、2回目は呼ばれないので使われない。
+    """
     out: list[dict] = [{"candidates": candidates, "rationale": "(固定)"}]
-    out.append(
-        {
-            "choice": choice,
-            "reason": f"{choice} を選んだ(固定)",
-            "definition_part": "",
-            "considered": considered
-            if considered is not None
-            else [{"name": "送信", "why_not": "手段が違う(固定)"}],
-        }
-    )
+    out.append({"synonym_of": choice, "reason": f"{choice} と同義(固定)"})
     if proposal is not None:
         out.append(proposal)
     return out
@@ -305,43 +301,173 @@ def test_a_single_candidate_does_not_raise_the_ambiguous_gate(seeded_ledger):
 
 
 # --------------------------------------------------------------------------
-# 動詞の一致の検査(手順4・P15)
+# 寄せ方を動詞の規則にする(手順3a・3b・3c。P27〜P30。第38回パートA)
 # --------------------------------------------------------------------------
 
 
-def test_verb_mismatch_raises_the_gate(seeded_ledger):
-    """P15: 既存に寄せたが、中心の動詞が過去の語句の動詞にない。"""
+def test_a_single_verb_match_merges_without_asking_the_llm(seeded_ledger):
+    """手順3a(P27): 動詞が1つの Action と一致したら、LLM に聞かずに寄せる。
+
+    LLM の呼び出しは抜き出しの1回だけになる(4.7節)。
+    """
+    seeded_ledger.record_surface("送信", "情報を送信", "あおいの既存DMN", "送信")
+    result, llm = _normalize(
+        seeded_ledger,
+        "極秘の情報を社外に送信してはならない。",
+        [{"surface": "社外に送信", "core_verb": "送信"}],
+        NO_MATCH,  # 同義語の判定は呼ばれないので使われない
+    )
+    assert result.action.normalized == "送信"
+    assert result.action.is_new is False
+    assert result.trace.llm_calls == 1
+    assert len(llm.prompts) == 1
+    assert result.trace.run.route == "3a"
+    assert result.trace.verb_routing.matched_names == ["送信"]
+    # 動詞で寄せたので、同義語のゲートは立たない
+    assert "action_synonym_merge" not in result.gates.gate_names()
+
+
+def test_two_verb_matches_go_to_a_human(seeded_ledger):
+    """手順3a(P27): 一致が2つ以上なら人に回す(どちらの行為かは人の判断)。"""
+    seeded_ledger.record_surface("送信", "情報を送信", "あおいの既存DMN", "送信")
+    seeded_ledger.add(
+        ActionEntry(name="転送", definition="受け取った情報を別の宛先へ送ること")
+    )
+    seeded_ledger.record_surface("転送", "メールを転送", "テスト 第2条", "送信")
+    result, _ = _normalize(
+        seeded_ledger,
+        "極秘の情報を社外に送信してはならない。",
+        [{"surface": "社外に送信", "core_verb": "送信"}],
+        NO_MATCH,
+    )
+    assert result.trace.verb_routing.matched_names == ["送信", "転送"]
+    assert result.trace.verb_routing.ambiguous is True
+    assert "action_surface_ambiguous" in result.gates.gate_names()
+    # 1つ目(宣言順)に寄せたうえで人に回す
+    assert result.action.normalized == "送信"
+
+
+def test_a_synonym_merge_raises_the_design_check_gate(seeded_ledger):
+    """手順3c(P27・P30): 動詞が一致しないが同義語と判定して寄せたら
+    `action_synonym_merge`。"""
+    seeded_ledger.record_surface("送信", "情報を送信", "あおいの既存DMN", "送信")
+    result, llm = _normalize(
+        seeded_ledger,
+        "極秘の情報を社外に転送してはならない。",
+        [{"surface": "社外に転送", "core_verb": "転送"}],
+        "送信",
+    )
+    assert result.action.normalized == "送信"
+    assert result.trace.run.route == "3c"
+    assert "action_synonym_merge" in result.gates.gate_names()
+    assert result.trace.synonym_judgment.answer == "送信"
+    assert result.trace.llm_calls == 2
+    assert len(llm.prompts) == 2
+
+
+def test_the_retired_verb_mismatch_gate_is_gone(seeded_ledger):
+    """P30: `action_verb_mismatch` は廃止した(ゲートの一覧に無い)。"""
+    from src.stage3_generate.ir_schema import (
+        RETIRED_GATES,
+        SUSPICION_GATES,
+        gate_kind,
+    )
+
+    assert "action_verb_mismatch" not in SUSPICION_GATES
+    assert "action_verb_mismatch" in RETIRED_GATES
+    # 過去の記録を読み直すときは、当時の種類(疑い)で数える
+    assert gate_kind("action_verb_mismatch") == "suspicion"
     seeded_ledger.record_surface("送信", "情報を送信", "あおいの既存DMN", "送信")
     result, _ = _normalize(
         seeded_ledger,
-        "医療情報を口頭で伝達してはならない。",
-        [{"surface": "口頭で伝達してはならない", "core_verb": "伝達"}],
+        "極秘の情報を社外に転送してはならない。",
+        [{"surface": "社外に転送", "core_verb": "転送"}],
         "送信",
     )
-    assert "action_verb_mismatch" in result.gates.gate_names()
-    check = result.trace.verb_check
-    assert check is not None and check.matched is False
-    assert check.core_verb == "伝達" and check.compared == ["送信"]
+    assert "action_verb_mismatch" not in result.gates.gate_names()
 
 
 def test_verb_match_allows_an_okurigana_difference():
     """判断: 完全一致か、どちらかがもう片方を含むことを一致とする。"""
-    assert core_verbs_match("従事させ", ["従事"])[0] is True
-    assert core_verbs_match("従事", ["労働に従事させ"])[0] is True
+    assert core_verbs_match("立ち入る", ["立ち入"])[0] is True
+    assert core_verbs_match("使用", ["私有機器を使用"])[0] is True
     assert core_verbs_match("伝達", ["提供"])[0] is False
-    # 過去の語句が無い Action に寄せた場合も立てる(P15)
+    # 比べる相手の動詞が無い Action には寄せられない
     assert core_verbs_match("提供", [])[0] is False
 
 
-def test_verb_check_is_not_run_for_a_new_action(seeded_ledger):
-    """新規候補のときは比べる相手が無いので、動詞の検査はしない。"""
+def test_a_causative_difference_is_not_a_match():
+    """P28: 使役(「させ」)の有無だけが違う組は一致としない。"""
+    assert core_verbs_match("就業させる", ["就業"])[0] is False
+    assert core_verbs_match("従事させ", ["従事"])[0] is False
+    assert core_verbs_match("従事", ["労働に従事させ"])[0] is False
+    # 使役どうし・使役でないどうしは、送り仮名の差を一致とする
+    assert core_verbs_match("就業させ", ["就業させる"])[0] is True
+    assert core_verbs_match("就業", ["酒気を帯びて就業"])[0] is True
+
+
+def test_a_causative_clause_is_not_merged_into_the_plain_verb(seeded_ledger):
+    """P28: 「就業させる」の条文は、台帳の「就業」に動詞では寄らない。"""
+    seeded_ledger.add(ActionEntry(name="就業", definition="業務に就くこと"))
+    seeded_ledger.record_surface("就業", "酒気を帯びて就業", "厚労 第11条", "就業")
+    result, _ = _normalize(
+        seeded_ledger,
+        "酒気を帯びた者を就業させてはならない。",
+        [{"surface": "就業させ", "core_verb": "就業させ"}],
+        NO_MATCH,
+        proposal={"name": "就業指示", "definition": "人を業務に就かせること",
+                  "kind": "concrete", "parent": None, "basis_quotes": ["就業させ"]},
+    )
+    assert result.trace.verb_routing.matched_names == []
+    assert result.action.is_new is True
+
+
+def test_the_extraction_check_flags_another_ledger_verb_in_the_clause(seeded_ledger):
+    """手順3b(P29): 抜き出した動詞のほかに台帳の動詞が条文に現れたら人に回す。
+
+    開発用の項目6で「使用」を抜き出したとき、条文に台帳の動詞「操作」がある。
+    """
+    seeded_ledger.add(ActionEntry(name="操作", definition="情報システムや機器を動かすこと"))
+    seeded_ledger.record_surface("操作", "特権操作", "ipa 6.7第3項", "操作")
+    clause = (
+        "特権操作は多要素認証を用い、社有機器及び指定経路（VPN等）からのみ実施し、"
+        "私有機器を使用しないこと。"
+    )
+    result, _ = _normalize(
+        seeded_ledger,
+        clause,
+        [{"surface": "私有機器を使用", "core_verb": "使用"}],
+        NO_MATCH,
+        proposal={"name": "使用", "definition": "物・設備・サービスを使うこと",
+                  "kind": "concrete", "parent": None, "basis_quotes": ["私有機器を使用"]},
+    )
+    hits = result.trace.extraction_check.hits
+    assert [h["core_verb"] for h in hits] == ["操作"]
+    assert "action_surface_ambiguous" in result.gates.gate_names()
+
+
+def test_the_extraction_check_ignores_the_extracted_verb_itself(seeded_ledger):
+    """手順3b: 抜き出した動詞そのもの(送り仮名の差を含む)は数えない。"""
+    seeded_ledger.record_surface("送信", "情報を送信", "あおいの既存DMN", "送信")
+    result, _ = _normalize(
+        seeded_ledger,
+        "極秘の情報を社外に送信してはならない。",
+        [{"surface": "社外に送信", "core_verb": "送信"}],
+        NO_MATCH,
+    )
+    assert result.trace.extraction_check.hits == []
+
+
+def test_the_verb_routing_is_recorded_even_for_a_new_action(seeded_ledger):
+    """新規候補のときも、動詞を比べた記録は残す(どの動詞と比べたか)。"""
     result, _ = _normalize(
         seeded_ledger, CLAUSE, [{"surface": SURFACE, "core_verb": "使用"}], NO_MATCH,
         proposal={"name": "使用", "definition": "会社の施設や物品を使うこと",
                   "kind": "concrete", "parent": None, "basis_quotes": [SURFACE]},
     )
-    assert result.trace.verb_check is None
-    assert "action_verb_mismatch" not in result.gates.gate_names()
+    assert result.trace.verb_routing.matched_names == []
+    assert result.trace.run.route == "4"
+    assert "action_synonym_merge" not in result.gates.gate_names()
 
 
 def test_abstract_selected_raises_the_gate(seeded_ledger):
@@ -480,15 +606,27 @@ def test_the_ledger_block_shows_the_kind_the_parent_and_the_core_verbs(seeded_le
     assert "中心の動詞: 提供" in block
 
 
-def test_the_choice_prompt_tells_the_model_to_match_the_tier(seeded_ledger):
-    """手順3: 段を合わせること・excludes にある行為は選ばないことを示す(P14)。"""
+def test_the_synonym_prompt_shows_the_verbs_but_never_the_definitions(seeded_ledger):
+    """手順3c(W1): 名前と過去の動詞だけを渡し、**定義は渡さない**。
+
+    第37回の誤統合8件は、定義を読んで「一番近い既存」を選んだ結果だった(7.4節)。
+    """
+    seeded_ledger.record_surface("送信", "情報を送信", "あおいの既存DMN", "送信")
     _result, llm = _normalize(
-        seeded_ledger, CLAUSE, [{"surface": SURFACE, "core_verb": "使用"}], "送信"
+        seeded_ledger, CLAUSE, [{"surface": SURFACE, "core_verb": "使用"}], NO_MATCH,
+        proposal={"name": "使用", "definition": "物・設備・サービスを使うこと",
+                  "kind": "concrete", "parent": None, "basis_quotes": [SURFACE]},
     )
-    choice_prompt = llm.prompts[1]
-    assert "段を合わせてください" in choice_prompt
-    assert "この Action に含まないもの" in choice_prompt
-    assert "中心の動詞" in choice_prompt
+    synonym_prompt = llm.prompts[1]
+    assert "同じ行為を表す同義語" in synonym_prompt
+    assert "送信（これまでの動詞: 送信）" in synonym_prompt
+    # 定義も条文本文も渡さない
+    assert SEED_DEFINITION not in synonym_prompt
+    assert CLAUSE not in synonym_prompt
+    # 向き・使役・上位下位は同義語ではないことを示す(P27)
+    assert "向きが違う動詞は同義語ではありません" in synonym_prompt
+    assert "使役(させる)の有無が違えば別の行為です" in synonym_prompt
+    assert "上位・下位の関係は同義語ではありません" in synonym_prompt
 
 
 def test_the_surface_prompt_warns_about_the_sentence_final_predicate(seeded_ledger):
@@ -521,18 +659,19 @@ def test_the_proposal_prompt_forbids_modality_and_conditions(seeded_ledger):
     assert "使役(させる)は動詞の" in prompt
 
 
-def test_the_choice_prompt_tells_the_model_to_merge_by_verb(seeded_ledger):
-    """P26: 動詞が同じ(または同義の)行為は、対象が違っても同じ Action に寄せる。"""
+def test_the_synonym_prompt_gives_examples_and_keeps_the_object_out(seeded_ledger):
+    """P27: 同義語の例を示し、対象・権限・場所が違っても動詞が同じなら同義語とする。"""
     _result, llm = _normalize(
         seeded_ledger, CLAUSE, [{"surface": SURFACE, "core_verb": "使用"}], NO_MATCH,
         proposal={"name": "使用", "definition": "使うこと", "kind": "concrete",
                   "parent": None, "basis_quotes": []},
     )
-    choice_prompt = llm.prompts[1]
-    assert "Action の名前は**行為の種類(動詞)だけ**です" in choice_prompt
-    assert "動詞が\n   同じなら同じ Action です" in choice_prompt or "同じなら同じ Action です" in choice_prompt
-    assert "動詞が**同義**なら同じ Action です(例: 送信と転送、共有と共用、使用と利用)" in choice_prompt
-    assert "**使役(させる)は動詞の一部**で、別の行為です" in choice_prompt
+    synonym_prompt = llm.prompts[1]
+    assert "「利用」と「使用」" in synonym_prompt
+    assert "「ダウンロード」と「取り出し」" in synonym_prompt
+    assert "行為の種類\n   (動詞)が同じなら同義語です" in synonym_prompt
+    # 迷ったら寄せない(閉じた選択の「該当なし」)
+    assert f"迷ったときは「{NO_MATCH}」を選んでください" in synonym_prompt
 
 
 def test_context_is_offered_but_not_as_the_source_of_the_surface(seeded_ledger):
@@ -671,8 +810,10 @@ def test_mis_merge_is_an_unrelated_existing_action(action_gold, taught_ledger):
     assert classify(item, result, taught_ledger) == "mis_merge"
     verdict = judge(item, result, taught_ledger)
     assert verdict.severe is True
-    # 動詞の一致の検査が捕まえるので、すり抜けない(P15)
-    assert "action_verb_mismatch" in verdict.gates
+    # v0.7: 動詞が一致しないかぎり寄らないので、誤統合は同義語の判定(手順3c)でしか
+    # 起きない。そのゲートが立つのですり抜けない(P30)
+    assert verdict.route == "3c"
+    assert "action_synonym_merge" in verdict.gates
     assert verdict.slipped is False
 
 
@@ -720,14 +861,18 @@ def test_missing_an_existing_action_is_counted_as_a_miss(action_gold, taught_led
         "parent": None,
         "basis_quotes": [],
     }
+    # v0.7: 台帳にある動詞(操作・使用)を抜き出すと手順3a で寄ってしまうので、
+    # 台帳に無い動詞(「実施」)を抜き出した場合で確かめる
     result, _ = _normalize(
         taught_ledger, item["text"],
-        [{"surface": "私有機器を使用しないこと", "core_verb": "使用"}], NO_MATCH,
+        [{"surface": "社有機器及び指定経路（VPN等）からのみ実施", "core_verb": "実施"}],
+        NO_MATCH,
         proposal=proposal, clause_ref=item["clause_ref"],
     )
     verdict = judge(item, result, taught_ledger)
     assert verdict.verdict == "missed"
     assert verdict.severe is False
+    assert verdict.route == "4"
     assert "new_action_unapproved" in verdict.gates
 
 
@@ -893,13 +1038,17 @@ def test_the_design_check_gates_are_not_counted_as_false_alarms(action_gold, see
     verdict = judge(item, result, seeded_ledger)
     assert verdict.verdict == "correct"
     assert "action_abstract_selected" in verdict.gates
-    assert verdict.design_check_gates == ["action_abstract_selected"]
-    # 立った疑いのゲート(動詞の不一致)だけが誤報になる
-    assert verdict.suspicion_gates == ["action_verb_mismatch"]
-    assert verdict.false_alarm_gates == ["action_verb_mismatch"]
-    # 人に回ったが、疑いのゲートも立っている
+    # v0.7: 同義語で寄せた(手順3c)ので action_synonym_merge も立つ。どちらも
+    # 設計上の確認なので、正しい答えでも誤報は0件になる(W2・P30)
+    assert verdict.design_check_gates == [
+        "action_synonym_merge",
+        "action_abstract_selected",
+    ]
+    assert verdict.suspicion_gates == []
+    assert verdict.false_alarm_gates == []
+    # 人に回ったが、立ったのは設計上の確認だけ
     assert verdict.routed_to_human is True
-    assert verdict.design_check_only is False
+    assert verdict.design_check_only is True
 
 
 def test_an_item_with_only_a_design_check_gate_is_counted_separately(
@@ -1013,13 +1162,16 @@ def test_either_action_of_a_line_of_expectations_is_correct():
 def test_an_unrelated_action_on_a_line_of_expectations_is_a_mis_merge():
     """P25: 並びのどれとも親子関係にない既存を選べば誤統合(重大)。"""
     item, ledger = _alt_item(), _alt_ledger()
+    # v0.7: 「複写」を抜き出すと手順3a で正しく寄るので、台帳に無い動詞を抜き出し、
+    # 同義語の判定(手順3c)が「放置」と誤って答えた場合で確かめる
     result, _ = _normalize(
-        ledger, item["text"], [{"surface": "書類を複写", "core_verb": "複写"}], "放置",
+        ledger, item["text"], [{"surface": "書類", "core_verb": "書類"}], "放置",
         clause_ref=item["clause_ref"],
     )
     verdict = judge(item, result, ledger)
     assert verdict.verdict == "mis_merge"
     assert verdict.severe is True
+    assert "action_synonym_merge" in verdict.gates
 
 
 def test_the_ambiguous_gate_is_by_design_on_a_line_of_expectations():

@@ -26,7 +26,7 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from src.stage3_generate.ir_schema import DESIGN_CHECK_GATES, SUSPICION_GATES
+from src.stage3_generate.ir_schema import gate_kind
 
 from .modality import check_surface
 
@@ -43,8 +43,9 @@ def recompute(result: dict, gold: dict) -> dict:
     for item in items:
         gates = item["gates"]
         correct = item["verdict"] == "correct"
-        suspicion = [g for g in gates if g in SUSPICION_GATES]
-        design = [g for g in gates if g in DESIGN_CHECK_GATES]
+        # P30: 廃止したゲートも、当時の種類(gate_kind)で数える
+        suspicion = [g for g in gates if gate_kind(g) == "suspicion"]
+        design = [g for g in gates if gate_kind(g) == "design_check"]
         # P24: 条文と語句の両方から括弧を除いて、部分文字列かを確かめ直す
         trace_run = item["trace"]["run"] if item.get("trace") else {}
         raw = (trace_run.get("candidates") or [{}])[0].get("raw", item["actual"]["surface"])
@@ -167,7 +168,7 @@ def reclassify(result: dict, gold_v3: dict, registry_path: str | Path) -> dict:
         verdict = classify(item, fake, ledger)
         gates = old["gates"]
         severe = verdict in SEVERE
-        suspicion = [g for g in gates if g in SUSPICION_GATES]
+        suspicion = [g for g in gates if gate_kind(g) == "suspicion"]
         rows.append(
             {
                 "order": item["order"],

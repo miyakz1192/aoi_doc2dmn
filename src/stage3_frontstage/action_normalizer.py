@@ -6,15 +6,17 @@
 
 ## 手順(4.2節 v0.4)と、この実装での対応
 
-| 手順 | 中身 | 実装 |
-| --- | --- | --- |
-| 1 | 行為の語句を逐語で抜き出す(LLM。候補は2つまで・中心の動詞も) | `_extract_surface` |
-| 2 | 末尾の様相をプログラムで削り、条文にあるかを確かめる | `modality.check_surface` |
-| 3 | 台帳から選ぶか「該当なし」を選ぶ(LLM。段に合わせる) | `_choose_action` |
-| 4 | 動詞の一致をプログラムで確かめる | `_check_verb` |
-| 5 | 「該当なし」なら新規候補の名前・定義・段(LLM) | `_propose_action` |
+| 手順 | 誰が | 中身 | 実装 |
+| --- | --- | --- | --- |
+| 1 | LLM | 行為の語句を逐語で抜き出す(候補は2つまで・中心の動詞も) | `_extract_surface` |
+| 2 | プログラム | 末尾の様相を削り、条文にあるかを確かめる | `modality.check_surface` |
+| 3a | プログラム | 中心の動詞を台帳の過去の動詞と比べる。一致が1つならそこへ寄せ、2つ以上なら人に回す | `route_by_verb` |
+| 3b | プログラム | 抜き出した動詞のほかに台帳の動詞が条文に現れたら人に回す(P29) | `check_extraction` |
+| 3c | LLM | 3a で一致が無いときだけ、同義語かを聞く(**定義は渡さない**。W1) | `_judge_synonym` |
+| 4 | LLM | 同義語も無ければ新規候補の名前・定義・段(旧 手順5) | `_propose_action` |
 
-1件あたりの LLM の呼び出しは2回(新規候補なら3回)である(k=1。P7)。
+1件あたりの LLM の呼び出しは、3a で寄せたら1回、3c まで進めば2回、新規候補なら3回で
+ある(k=1。P7)。
 
 ## v0.4(第31回)での変更
 
@@ -27,11 +29,28 @@
 - **抽象的な段を選んだら** `action_abstract_selected`(P15)
 - **名前と定義に様相の語があれば** `action_name_rule`(P16)
 
+## v0.7(第38回)での変更
+
+- **寄せ方を動詞の規則にした**(P27)。既存に寄せるのは、中心の動詞が台帳の過去の
+  動詞と一致するときだけ。LLM は抜き出しと同義語の判定だけを行う
+- **使役の有無が違う動詞は一致としない**(P28)。「就業」と「就業させる」は別の行為
+- **抜き出しの検査**を足した(P29)。条文に台帳の別の動詞が残っていたら人に回す
+- **`action_verb_mismatch` を廃止**(P30)。動詞が合わないまま寄せるのは同義語の判定で
+  寄せた場合だけなので、`action_synonym_merge`(設計上の確認)に置き換えた
+- 手順3 の選択のプロンプト(定義を渡して台帳から選ばせる形)は無くなった。第37回の
+  誤統合8件は、定義を読んで「一番近い既存」を選んだ結果だった(前段 7.4節)
+
 ## 判断したこと(設計書に書かれていない点)
 
 - **中心の動詞の比べ方**: 完全一致、またはどちらかがもう片方を含むこと
-  (「従事」と「従事させ」のような送り仮名の差を同じ動詞として扱う)。形態素解析は
-  使わない(②と同じく、依存を増やさずに済む範囲で済ませる)
+  (「立ち入る」と「立ち入」のような送り仮名の差を同じ動詞として扱う)。ただし使役の
+  有無が違う組は一致としない(P28)。形態素解析は使わない(②と同じく、依存を
+  増やさずに済む範囲で済ませる)
+- **動詞の一致が2つ以上あったとき**: 宣言順の1つ目に寄せたうえで
+  `action_surface_ambiguous` を立てて人に回す(どちらの行為かは人の判断。語句の候補が
+  2つのときと同じ扱い)
+- **同義語の判定に渡すもの**: 中心の動詞と、台帳の名前・過去の動詞だけ。条文本文も
+  定義も渡さない(W1。定義が吸い寄せの原因だったため)
 - **出力に使う語句**: 候補が2つ出たときは1つ目を使う。2つとも Trace に残し、
   `action_surface_ambiguous` で人に回す(どちらが規制の対象かは人の判断。P17)
 - **選択のプロンプトに渡す語句**: 1つ目の候補(様相を削った後)
@@ -90,20 +109,79 @@ class SurfaceCandidate:
 
 
 @dataclass
-class VerbCheck:
-    """動詞の一致の検査(手順4。P15)。"""
+class VerbRouting:
+    """手順3a の記録: 動詞を比べて寄せる先を決めた過程(P27)。"""
 
     core_verb: str
-    compared: list[str]
-    matched: bool
+    matches: list[dict]
+    compared: dict[str, list[str]]
     reason: str
+
+    @property
+    def matched_names(self) -> list[str]:
+        return [m["name"] for m in self.matches]
+
+    @property
+    def single_match(self) -> Optional[str]:
+        """一致が1つのときだけその名前を返す。"""
+        return self.matches[0]["name"] if len(self.matches) == 1 else None
+
+    @property
+    def ambiguous(self) -> bool:
+        """一致が2つ以上(人に回す)。"""
+        return len(self.matches) > 1
 
     def to_json(self) -> dict:
         return {
             "core_verb": self.core_verb,
-            "compared": list(self.compared),
-            "matched": self.matched,
+            "matches": [dict(m) for m in self.matches],
+            "compared": {k: list(v) for k, v in self.compared.items()},
             "reason": self.reason,
+        }
+
+
+@dataclass
+class ExtractionCheck:
+    """手順3b の記録: 条文に残っている台帳の動詞(P29)。"""
+
+    core_verb: str
+    hits: list[dict]
+
+    @property
+    def flagged(self) -> bool:
+        return bool(self.hits)
+
+    @property
+    def short_hits(self) -> list[dict]:
+        """1〜2文字の動詞で当たったもの(誤って当たる恐れがある。報告用)。"""
+        return [h for h in self.hits if h["length"] <= 2]
+
+    def to_json(self) -> dict:
+        return {
+            "core_verb": self.core_verb,
+            "hits": [dict(h) for h in self.hits],
+            "flagged": self.flagged,
+            "short_hits": len(self.short_hits),
+        }
+
+
+@dataclass
+class SynonymJudgment:
+    """手順3c の記録: LLM の同義語の判定(P27・W1)。"""
+
+    core_verb: str
+    offered: dict[str, list[str]]
+    answer: Optional[str]
+    reason: str
+    raw_answer: str = ""
+
+    def to_json(self) -> dict:
+        return {
+            "core_verb": self.core_verb,
+            "offered": {k: list(v) for k, v in self.offered.items()},
+            "answer": self.answer,
+            "reason": self.reason,
+            "raw_answer": self.raw_answer,
         }
 
 
@@ -116,6 +194,8 @@ class NormalizationRun:
     choice: str
     reason: str
     definition_part: str
+    # 寄せた手順(P27): "3a"(動詞の一致)・"3c"(同義語)・"4"(新規候補)
+    route: str = "4"
     considered: list[dict] = field(default_factory=list)
 
     def to_json(self) -> dict:
@@ -130,6 +210,7 @@ class NormalizationRun:
             "choice": self.choice,
             "reason": self.reason,
             "definition_part": self.definition_part,
+            "route": self.route,
             "considered": [dict(c) for c in self.considered],
         }
 
@@ -170,7 +251,9 @@ class ActionNormalizationTrace:
     """レビューと評価のための記録(設計書4.4)。IR には入れない。"""
 
     run: NormalizationRun
-    verb_check: Optional[VerbCheck] = None
+    verb_routing: Optional[VerbRouting] = None
+    extraction_check: Optional[ExtractionCheck] = None
+    synonym_judgment: Optional[SynonymJudgment] = None
     candidates_considered: list[dict] = field(default_factory=list)
     new_action_proposal: Optional[NewActionProposal] = None
     duplicate_check: Optional[DuplicateCheck] = None
@@ -180,7 +263,13 @@ class ActionNormalizationTrace:
     def to_json(self) -> dict:
         return {
             "run": self.run.to_json(),
-            "verb_check": self.verb_check.to_json() if self.verb_check else None,
+            "verb_routing": self.verb_routing.to_json() if self.verb_routing else None,
+            "extraction_check": (
+                self.extraction_check.to_json() if self.extraction_check else None
+            ),
+            "synonym_judgment": (
+                self.synonym_judgment.to_json() if self.synonym_judgment else None
+            ),
             "candidates_considered": [dict(c) for c in self.candidates_considered],
             "new_action_proposal": (
                 self.new_action_proposal.to_json() if self.new_action_proposal else None
@@ -232,6 +321,22 @@ class ActionNormalizationResult:
 # --------------------------------------------------------------------------
 
 
+def _verb_block(ledger: ActionLedger) -> str:
+    """同義語の判定(手順3c)に渡す台帳の一覧(名前と過去の動詞だけ。W1)。
+
+    定義を渡さないのが v0.7 の要点である(P27)。定義を読むと「渡す」「得る」と
+    言い換えられる行為がすべて抽象の「提供」に吸い寄せられた(第37回 穴2)。
+    """
+    if not ledger.entries:
+        return "（台帳は空です。既存の Action はありません）"
+    lines = []
+    for i, entry in enumerate(ledger.entries, 1):
+        verbs = entry.core_verbs()
+        shown = "、".join(verbs) if verbs else "（まだ無い）"
+        lines.append(f"{i}. {entry.name}（これまでの動詞: {shown}）")
+    return "\n".join(lines)
+
+
 def _context_block(context: Optional[list[dict]]) -> str:
     """出典付きの context をプロンプトに入れる(IR v2 1.4節)。
 
@@ -278,59 +383,37 @@ SURFACE_PROMPT = """あなたは就業規則・情報セキュリティ規程な
  "rationale": "なぜその語句を選んだかを日本語で1文"}}
 """
 
-CHOICE_PROMPT = """あなたは業務規程の条文に出てくる行為を、既存の「Action 台帳」の
-どれに当たるかを判断するアシスタントです。Action 台帳は、あるAIエージェントが
-実行時に要求する行為の一覧(職務記述書)です。
+SYNONYM_PROMPT = """あなたは業務規程の条文に出てくる行為の動詞が、既存の
+「Action 台帳」にある行為の動詞と**同義**かどうかだけを判断するアシスタントです。
 
-台帳は2段からなります。
-- **具体的な行為**: 渡し方などを**動詞そのものが**決めている行為(例: 送る、伝える、
-  共有する)
-- **抽象的な行為**: 渡すことだけを言う行為(例: 提供する、漏洩する)。具体的な行為を
-  子に持ち、抽象的な行為への禁止は子すべてに及びます
+条文から抜き出した行為の中心の動詞: 「{core_verb}」
 
-Action の名前は**行為の種類(動詞)だけ**です。何を(対象)・どの権限で・どこで・
-誰に(宛先)・どうやって(「口頭で」のような副詞の手段)は、名前には入っておらず、
-別の欄(決定表の列)で判定します。
+Action 台帳にある行為の名前と、これまでにその行為に正規化された条文の中心の動詞:
+{verb_block}
 
-条文(参照: {clause_ref}):
-\"\"\"{clause_text}\"\"\"
-{context_block}
-この条文から抜き出した行為の語句: 「{surface}」（中心の動詞: 「{core_verb}」）
+この動詞が、上のどれかと**同じ行為を表す同義語**であるかを判断してください。
+次の規則を守ってください。
 
-Action 台帳:
-{ledger_block}
-
-この行為が、台帳のどれに当たるかを1つだけ選んでください。台帳のどれにも当たらない
-場合は「{no_match}」を選んでください。次の規則を守ってください。
-
-1. 選べるのは、台帳にある名前そのままか、「{no_match}」のどちらかだけです。
-   新しい名前を作ってはいけません
-2. 行為の**種類(動詞)**が同じかどうかで判断してください。**対象(何を)・権限・
-   場所・宛先・副詞の手段**、誰が・いつ・どの区分かといった条件が違っても、動詞が
-   同じなら同じ Action です
-   (例:「時間外労働に従事させる」と「休日労働に従事させる」は同じ行為。
-    「特権/管理者権限で操作する」と「機器を操作する」は、どちらも「操作」)
-3. 動詞が**同義**なら同じ Action です(例: 送信と転送、共有と共用、使用と利用)
-4. **段を合わせてください。**条文の動詞が渡すことだけを言うなら抽象的な行為を、
-   動詞そのものが渡し方を決めているなら具体的な行為を選びます
-   (例:「提供してはならない」は渡すことだけを言うので抽象的な行為。
-    「口頭で伝達してはならない」は動詞「伝達」が渡し方を決めているので具体的な行為。
-    「口頭で」は副詞の手段なので、行為の種類を分けません)
-5. 動詞が違えば別の Action です。動詞そのものが手段や向きを含む場合も別です
-   (例:「伝える」と「送る」は動詞が違う。「送る」と「取り出す」は向きが違う)
-6. **使役(させる)は動詞の一部**で、別の行為です
-   (例:「自ら働く(就業)」と「人を働かせる(労働指示)」は別の行為)
-7. 候補の「この Action に含まないもの」に書かれている行為であれば、それを選ばない
-8. 迷ったときは「{no_match}」を選んでください。誤って既存の Action に寄せると、
+1. 同義語とは、同じ行為を別の語で言うことです
+   (例: 「利用」と「使用」、「伝える」と「伝達」、「転送」と「送信」、
+    「共用」と「共有」、「ダウンロード」と「取り出し」)
+2. **向きが違う動詞は同義語ではありません**
+   (例: 「送信」と「受信」、「持込み」と「持出し」、「取得」と「提供」、
+    「立入り」と「離席」)
+3. 対象(何を)・権限・場所・宛先・副詞の手段(「口頭で」)が違っても、行為の種類
+   (動詞)が同じなら同義語です
+4. **使役(させる)の有無が違えば別の行為です**(例: 「就業」と「就業させる」)
+5. **上位・下位の関係は同義語ではありません。**より抽象的な行為(渡すことだけを
+   言う「提供」など)や、より具体的な行為は、同義語ではありません
+   (例: 「保存」と「提供」は同義語ではない。「撮影」と「提供」も同義語ではない)
+6. 迷ったときは「{no_match}」を選んでください。誤って既存の Action に寄せると、
    実行時にその条文の規制が別の判定に入ってしまいます
 
 出力は必ず次のJSON形式のみで返してください(前後に他のテキストを含めないこと):
-{{"choice": "台帳にある Action の名前、または {no_match}",
- "reason": "選んだ理由を日本語で1〜2文",
- "definition_part": "選んだ Action の定義のどの部分に当たるかを、定義から一言一句そのまま抜き出したもの(「{no_match}」のときは空文字列)",
- "considered": [{{"name": "検討したが選ばなかった Action の名前",
-  "why_not": "選ばなかった理由を日本語で1文"}}]}}
+{{"synonym_of": "台帳にある Action の名前、または {no_match}",
+ "reason": "同義語と判断した(またはしなかった)理由を日本語で1文"}}
 """
+
 
 PROPOSAL_PROMPT = """あなたは業務規程の条文に出てくる行為に、新しい Action の名前と
 定義を付けるアシスタントです。
@@ -384,22 +467,90 @@ PROPOSAL_PROMPT = """あなたは業務規程の条文に出てくる行為に�
 # --------------------------------------------------------------------------
 
 
+# P28: 使役の印。「させ」の有無が違う組は、同じ動詞として扱わない
+# (「就業」と「就業させる」、「従事」と「従事させ」は別の行為)。「知らせ」「任せる」の
+# ような「させ」を含まない語は、この印に当たらない。
+CAUSATIVE_MARK = "させ"
+
+
+def is_causative(verb: str) -> bool:
+    """その動詞が使役の形か(「させ」を含むか。P28)。"""
+    return CAUSATIVE_MARK in verb
+
+
 def core_verbs_match(core_verb: str, past_verbs: list[str]) -> tuple[bool, str]:
-    """中心の動詞が、過去の語句の動詞のどれかと一致するか(手順4。P15)。
+    """中心の動詞が、過去の語句の動詞のどれかと一致するか(手順3a。P27・P28)。
 
     完全一致、またはどちらかがもう片方を含むことを「一致」とする。送り仮名の差
-    (「従事」と「従事させ」)を同じ動詞として扱うためで、形態素解析は使わない。
+    (「立ち入る」と「立ち入」)を同じ動詞として扱うためで、形態素解析は使わない。
+
+    ただし**使役の有無だけが違う組は一致としない**(P28)。「就業」と「就業させる」は
+    別の行為(自ら働く／人を働かせる)なので、送り仮名の差と同じには扱えない。
     """
     if not core_verb:
         return False, "中心の動詞が空(抜き出しに失敗している)"
     if not past_verbs:
-        return False, "選んだ Action に過去の語句(中心の動詞)が無い"
+        return False, "比べる相手の動詞が無い(過去の語句が無い Action)"
     for past in past_verbs:
         if core_verb == past:
             return True, f"過去の語句の動詞 {past!r} と一致"
+        if is_causative(core_verb) != is_causative(past):
+            # P28: 片方だけが使役。含んでいても別の行為として扱う
+            continue
         if core_verb in past or past in core_verb:
             return True, f"過去の語句の動詞 {past!r} と送り仮名の差だけで一致"
     return False, f"過去の語句の動詞 {past_verbs} のどれとも一致しない"
+
+
+def route_by_verb(core_verb: str, ledger: ActionLedger) -> "VerbRouting":
+    """手順3a: 中心の動詞を台帳の過去の動詞と比べ、寄せる先を決める(P27)。
+
+    一致が1つならその Action に寄せる。2つ以上なら人に回す(どちらの行為かは人の
+    判断)。1つも無ければ手順3c(同義語の判定)へ進む。
+    """
+    matches: list[dict] = []
+    compared: dict[str, list[str]] = {}
+    for entry in ledger.entries:
+        verbs = entry.core_verbs()
+        compared[entry.name] = list(verbs)
+        matched, why = core_verbs_match(core_verb, verbs)
+        if matched:
+            matches.append({"name": entry.name, "reason": why})
+    if len(matches) == 1:
+        reason = f"動詞 {core_verb!r} が {matches[0]['name']!r} の過去の動詞と一致"
+    elif len(matches) > 1:
+        names = "、".join(m["name"] for m in matches)
+        reason = f"動詞 {core_verb!r} が2つ以上の Action と一致({names})ので人に回す"
+    else:
+        reason = f"動詞 {core_verb!r} と一致する過去の動詞が台帳に無い"
+    return VerbRouting(
+        core_verb=core_verb, matches=matches, compared=compared, reason=reason
+    )
+
+
+def check_extraction(
+    clause_text: str, core_verb: str, ledger: ActionLedger
+) -> "ExtractionCheck":
+    """手順3b: 抜き出した動詞のほかに、台帳の過去の動詞が条文に現れるか(P29)。
+
+    現れたら、抜き出しが条文の別の行為を拾い落としている恐れがあるので人に回す。
+    短い動詞(1〜2文字)で偶然当たることがあるため、当たった動詞の文字数も残す。
+    """
+    hits: list[dict] = []
+    seen: set[tuple[str, str]] = set()
+    for entry in ledger.entries:
+        for verb in entry.core_verbs():
+            if not verb or (entry.name, verb) in seen:
+                continue
+            if core_verbs_match(core_verb, [verb])[0]:
+                # 抜き出した動詞そのもの(送り仮名の差を含む)は数えない
+                continue
+            if verb in clause_text:
+                seen.add((entry.name, verb))
+                hits.append(
+                    {"action": entry.name, "core_verb": verb, "length": len(verb)}
+                )
+    return ExtractionCheck(core_verb=core_verb, hits=hits)
 
 
 class ActionNormalizer:
@@ -442,24 +593,37 @@ class ActionNormalizer:
             candidates.append(SurfaceCandidate(check=check, core_verb=verb))
         return candidates, str(parsed.get("rationale", ""))
 
-    def _choose_action(
+    def _judge_synonym(
         self,
-        clause_text: str,
-        clause_ref: str,
-        context: Optional[list[dict]],
         candidate: SurfaceCandidate,
         ledger: ActionLedger,
-    ) -> dict:
-        prompt = CHOICE_PROMPT.format(
-            clause_ref=clause_ref,
-            clause_text=clause_text,
-            context_block=_context_block(context),
-            surface=candidate.surface,
+    ) -> SynonymJudgment:
+        """手順3c: 動詞の一致が無かったときだけ、同義語かを LLM に聞く(P27・W1)。
+
+        渡すのは中心の動詞と、台帳の Action の名前・過去の動詞だけである。**定義は
+        渡さない。**第37回の誤統合8件は、定義を読んで「一番近い既存」を選んだ結果
+        だった(抽象の「提供」への寄せが5件。前段 7.4節)。
+        """
+        offered = {e.name: e.core_verbs() for e in ledger.entries}
+        prompt = SYNONYM_PROMPT.format(
             core_verb=candidate.core_verb,
-            ledger_block=ledger.prompt_block(),
+            verb_block=_verb_block(ledger),
             no_match=NO_MATCH,
         )
-        return self._ask(prompt)
+        parsed = self._ask(prompt)
+        raw = str(parsed.get("synonym_of", "")).strip()
+        answer: Optional[str] = raw if raw in offered else None
+        reason = str(parsed.get("reason", ""))
+        if raw and answer is None and raw != NO_MATCH:
+            # 閉じた選択を外れた答え(台帳にない名前)は「該当なし」として扱う(P5)
+            reason = f"[台帳にない名前 {raw!r} が返されたので同義語なしとして扱った] " + reason
+        return SynonymJudgment(
+            core_verb=candidate.core_verb,
+            offered=offered,
+            answer=answer,
+            reason=reason,
+            raw_answer=raw,
+        )
 
     def _propose_action(
         self,
@@ -507,10 +671,13 @@ class ActionNormalizer:
         *,
         context: Optional[list[dict]] = None,
     ) -> ActionNormalizationResult:
-        """1条文を正規化する。台帳は書き換えない(台帳の更新は呼び出し側の判断)。"""
+        """1条文を正規化する。台帳は書き換えない(台帳の更新は呼び出し側の判断)。
+
+        手順は v0.7 で変わった(P27。4.7節)。寄せるかどうかは**動詞の規則**で決め、
+        LLM は語句と動詞の抜き出し(手順1)と、同義語の判定(手順3c)だけを行う。
+        """
         started = time.monotonic()
         self.calls = 0
-        allowed = set(ledger.names())
 
         candidates, _rationale = self._extract_surface(clause_text, clause_ref, context)
         if not candidates:
@@ -520,39 +687,48 @@ class ActionNormalizer:
             ]
         primary = candidates[0]
 
-        chosen = self._choose_action(
-            clause_text, clause_ref, context, primary, ledger
-        )
-        choice = str(chosen.get("choice", "")).strip()
-        if choice not in allowed and choice != NO_MATCH:
-            # 閉じた選択を外れた答え(台帳にない名前)は「該当なし」として扱い、
-            # 理由にその旨を残す(新しい名前を作らせないため。P5)
-            reason = (
-                f"[台帳にない名前 {choice!r} が返されたので「{NO_MATCH}」として"
-                f"扱った] " + str(chosen.get("reason", ""))
-            )
-            choice = NO_MATCH
+        # 手順3a(プログラム): 動詞を比べる
+        routing = route_by_verb(primary.core_verb, ledger)
+        # 手順3b(プログラム): 抜き出しを確かめる(P29)
+        extraction = check_extraction(clause_text, primary.core_verb, ledger)
+
+        synonym: Optional[SynonymJudgment] = None
+        if routing.single_match is not None:
+            choice = routing.single_match
+            route = "3a"
+            reason = routing.reason
+        elif routing.ambiguous:
+            # 一致が2つ以上。1つ目に寄せたうえで人に回す(どちらの行為かは人の判断)
+            choice = routing.matches[0]["name"]
+            route = "3a"
+            reason = routing.reason
         else:
-            reason = str(chosen.get("reason", ""))
+            synonym = self._judge_synonym(primary, ledger)
+            if synonym.answer is not None:
+                choice = synonym.answer
+                route = "3c"
+                reason = f"動詞の一致は無いが、同義語と判定した: {synonym.reason}"
+            else:
+                choice = NO_MATCH
+                route = "4"
+                reason = f"{routing.reason}／同義語も無い: {synonym.reason}"
 
         run = NormalizationRun(
             temperature=self.temperature,
             candidates=candidates,
             choice=choice,
             reason=reason,
-            definition_part=str(chosen.get("definition_part", "")),
-            considered=[
-                {"name": str(c.get("name", "")), "why_not": str(c.get("why_not", ""))}
-                for c in (chosen.get("considered") or [])
-                if isinstance(c, dict)
-            ],
+            # 定義は手順3c に渡していないので、定義のどの部分かは答えさせない(W1)
+            definition_part="",
+            route=route,
+            considered=[],
         )
 
         proposal: Optional[NewActionProposal] = None
         duplicate: Optional[DuplicateCheck] = None
-        verb_check: Optional[VerbCheck] = None
         existing_kind = ACTION_CONCRETE
         if choice == NO_MATCH:
+            # 手順4(旧 手順5): 新規候補の名前・定義・段の案
             proposal = self._propose_action(
                 clause_text, clause_ref, context, primary, ledger
             )
@@ -563,14 +739,6 @@ class ActionNormalizer:
             normalized = choice
             is_new = False
             entry = ledger.find(choice)
-            past_verbs = entry.core_verbs() if entry else []
-            matched, why = core_verbs_match(primary.core_verb, past_verbs)
-            verb_check = VerbCheck(
-                core_verb=primary.core_verb,
-                compared=past_verbs,
-                matched=matched,
-                reason=why,
-            )
             existing_kind = entry.kind if entry else ACTION_CONCRETE
 
         action = ActionRef(
@@ -584,8 +752,13 @@ class ActionNormalizer:
         gates = ReviewGates(
             new_action_unapproved=is_new and action.approved_by is None,
             action_surface_unverified=not primary.check.ok,
-            action_surface_ambiguous=len(candidates) > 1,
-            action_verb_mismatch=bool(verb_check and not verb_check.matched),
+            # 語句の候補が2つ(P17)・動詞の一致が2つ以上(P27)・条文に台帳の別の動詞が
+            # 残っている(P29)のいずれか
+            action_surface_ambiguous=(
+                len(candidates) > 1 or routing.ambiguous or extraction.flagged
+            ),
+            # P30: 動詞が合わないまま寄せたのは、同義語の判定で寄せた場合だけ
+            action_synonym_merge=route == "3c",
             action_abstract_selected=(
                 existing_kind == ACTION_ABSTRACT
                 if not is_new
@@ -596,8 +769,10 @@ class ActionNormalizer:
         )
         trace = ActionNormalizationTrace(
             run=run,
-            verb_check=verb_check,
-            candidates_considered=run.considered,
+            verb_routing=routing,
+            extraction_check=extraction,
+            synonym_judgment=synonym,
+            candidates_considered=[],
             new_action_proposal=proposal,
             duplicate_check=duplicate,
             elapsed_seconds=time.monotonic() - started,

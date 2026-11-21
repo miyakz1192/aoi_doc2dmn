@@ -16,6 +16,7 @@
 | 適用漏れ | 正解は抽象的な Action なのに、その子孫を選んだ | **重大** |
 | 過剰適用 | 正解は具体的な Action なのに、その祖先を選んだ | 中(安全側に倒れる) |
 | 取りこぼし | 正解は既存なのに、新規にした | 軽(ゲートで人が拾える) |
+| 新規の取り違え | 正解も新規だが、名前の動詞が正解と合わない別の行為 | 中(v0.7 で追加。5.1節) |
 
 - **すり抜け**: 重大な誤りのうち、ゲートが1つも立たなかった件数。**0件が合格の条件**
 - **ゲートの誤報**: 正しい結果なのに立った**疑いの**ゲートの件数(人の負担の目安)
@@ -28,8 +29,11 @@
 
 | 種類 | ゲート | 誤報に数えるか |
 | --- | --- | --- |
-| 疑い | surface_unverified・surface_ambiguous・verb_mismatch・possible_duplicate・name_rule | 数える |
-| 設計上の確認 | new_action_unapproved・action_abstract_selected | 数えない |
+| 疑い | surface_unverified・surface_ambiguous・possible_duplicate・name_rule | 数える |
+| 設計上の確認 | new_action_unapproved・action_abstract_selected・action_synonym_merge | 数えない |
+
+v0.7 で `action_verb_mismatch` を廃止し(P30)、`action_synonym_merge` を設計上の確認に
+入れた(W2)。
 
 - **人に回る割合**: ゲートが1本以上立った件数。「設計上の確認だけ」と「疑いのゲート
   あり」に分ける。合格の条件「すり抜け0件」は全件にゲートを立てても満たせるので、
@@ -82,6 +86,7 @@ from .action_normalizer import (
     ActionNormalizationResult,
     ActionNormalizer,
     OllamaJsonLlm,
+    core_verbs_match,
 )
 from .modality import check_surface
 
@@ -94,6 +99,8 @@ CLASS_LABELS = {
     "under_applied": "適用漏れ",
     "over_applied": "過剰適用",
     "missed": "取りこぼし",
+    # 5.1節 v0.7: 正解も出力も新規だが、別の行為を新規にした(第37回の項目10)
+    "new_mismatch": "新規の取り違え",
 }
 REGISTRY_PATH = "registry/registry.json"
 OUT_DIR = "out/action_eval"
@@ -116,11 +123,23 @@ def expectations(item: dict) -> list[dict]:
 def _matches(expected: dict, chosen: str, is_new: bool) -> bool:
     """出力が1つの正解と一致するか。
 
-    新規にした場合、名前は文字列で比べない(名前の付け方には幅があり、人が承認して
-    決める。5.1節)。既存を選んだ場合は Action 名で比べる。
+    既存を選んだ場合は Action 名で比べる。
+
+    新規にした場合、名前は文字列そのままでは比べない(名前の付け方には幅があり、人が
+    承認して決める。5.1節)。ただし v0.7 からは**名前の動詞**を比べる(Q2・第37回 穴1)。
+    出力の名前が、正解の名前か正解の中心の動詞と一致しなければ、別の行為を新規に
+    したことになる(第37回の項目10: 正解は受信、出力は暗号化)。比べ方は手順3a と同じ
+    `core_verbs_match`(使役の有無が違えば別の行為。P28)。
     """
     if is_new:
-        return bool(expected["is_new"])
+        if not expected["is_new"]:
+            return False
+        compared = [
+            v
+            for v in (expected["normalized"], expected.get("core_verb", ""))
+            if v
+        ]
+        return core_verbs_match(chosen, compared)[0]
     return (not expected["is_new"]) and chosen == expected["normalized"]
 
 
@@ -160,6 +179,12 @@ class ItemResult:
     core_verb: str
     verdict: str
     gates: list[str]
+    # v0.7: どの手順で寄せたか("3a"・"3c"・"4")と、同義語の判定の答え(P27)
+    route: str
+    synonym_answer: Optional[str]
+    synonym_reason: str
+    verb_matches: list[str]
+    extraction_hits: list[dict]
     surface_in_clause: bool
     surface_no_modality: bool
     surface_has_core_verb: bool
@@ -277,6 +302,11 @@ class ItemResult:
             },
             "verdict": self.verdict,
             "verdict_label": CLASS_LABELS[self.verdict],
+            "route": self.route,
+            "synonym_answer": self.synonym_answer,
+            "synonym_reason": self.synonym_reason,
+            "verb_matches": list(self.verb_matches),
+            "extraction_hits": [dict(h) for h in self.extraction_hits],
             "severe": self.severe,
             "slipped": self.slipped,
             "false_alarm_gates": self.false_alarm_gates,
@@ -313,6 +343,9 @@ def classify(item: dict, result: ActionNormalizationResult, ledger: ActionLedger
     if any(_matches(exp, chosen, is_new) for exp in options):
         return "correct"
     if is_new:
+        if any(exp["is_new"] for exp in options):
+            # 正解も新規だが、別の行為を新規にした(5.1節 v0.7。重さは中)
+            return "new_mismatch"
         # 新規にしたが、どの正解も既存だった
         return "missed"
     # 誤りの分類は、出力に最も近い正解(同じ系統のもの)と比べて決める(P25)
@@ -362,6 +395,25 @@ def judge(item: dict, result: ActionNormalizationResult, ledger: ActionLedger) -
         core_verb=run.candidates[0].core_verb if run.candidates else "",
         verdict=verdict,
         gates=result.gates.gate_names(),
+        route=run.route,
+        synonym_answer=(
+            result.trace.synonym_judgment.answer
+            if result.trace.synonym_judgment
+            else None
+        ),
+        synonym_reason=(
+            result.trace.synonym_judgment.reason
+            if result.trace.synonym_judgment
+            else ""
+        ),
+        verb_matches=(
+            result.trace.verb_routing.matched_names if result.trace.verb_routing else []
+        ),
+        extraction_hits=(
+            list(result.trace.extraction_check.hits)
+            if result.trace.extraction_check
+            else []
+        ),
         surface_in_clause=surface_check.in_clause,
         surface_no_modality=not surface_check.modality_found,
         # P25: 並びのどれかの中心の動詞を含んでいればよい
@@ -460,12 +512,29 @@ class OracleJsonLlm:
 
     def __init__(self, items: list[dict]) -> None:
         self.by_text = {item["text"]: item for item in items}
+        # 手順3c のプロンプトには条文本文を入れない(W1)ので、中心の動詞で引く
+        self.by_verb: dict[str, dict] = {}
+        for item in items:
+            for exp in expectations(item):
+                verb = exp.get("core_verb", "")
+                if verb:
+                    self.by_verb.setdefault(verb, item)
 
     def complete_json(self, prompt: str, *, temperature: float) -> dict:
         item = next(
             (i for t, i in self.by_text.items() if t in prompt),
             None,
         )
+        if item is None:
+            # 条文が無いプロンプト(手順3c)は、提示された中心の動詞で引く
+            item = next(
+                (
+                    i
+                    for verb, i in self.by_verb.items()
+                    if f"中心の動詞: 「{verb}」" in prompt
+                ),
+                None,
+            )
         if item is None:
             raise AssertionError("OracleJsonLlm: プロンプトに条文が見つかりません")
         expected = item["expected"]
@@ -482,14 +551,12 @@ class OracleJsonLlm:
                 ],
                 "rationale": "(正解)",
             }
-        if "どれに当たるかを1つだけ選んで" in prompt:
-            choice = NO_MATCH if expected["is_new"] else expected["normalized"]
-            return {
-                "choice": choice,
-                "reason": "(正解)",
-                "definition_part": "",
-                "considered": [],
-            }
+        if "同じ行為を表す同義語" in prompt:
+            # 手順3c。正解が既存なら、その名前を同義語として返す(動詞の一致で寄らな
+            # かった項目をオラクルでも正しく寄せられるようにする)。正解が新規なら
+            # 「該当なし」
+            answer = NO_MATCH if expected["is_new"] else expected["normalized"]
+            return {"synonym_of": answer, "reason": "(正解)"}
         definition = expected.get("definition") or item.get("definition") or {}
         return {
             "name": expected["normalized"],
@@ -514,22 +581,25 @@ def load_ledger(gold: dict, registry_path: str | Path) -> ActionLedger:
     - **保留用(split=holdout)**: 出発点は「開発用18件の正解をすべて足し終えた状態」
       (v3 で11件)で、登録簿には無い。正解ファイルの `ledger_seed` から作り、登録簿の
       エントリがその中にあること(定義まで一致すること)だけを確かめる(第33回4.1節)
+    - **`_meta.ledger_source` が `"seed"`**: 開発用(split=dev)でも、出発点が育った
+      台帳の場合はこちら(第38回 タスクC2 の dev2。旧保留用を開発用に移したもの)
     """
     registry = Registry.load(registry_path)
     seed = gold.get("ledger_seed", [])
-    if gold.get("_meta", {}).get("split") == "holdout":
+    meta = gold.get("_meta", {})
+    if meta.get("split") == "holdout" or meta.get("ledger_source") == "seed":
         ledger = ActionLedger.from_json(seed)
         by_name = {e["name"]: e for e in seed}
         for entry in registry.action_ledger:
             found = by_name.get(entry["name"])
             if found is None:
                 raise SystemExit(
-                    f"登録簿の Action {entry['name']!r} が保留用の ledger_seed に"
+                    f"登録簿の Action {entry['name']!r} が ledger_seed に"
                     "ありません(出発点は開発用18件を足し終えた台帳のはず)"
                 )
             if found["definition"] != entry["definition"]:
                 raise SystemExit(
-                    f"Action {entry['name']!r} の定義が登録簿と保留用の ledger_seed で"
+                    f"Action {entry['name']!r} の定義が登録簿と ledger_seed で"
                     f"違います:\n  登録簿: {entry['definition']!r}\n"
                     f"  正解ファイル: {found['definition']!r}"
                 )
@@ -656,6 +726,7 @@ def run(
             mark = "OK" if judged.correct else ("すり抜け" if judged.slipped else "NG")
             print(
                 f"      [{mark}] {CLASS_LABELS[judged.verdict]} "
+                f"[手順{judged.route}] "
                 f"surface={judged.surface!r}"
                 f"(削った様相={judged.removed_modality}／動詞={judged.core_verb!r}) "
                 f"→ {judged.chosen!r}({judged.chosen_kind}, is_new={judged.is_new}) "
@@ -760,6 +831,44 @@ def run(
         "alternatives_ambiguous_raised": sum(
             1 for r in results if r.is_alternatives and r.surface_ambiguous
         ),
+        # --- v0.7 で足した指標(P27〜P30・PU12) ---
+        # どの手順で寄せたか
+        "routed_by": {
+            route: sum(1 for r in results if r.route == route)
+            for route in ("3a", "3c", "4")
+        },
+        # 手順3a で寄せた件のうち、正しかった件数
+        "route_3a_correct": sum(
+            1 for r in results if r.route == "3a" and r.correct
+        ),
+        # 手順3c(同義語)で寄せた件のうち、正しかった件数(PU12: 誤った同義語の判定)
+        "route_3c_correct": sum(
+            1 for r in results if r.route == "3c" and r.correct
+        ),
+        "synonym_merges": [
+            {
+                "order": r.order,
+                "clause_id": r.clause_id,
+                "core_verb": r.core_verb,
+                "answer": r.synonym_answer,
+                "reason": r.synonym_reason,
+                "verdict": r.verdict,
+                "correct": r.correct,
+            }
+            for r in results
+            if r.route == "3c"
+        ],
+        # 手順3b(P29): 条文に台帳の別の動詞が残っていた件数と、短い動詞で当たった数
+        "extraction_check_items": sum(1 for r in results if r.extraction_hits),
+        "extraction_check_hits": sum(len(r.extraction_hits) for r in results),
+        "extraction_check_short_hits": sum(
+            1 for r in results for h in r.extraction_hits if h["length"] <= 2
+        ),
+        "extraction_check_detail": [
+            {"order": r.order, "clause_id": r.clause_id, "hits": r.extraction_hits}
+            for r in results
+            if r.extraction_hits
+        ],
         "elapsed_seconds_total": round(elapsed, 1),
         "elapsed_seconds_per_item": round(elapsed / max(len(results), 1), 1),
         "llm_calls_total": sum(r.llm_calls for r in results),
@@ -812,6 +921,22 @@ def print_summary(out: dict) -> None:
         f"（部分文字列 {s['surface_in_clause']}／様相なし {s['surface_no_modality']}／"
         f"中心の動詞 {s['surface_has_core_verb']}）"
     )
+    routed = s.get("routed_by") or {}
+    if routed:
+        print(
+            f"  寄せ方: 手順3a(動詞の一致) {routed.get('3a', 0)}件"
+            f"（正しい {s.get('route_3a_correct', 0)}）／"
+            f"手順3c(同義語) {routed.get('3c', 0)}件"
+            f"（正しい {s.get('route_3c_correct', 0)}）／"
+            f"新規候補 {routed.get('4', 0)}件"
+        )
+    if s.get("extraction_check_items"):
+        print(
+            f"  抜き出しの検査（P29）: {s['extraction_check_items']}件で"
+            f"台帳の別の動詞が条文に残っていた"
+            f"（当たった動詞 {s['extraction_check_hits']}個／"
+            f"うち1〜2文字 {s['extraction_check_short_hits']}個）"
+        )
     print("  立ったゲート:")
     for gate, count in sorted(s["gates"].items(), key=lambda kv: -kv[1]):
         kind = "疑い" if gate in SUSPICION_GATES else "設計上の確認"
@@ -877,7 +1002,7 @@ def print_summary(out: dict) -> None:
             mark = "すり抜け" if i["slipped"] else ("重大" if i["severe"] else "軽〜中")
             trace = i["trace"] or {}
             run = trace.get("run") or {}
-            verb = trace.get("verb_check") or {}
+            verb = trace.get("verb_routing") or {}
             print(
                 f"  [{i['verdict_label']}／{mark}] {i['clause_id']}: "
                 f"正解 {i['expected']['normalized']}"
@@ -886,13 +1011,20 @@ def print_summary(out: dict) -> None:
                 f"({i['actual']['kind']}, is_new={i['actual']['is_new']})"
             )
             print(f"      ゲート: {i['gates']}")
-            print(f"      理由: {run.get('reason', '')}")
+            print(f"      手順: {i.get('route')}／理由: {run.get('reason', '')}")
             if verb:
                 print(
-                    f"      動詞の一致: {verb.get('core_verb')!r} vs "
-                    f"{verb.get('compared')} → {verb.get('matched')}"
+                    f"      動詞の一致(手順3a): {verb.get('core_verb')!r} → "
+                    f"{[m['name'] for m in verb.get('matches', [])]}"
                     f"（{verb.get('reason')}）"
                 )
+            if i.get("synonym_answer") or i.get("route") == "3c":
+                print(
+                    f"      同義語の判定(手順3c): {i.get('synonym_answer')!r}"
+                    f"（{i.get('synonym_reason')}）"
+                )
+            if i.get("extraction_hits"):
+                print(f"      抜き出しの検査(手順3b): {i['extraction_hits']}")
 
 
 def main(argv: Optional[list[str]] = None) -> int:

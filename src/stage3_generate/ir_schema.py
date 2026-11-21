@@ -111,6 +111,15 @@ v1(コミット 9e66776)との差分は同書 付録A。
   だけで立つ。様相はプログラムが削るので(P4)、様相が残っていること自体は
   ゲートにしない(評価の surface の3条件では引き続き数える)
 
+## v1.12 で変わった点(前段設計書 v0.7 の4.7節・P27〜P30)
+
+寄せ方を動詞の規則にしたので、前段のゲートを入れ替えた。IR の型は変わっていない。
+
+- **廃止**: `action_verb_mismatch`(P30)。動詞が一致しないかぎり既存に寄せないので、
+  「寄せたが動詞が合わない」という状態が起きない。名前は `RETIRED_GATES` に残す
+- **追加**: `action_synonym_merge`(P27・P30)。動詞が一致しなかったが、LLM が同義語と
+  判定して既存に寄せた場合に立つ。**設計上の確認**に入れる(誤報に数えない。W2)
+
 ## 引き継ぐ原則(設計書1.4)
 
 - 4点セットの同時生成、複合 fact 禁止、FIRST と行の順序、来歴の表し方、Action 正規化
@@ -160,14 +169,25 @@ def clear_ir_load_warnings() -> None:
 SUSPICION_GATES: tuple[str, ...] = (
     "action_surface_unverified",
     "action_surface_ambiguous",
-    "action_verb_mismatch",
     "action_possible_duplicate",
     "action_name_rule",
 )
 DESIGN_CHECK_GATES: tuple[str, ...] = (
     "new_action_unapproved",
     "action_abstract_selected",
+    "action_synonym_merge",
 )
+
+# 廃止したゲート(P30・P7)。立つことはないが、過去の評価の記録(第32回・第37回の
+# 生データ)を読み直すときに種類が分からないと指標を計算し直せないので、名前と
+# 当時の種類だけ残す。
+RETIRED_GATES: dict[str, str] = {
+    # k=1 にしたので廃止(P7。第31回)
+    "action_mapping_unstable": "suspicion",
+    # 寄せ方を動詞の規則にしたので廃止(P30。第38回)。動詞が一致しなければ
+    # そもそも既存に寄せないため、「寄せたが動詞が合わない」が起きない
+    "action_verb_mismatch": "suspicion",
+}
 
 
 def gate_kind(name: str) -> str:
@@ -181,6 +201,9 @@ def gate_kind(name: str) -> str:
         return "suspicion"
     if name in DESIGN_CHECK_GATES:
         return "design_check"
+    # 廃止したゲートは、当時の種類を返す(過去の記録を読み直すため。P30)
+    if name in RETIRED_GATES:
+        return RETIRED_GATES[name]
     return "other"
 
 
@@ -814,8 +837,9 @@ class ReviewGates:
     action_surface_unverified: bool = False
     # 行為の語句の候補が2つ出た(P17)。どちらが規制の対象かを人が見る。
     action_surface_ambiguous: bool = False
-    # 既存に寄せたが、中心の動詞が選んだ Action の過去の語句の動詞にない(P15)。
-    action_verb_mismatch: bool = False
+    # 動詞が一致しなかったが、LLM が同義語と判定して既存に寄せた(P27・P30)。
+    # 寄せ方を動詞の規則にしたので、「動詞が合わないまま寄せた」はここだけで起きる。
+    action_synonym_merge: bool = False
     # 抽象的な段の Action を選んだ(P15)。禁止が子すべてに及ぶので人が段を確かめる。
     action_abstract_selected: bool = False
     # 新規候補の名前・定義に規範の様相の語がある(P16)。
@@ -838,7 +862,7 @@ class ReviewGates:
             "new_primitive_required",
             "action_surface_unverified",
             "action_surface_ambiguous",
-            "action_verb_mismatch",
+            "action_synonym_merge",
             "action_abstract_selected",
             "action_name_rule",
             "action_possible_duplicate",
@@ -864,9 +888,9 @@ class ReviewGates:
             out.append("様相を削った行為の語句が条文に逐語で実在しない")
         if self.action_surface_ambiguous:
             out.append("行為の語句の候補が2つ出た(どちらが規制の対象か)")
-        if self.action_verb_mismatch:
+        if self.action_synonym_merge:
             out.append(
-                "既存の Action に寄せたが、中心の動詞がその Action の過去の語句にない"
+                "動詞は一致しなかったが、同義語と判定して既存の Action に寄せた"
             )
         if self.action_abstract_selected:
             out.append("抽象的な段の Action を選んだ(段は正しいか)")

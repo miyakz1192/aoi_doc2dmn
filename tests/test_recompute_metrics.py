@@ -104,7 +104,11 @@ def test_reclassifying_round32_with_the_v3_answers():
     out = reclassify(result, gold_v3, ROOT / "registry" / "registry.json")
     assert out["slipped"] == 0
     assert out["by_verdict"] == {
-        "correct": 13, "mis_merge": 2, "under_applied": 0, "over_applied": 2, "missed": 1
+        "correct": 13, "mis_merge": 2, "under_applied": 0, "over_applied": 2,
+        "missed": 1,
+        # 5.1節 v0.7 の「新規の取り違え」: 第32回は0件(新規どうしの4件は
+        # 「私的使用／使用」のように名前の動詞が正解と一致する)
+        "new_mismatch": 0,
     }
     assert out["changed"] == []
     item9 = out["rows"][8]
