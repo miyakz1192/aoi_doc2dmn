@@ -1,0 +1,148 @@
+[ 1/18] 項目1 ipa_secguide_v4_6_7_1 (台帳 1件) ...
+      [OK] 正しい [手順4] surface='特権/管理者権限で操作を行う'(削った様相=[]／動詞='操作を行う') → '操作'(concrete, is_new=True) ゲート=['new_action_unapproved'] 156秒／3回
+      台帳に追加: 操作(concrete)
+[ 2/18] 項目2 mhlw_r7dec_art11_1 (台帳 2件) ...
+      [NG] 誤統合 [手順3c] surface='許可なく職務以外の目的で会社の施設、物品等を使用'(削った様相=['しないこと']／動詞='使用') → '操作'(concrete, is_new=False) ゲート=['action_synonym_merge'] 110秒／2回
+      台帳に追加: 使用(concrete)
+[ 3/18] 項目3 ipa_secguide_v4_personnel_2 (台帳 3件) ...
+      [OK] 正しい [手順4] surface='提供'(削った様相=['してはならない']／動詞='提供') → '提供'(concrete, is_new=True) ゲート=['new_action_unapproved'] 161秒／3回
+      台帳に追加: 提供(abstract)／親を付けた: 送信 → 提供
+[ 4/18] 項目4 mhlw_r7dec_art21_3 (台帳 4件) ...
+      [OK] 正しい [手順4] surface='時間外労働又は休日若しくは深夜労働に従事させ'(削った様相=['ない']／動詞='従事させ') → '労働指示'(concrete, is_new=True) ゲート=['new_action_unapproved'] 188秒／3回
+      台帳に追加: 労働指示(concrete)
+[ 5/18] 項目5 aoi_johokanri_art14 (台帳 5件) ...
+      [NG] 過剰適用 [手順3c] surface='口頭で伝達'(削った様相=['してはならない']／動詞='伝達') → '提供'(abstract, is_new=False) ゲート=['action_synonym_merge', 'action_abstract_selected'] 102秒／2回
+      台帳に追加: 伝達(concrete)
+[ 6/18] 項目6 ipa_secguide_v4_6_1_5 (台帳 6件) ...
+      [NG] 誤統合 [手順3a] surface='私有機器を使用'(削った様相=[]／動詞='使用') → '使用'(concrete, is_new=False) ゲート=['action_surface_ambiguous'] 46秒／1回
+      語句を追加: 操作 ← 特権操作
+[ 7/18] 項目7 ipa_secguide_v4_6_10_priv_name (台帳 6件) ...
+      [NG] 過剰適用 [手順3c] surface='1つの特権アカウント名を2名以上で共用'(削った様相=['しない']／動詞='共用') → '提供'(abstract, is_new=False) ゲート=['action_synonym_merge', 'action_abstract_selected'] 99秒／2回
+      台帳に追加: 共有(concrete)
+[ 8/18] 項目8 mhlw_r7dec_art11_5 (台帳 7件) ...
+      [NG] 適用漏れ [手順3c] surface='漏洩'(削った様相=['しないこと']／動詞='漏洩') → '共有'(concrete, is_new=False) ゲート=['action_synonym_merge'] 95秒／2回
+      語句を追加: 提供 ← 機密を漏洩
+[ 9/18] 項目9 ipa_secguide_v4_2_3_3_forward (台帳 7件) ...
+      [OK] 正しい [手順3c] surface='社用メールアドレスで受信したメールを従業員個人のアドレスに転送すること'(削った様相=[]／動詞='転送') → '送信'(concrete, is_new=False) ゲート=['action_synonym_merge'] 103秒／2回
+      語句を追加: 送信 ← 従業員個人のアドレスに転送
+[10/18] 項目10 ipa_secguide_v4_2_3_3_send (台帳 7件) ...
+      [NG] 誤統合 [手順3c] surface='社内で利用したデータを従業員個人のアドレスに送信すること'(削った様相=[]／動詞='送信') → '伝達'(concrete, is_new=False) ゲート=['action_synonym_merge'] 99秒／2回
+      語句を追加: 送信 ← 従業員個人のアドレスに送信
+[11/18] 項目11 ipa_secguide_v4_7_3_export (台帳 7件) ...
+      [OK] 正しい [手順4] surface='メールサーバーからのメールの取り出し及びエクスポート'(削った様相=[]／動詞='取り出し及びエクスポート') → '取り出し及びエクスポート'(concrete, is_new=True) ゲート=['new_action_unapproved'] 207秒／3回
+      台帳に追加: 取り出し(concrete)
+[12/18] 項目12 mhlw_r7dec_art11_6 (台帳 8件) ...
+      [OK] 正しい [手順4] surface='酒気を帯びて就業'(削った様相=[]／動詞='就業') → '就業'(concrete, is_new=True) ゲート=['new_action_unapproved'] 189秒／3回
+      台帳に追加: 就業(concrete)
+[13/18] 項目13 mhlw_r7dec_art25_2 (台帳 9件) ...
+      [NG] 取りこぼし [手順4] surface='就業させ'(削った様相=['ない']／動詞='就業させる') → '就業指示'(concrete, is_new=True) ゲート=['new_action_unapproved', 'action_surface_ambiguous', 'action_possible_duplicate'] 184秒／3回
+      語句を追加: 労働指示 ← 就業させ
+[14/18] 項目14 mhlw_r7dec_art21_4 (台帳 9件) ...
+      [OK] 正しい [手順3a] surface='所定労働時間外労働又は休日労働に従事させ'(削った様相=['ない']／動詞='従事させ') → '労働指示'(concrete, is_new=False) ゲート=[] 55秒／1回
+      語句を追加: 労働指示 ← 所定労働時間外労働又は休日労働に従事させ
+[15/18] 項目15 ipa_secguide_v4_phys_3_printer (台帳 9件) ...
+      [OK] 正しい [手順4] surface='原稿、印刷物を放置'(削った様相=['しない']／動詞='放置') → '放置'(concrete, is_new=True) ゲート=['new_action_unapproved'] 194秒／3回
+      台帳に追加: 放置(concrete)
+[16/18] 項目16 ipa_secguide_v4_phys_1_2_level1 (台帳 10件) ...
+      [OK] 正しい [手順3a] surface='放置'(削った様相=[]／動詞='放置') → '放置'(concrete, is_new=False) ゲート=['action_surface_ambiguous'] 51秒／1回
+      語句を追加: 放置 ← 情報資産の放置
+[17/18] 項目17 mhlw_r7dec_art58_3_6 (台帳 10件) ...
+      [OK] 正しい [手順4] surface='立ち入ら'(削った様相=['ない']／動詞='立ち入る') → '立入り'(concrete, is_new=True) ゲート=['new_action_unapproved'] 189秒／3回
+      台帳に追加: 立入り(concrete)
+[18/18] 項目18 mhlw_r7dec_art58_3_4 (台帳 11件) ...
+      [OK] 正しい [手順3a] surface='立ち入ら'(削った様相=['ない']／動詞='立ち入る') → '立入り'(concrete, is_new=False) ゲート=[] 49秒／1回
+      語句を追加: 立入り ← 喫煙可能な場所には立ち入ら
+
+== 集計 ==
+  件数: 18
+  **すり抜け(ゲートが立たなかった重大な誤り): 0件**（合格の条件は0件。P9）
+  重大な誤り(誤統合・適用漏れ): 4件
+    正しい: 11件
+    誤統合: 3件
+    適用漏れ: 1件
+    過剰適用: 2件
+    取りこぼし: 1件
+    新規の取り違え: 0件
+  既存か新規かの判定: 14/18
+  既存の Action の選択: 4/8
+  surface の3条件: 17/18（部分文字列 18／様相なし 18／中心の動詞 17）
+  寄せ方: 手順3a(動詞の一致) 4件（正しい 3）／手順3c(同義語) 6件（正しい 1）／新規候補 8件
+  抜き出しの検査（P29）: 3件で台帳の別の動詞が条文に残っていた（当たった動詞 3個／うち1〜2文字 3個）
+  立ったゲート:
+    new_action_unapproved: 8件（設計上の確認）
+    action_synonym_merge: 6件（設計上の確認）
+    action_surface_ambiguous: 3件（疑い）
+    action_abstract_selected: 2件（設計上の確認）
+    action_possible_duplicate: 1件（疑い）
+  ゲートの誤報（疑いのゲートだけ。P21）: 1件 {'action_surface_ambiguous': 1}
+  人に回る割合: 16/18（疑いのゲートあり 3／設計上の確認だけ 13／自動で通った 2）
+  疑いのゲートの適合率: 2/3（67%）
+    action_possible_duplicate: 1/1
+    action_surface_ambiguous: 2/3
+  新規候補の段の一致: 6/7（P23）
+  所要時間: 合計 2277秒／1件あたり 126秒（LLM 呼び出し 40回）
+
+== 新規候補の一覧（名前・定義に条件が入っているかは人が判定する。P23）==
+  [ 1] ipa_secguide_v4_6_7_1: '操作'（段=concrete／正解の段=['concrete']→一致／親の案=None）
+       定義: システムや装置に対して特定の機能を実行すること。
+       根拠の語句: ['特権/管理者権限で操作を行う']
+  [ 3] ipa_secguide_v4_personnel_2: '提供'（段=concrete／正解の段=['abstract']→**不一致**／親の案=None）
+       定義: 情報や物を、他の組織や個人に対して渡すこと。
+       根拠の語句: ['従業員は、当社が営業秘密として管理する情報及びその複製物の一切を許可されていない組織、人に提供してはならない。']
+  [ 4] mhlw_r7dec_art21_3: '労働指示'（段=concrete／正解の段=['concrete']→一致／親の案=指示）
+       定義: 労働者に対して特定の時間帯や日付での労働を行うことを命じること
+       根拠の語句: ['時間外労働又は休日若しくは深夜労働に従事させ']
+  [11] ipa_secguide_v4_7_3_export: '取り出し及びエクスポート'（段=concrete／正解の段=['concrete']→一致／親の案=None）
+       定義: メールサーバーからメールを取り出すこと及びそのメールを他のシステムや媒体へ移動すること。
+       根拠の語句: ['メールサーバーからのメールの取り出し及びエクスポート']
+  [12] mhlw_r7dec_art11_6: '就業'（段=concrete／正解の段=['concrete']→一致／親の案=None）
+       定義: 労働者として業務を行うこと
+       根拠の語句: ['酒気を帯びて就業しないこと。']
+  [13] mhlw_r7dec_art25_2: '就業指示'（段=concrete／正解の段=[]→―／親の案=null）
+       定義: 使用者が労働者に対して業務に従事させること
+       根拠の語句: ['就業させない']
+  [15] ipa_secguide_v4_phys_3_printer: '放置'（段=concrete／正解の段=['concrete']→一致／親の案=None）
+       定義: 情報や物を、管理されない状態で置いたままにする行為
+       根拠の語句: ['原稿、印刷物を放置']
+  [17] mhlw_r7dec_art58_3_6: '立入り'（段=concrete／正解の段=['concrete']→一致／親の案=None）
+       定義: 特定の区域や場所に入ること。
+       根拠の語句: ['立ち入らないこと。']
+
+== 誤り(1件ずつ) ==
+  [誤統合／重大] mhlw_r7dec_art11_1: 正解 使用(concrete, is_new=True) → 出力 操作(concrete, is_new=False)
+      ゲート: ['action_synonym_merge']
+      手順: 3c／理由: 動詞の一致は無いが、同義語と判定した: 「使用」は物理的なボタンやスイッチを押すなどの具体的な操作行為を含むため、台帳にある「操作」と同義と判断します。ただし、「提供」「保存」などより抽象的または具体的な動詞とは異なります。
+      動詞の一致(手順3a): '使用' → []（動詞 '使用' と一致する過去の動詞が台帳に無い）
+      同義語の判定(手順3c): '操作'（「使用」は物理的なボタンやスイッチを押すなどの具体的な操作行為を含むため、台帳にある「操作」と同義と判断します。ただし、「提供」「保存」などより抽象的または具体的な動詞とは異なります。）
+  [過剰適用／軽〜中] aoi_johokanri_art14: 正解 伝達(concrete, is_new=True) → 出力 提供(abstract, is_new=False)
+      ゲート: ['action_synonym_merge', 'action_abstract_selected']
+      手順: 3c／理由: 動詞の一致は無いが、同義語と判定した: 「伝達」は情報や資料を他人に与える行為であり、これは「提供」と同じ種類の行為であるため。ただし、「含む」「より具体的な行為」などの関係ではなく、単純な同義語として判断できる。}
+      動詞の一致(手順3a): '伝達' → []（動詞 '伝達' と一致する過去の動詞が台帳に無い）
+      同義語の判定(手順3c): '提供'（「伝達」は情報や資料を他人に与える行為であり、これは「提供」と同じ種類の行為であるため。ただし、「含む」「より具体的な行為」などの関係ではなく、単純な同義語として判断できる。}）
+  [誤統合／重大] ipa_secguide_v4_6_1_5: 正解 操作(concrete, is_new=False) → 出力 使用(concrete, is_new=False)
+      ゲート: ['action_surface_ambiguous']
+      手順: 3a／理由: 動詞 '使用' が '使用' の過去の動詞と一致
+      動詞の一致(手順3a): '使用' → ['使用']（動詞 '使用' が '使用' の過去の動詞と一致）
+      抜き出しの検査(手順3b): [{'action': '操作', 'core_verb': '操作', 'length': 2}]
+  [過剰適用／軽〜中] ipa_secguide_v4_6_10_priv_name: 正解 共有(concrete, is_new=True) → 出力 提供(abstract, is_new=False)
+      ゲート: ['action_synonym_merge', 'action_abstract_selected']
+      手順: 3c／理由: 動詞の一致は無いが、同義語と判定した: 「共用」は他の人々と何かを共有することであり、「提供」と同じ行為であると考えられるため。
+      動詞の一致(手順3a): '共用' → []（動詞 '共用' と一致する過去の動詞が台帳に無い）
+      同義語の判定(手順3c): '提供'（「共用」は他の人々と何かを共有することであり、「提供」と同じ行為であると考えられるため。）
+  [適用漏れ／重大] mhlw_r7dec_art11_5: 正解 提供(abstract, is_new=False) → 出力 共有(concrete, is_new=False)
+      ゲート: ['action_synonym_merge']
+      手順: 3c／理由: 動詞の一致は無いが、同義語と判定した: 漏洩は情報を外部に伝える行為であり、共有も情報の外部への提供という点で同じ行為を指すため同義語と判断します。
+      動詞の一致(手順3a): '漏洩' → []（動詞 '漏洩' と一致する過去の動詞が台帳に無い）
+      同義語の判定(手順3c): '共有'（漏洩は情報を外部に伝える行為であり、共有も情報の外部への提供という点で同じ行為を指すため同義語と判断します。）
+  [誤統合／重大] ipa_secguide_v4_2_3_3_send: 正解 送信(concrete, is_new=False) → 出力 伝達(concrete, is_new=False)
+      ゲート: ['action_synonym_merge']
+      手順: 3c／理由: 動詞の一致は無いが、同義語と判定した: 「送信」は情報やデータを一方から他方に移す行為であり、これは「伝達」と同じ行為を表しています。
+      動詞の一致(手順3a): '送信' → []（動詞 '送信' と一致する過去の動詞が台帳に無い）
+      同義語の判定(手順3c): '伝達'（「送信」は情報やデータを一方から他方に移す行為であり、これは「伝達」と同じ行為を表しています。）
+  [取りこぼし／軽〜中] mhlw_r7dec_art25_2: 正解 労働指示(concrete, is_new=False) → 出力 就業指示(concrete, is_new=True)
+      ゲート: ['new_action_unapproved', 'action_surface_ambiguous', 'action_possible_duplicate']
+      手順: 4／理由: 動詞 '就業させる' と一致する過去の動詞が台帳に無い／同義語も無い: 「就業させる」は台帳にあるどの行為とも、使役の有無が異なるため同じ行為とはみなせない。
+      動詞の一致(手順3a): '就業させる' → []（動詞 '就業させる' と一致する過去の動詞が台帳に無い）
+      抜き出しの検査(手順3b): [{'action': '就業', 'core_verb': '就業', 'length': 2}]
+
+結果: out/action_eval_v4_fix1/result.json

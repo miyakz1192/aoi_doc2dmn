@@ -1,0 +1,116 @@
+[ 1/14] 項目1 ipa_secguide_v4_6_2_1_item1 (台帳 11件) ...
+      [NG] 誤統合 [手順3c] surface='利用者の認証に用いるアカウントは、利用者1名につき2つ以上を発行する'(削った様相=[]／動詞='発行') → '提供'(abstract, is_new=False) ゲート=['action_surface_unverified', 'action_synonym_merge', 'action_abstract_selected'] 105秒／2回
+      台帳に追加: 発行(concrete)
+[ 2/14] 項目2 ipa_secguide_v4_6_2_1_item2 (台帳 12件) ...
+      [OK] 正しい [手順3c] surface='同一アカウントの他者との共有'(削った様相=[]／動詞='共有') → '共有'(concrete, is_new=False) ゲート=['action_surface_ambiguous', 'action_synonym_merge'] 116秒／2回
+      語句を追加: 共有 ← 同一アカウントの他者との共有／語句を追加: 発行 ← 複数の利用者が共有するアカウントの発行
+[ 3/14] 項目3 ipa_secguide_v4_phys_1_2_level2 (台帳 12件) ...
+      [OK] 正しい [手順3a] surface='無断操作'(削った様相=[]／動詞='操作') → '操作'(concrete, is_new=False) ゲート=['action_surface_ambiguous'] 60秒／1回
+      語句を追加: 操作 ← 情報機器・設備の無断操作／台帳に追加: 持出し(concrete)
+[ 4/14] 項目4 ipa_secguide_v4_phys_1_2_level3_carry_in (台帳 13件) ...
+      [OK] 正しい [手順4] surface='スマートフォン、USBメモリ、HDD、CD-R、デジタルカメラその他の情報記憶媒体の無断持込み'(削った様相=[]／動詞='持込み') → '持込み'(concrete, is_new=True) ゲート=['new_action_unapproved'] 240秒／3回
+      台帳に追加: 持込み(concrete)
+[ 5/14] 項目5 ipa_secguide_v4_personnel_6_1_2 (台帳 14件) ...
+      [OK] 正しい [手順3c] surface='私有機器への極秘情報及び社外秘情報のダウンロード'(削った様相=[]／動詞='ダウンロード') → '取り出し'(concrete, is_new=False) ゲート=['action_synonym_merge'] 107秒／2回
+      語句を追加: 取り出し ← 私有機器への極秘情報及び社外秘情報のダウンロード
+[ 6/14] 項目6 ipa_secguide_v4_2_3_3_store (台帳 14件) ...
+      [OK] 正しい [手順4] surface='社外秘又は極秘の情報資産の保存'(削った様相=[]／動詞='保存') → '保存'(concrete, is_new=True) ゲート=['new_action_unapproved'] 234秒／3回
+      台帳に追加: 保存(concrete)
+[ 7/14] 項目7 ipa_secguide_v4_2_3_3_wifi (台帳 15件) ...
+      [OK] 正しい [手順3c] surface='会社で契約したサービス社外のWi-Fiサービスの利用'(削った様相=[]／動詞='利用') → '使用'(concrete, is_new=False) ゲート=['action_synonym_merge'] 102秒／2回
+      語句を追加: 使用 ← Wi-Fiサービスの利用
+[ 8/14] 項目8 ipa_secguide_v4_5_6_share (台帳 15件) ...
+      [OK] 正しい [手順3a] surface='社外秘又は極秘の情報ファイルを社外に共有する'(削った様相=[]／動詞='共有する') → '共有'(concrete, is_new=False) ゲート=[] 45秒／1回
+      語句を追加: 共有 ← 社外秘又は極秘の情報ファイルを社外に共有
+[ 9/14] 項目10 ipa_secguide_v4_5_6_outdoor (台帳 15件) ...
+      [NG] 新規の取り違え [手順4] surface='暗号化する'(削った様相=[]／動詞='暗号化') → '暗号化'(concrete, is_new=True) ゲート=['new_action_unapproved'] 218秒／3回
+      語句を追加: 送信 ← 極秘又は社外秘の情報資産を送受信／台帳に追加: 受信(concrete)
+[10/14] 項目11 ipa_secguide_v4_phys_3_phone (台帳 16件) ...
+      [OK] 正しい [手順3c] surface='従業員の個人情報を伝え'(削った様相=['てはならない']／動詞='伝える') → '伝達'(concrete, is_new=False) ゲート=['action_synonym_merge'] 105秒／2回
+      語句を追加: 伝達 ← 従業員の個人情報を伝え
+[11/14] 項目12 ipa_secguide_v4_phys_3_photo (台帳 16件) ...
+      [OK] 正しい [手順4] surface='室内での撮影、録音'(削った様相=[]／動詞='撮影') → '録音撮影'(concrete, is_new=True) ゲート=['new_action_unapproved'] 225秒／3回
+      台帳に追加: 撮影(concrete)／台帳に追加: 録音(concrete)
+[12/14] 項目13 mhlw_r7dec_art11_3 (台帳 18件) ...
+      [NG] 新規の取り違え [手順4] surface='勤務場所を離れる'(削った様相=[]／動詞='離れる') → '離脱'(concrete, is_new=True) ゲート=['new_action_unapproved', 'action_surface_unverified'] 231秒／3回
+      台帳に追加: 離席(concrete)
+[13/14] 項目14 mhlw_r7dec_art16_1 (台帳 19件) ...
+      [OK] 正しい [手順4] surface='自らの業務に関係のない情報を不当に取得'(削った様相=['してはならない']／動詞='取得') → '取得'(concrete, is_new=True) ゲート=['new_action_unapproved'] 241秒／3回
+      台帳に追加: 取得(abstract)／親を付けた: 取り出し → 取得／親を付けた: 受信 → 取得
+[14/14] 項目15 mhlw_r7dec_art58_3_5 (台帳 20件) ...
+      [NG] 新規の取り違え [手順4] surface='受動喫煙を望まない者を喫煙可能な場所に連れて行か'(削った様相=['ないこと']／動詞='連れて行く') → '連行'(concrete, is_new=True) ゲート=['new_action_unapproved'] 257秒／3回
+      台帳に追加: 同伴(concrete)
+
+== 集計 ==
+  件数: 14
+  **すり抜け(ゲートが立たなかった重大な誤り): 0件**（合格の条件は0件。P9）
+  重大な誤り(誤統合・適用漏れ): 1件
+    正しい: 10件
+    誤統合: 1件
+    適用漏れ: 0件
+    過剰適用: 0件
+    取りこぼし: 0件
+    新規の取り違え: 3件
+  既存か新規かの判定: 12/14
+  既存の Action の選択: 6/7
+  surface の3条件: 9/14（部分文字列 12／様相なし 12／中心の動詞 13）
+  寄せ方: 手順3a(動詞の一致) 2件（正しい 2）／手順3c(同義語) 5件（正しい 4）／新規候補 7件
+  抜き出しの検査（P29）: 1件で台帳の別の動詞が条文に残っていた（当たった動詞 1個／うち1〜2文字 1個）
+  立ったゲート:
+    new_action_unapproved: 7件（設計上の確認）
+    action_synonym_merge: 5件（設計上の確認）
+    action_surface_unverified: 2件（疑い）
+    action_surface_ambiguous: 2件（疑い）
+    action_abstract_selected: 1件（設計上の確認）
+  ゲートの誤報（疑いのゲートだけ。P21）: 0件 {}
+  人に回る割合: 13/14（疑いのゲートあり 4／設計上の確認だけ 9／自動で通った 1）
+  疑いのゲートの適合率: 2/4（50%）
+    action_surface_ambiguous: 0/2
+    action_surface_unverified: 2/2
+  新規候補の段の一致: 6/7（P23）
+  正解が並びの項目: 4件（action_surface_ambiguous が立った 2件。P25）
+  所要時間: 合計 2287秒／1件あたり 163秒（LLM 呼び出し 33回）
+
+== 新規候補の一覧（名前・定義に条件が入っているかは人が判定する。P23）==
+  [ 4] ipa_secguide_v4_phys_1_2_level3_carry_in: '持込み'（段=concrete／正解の段=['concrete']→一致／親の案=None）
+       定義: 情報記憶媒体を持ち込んで持ち込むこと
+       根拠の語句: ['スマートフォン、USBメモリ、HDD、CD-R、デジタルカメラその他の情報記憶媒体の無断持込み禁止']
+  [ 6] ipa_secguide_v4_2_3_3_store: '保存'（段=concrete／正解の段=['concrete']→一致／親の案=提供）
+       定義: 情報資産を保管すること。
+       根拠の語句: ['社外秘又は極秘の情報資産の保存を禁止する。']
+  [10] ipa_secguide_v4_5_6_outdoor: '暗号化'（段=concrete／正解の段=['concrete']→一致／親の案=None）
+       定義: 情報やデータを、読み取りが困難な形式に変換すること
+       根拠の語句: ['暗号化する']
+  [12] ipa_secguide_v4_phys_3_photo: '録音撮影'（段=concrete／正解の段=['concrete', 'concrete']→一致／親の案=None）
+       定義: 音声や映像を記録すること
+       根拠の語句: ['室内での撮影、録音']
+  [13] mhlw_r7dec_art11_3: '離脱'（段=concrete／正解の段=['concrete']→一致／親の案=None）
+       定義: 勤務中、職場から離れること。
+       根拠の語句: ['正当な理由なく勤務場所を離れないこと。']
+  [14] mhlw_r7dec_art16_1: '取得'（段=concrete／正解の段=['abstract']→**不一致**／親の案=提供）
+       定義: 情報を不正な方法で入手すること
+       根拠の語句: ['自らの業務に関係のない情報を不当に取得']
+  [15] mhlw_r7dec_art58_3_5: '連行'（段=concrete／正解の段=['concrete']→一致／親の案=None）
+       定義: 他人を特定の場所へ連れること。
+       根拠の語句: ['受動喫煙を望まない者を喫煙可能な場所に連れて行かないこと。']
+
+== 誤り(1件ずつ) ==
+  [誤統合／重大] ipa_secguide_v4_6_2_1_item1: 正解 発行(concrete, is_new=True) → 出力 提供(abstract, is_new=False)
+      ゲート: ['action_surface_unverified', 'action_synonym_merge', 'action_abstract_selected']
+      手順: 3c／理由: 動詞の一致は無いが、同義語と判定した: 「発行」は情報を外部に与える行為であり、「提供」と同じ種類の行為であるため。
+      動詞の一致(手順3a): '発行' → []（動詞 '発行' と一致する過去の動詞が台帳に無い）
+      同義語の判定(手順3c): '提供'（「発行」は情報を外部に与える行為であり、「提供」と同じ種類の行為であるため。）
+  [新規の取り違え／軽〜中] ipa_secguide_v4_5_6_outdoor: 正解 送信(concrete, is_new=False) → 出力 暗号化(concrete, is_new=True)
+      ゲート: ['new_action_unapproved']
+      手順: 4／理由: 動詞 '暗号化' と一致する過去の動詞が台帳に無い／同義語も無い: 「暗号化」は台帳にあるどの行動とも同じ行為とは言えません。
+      動詞の一致(手順3a): '暗号化' → []（動詞 '暗号化' と一致する過去の動詞が台帳に無い）
+  [新規の取り違え／軽〜中] mhlw_r7dec_art11_3: 正解 離席(concrete, is_new=True) → 出力 離脱(concrete, is_new=True)
+      ゲート: ['new_action_unapproved', 'action_surface_unverified']
+      手順: 4／理由: 動詞 '離れる' と一致する過去の動詞が台帳に無い／同義語も無い: 「離れる」は台帳にあるどの行為とも同じ行為とは言えません。
+      動詞の一致(手順3a): '離れる' → []（動詞 '離れる' と一致する過去の動詞が台帳に無い）
+  [新規の取り違え／軽〜中] mhlw_r7dec_art58_3_5: 正解 同伴(concrete, is_new=True) → 出力 連行(concrete, is_new=True)
+      ゲート: ['new_action_unapproved']
+      手順: 4／理由: 動詞 '連れて行く' と一致する過去の動詞が台帳に無い／同義語も無い: 「連れて行く」は台帳に記載されているどのActionとも、同じ行為とは言えません。
+      動詞の一致(手順3a): '連れて行く' → []（動詞 '連れて行く' と一致する過去の動詞が台帳に無い）
+
+結果: out/action_eval_dev2_fix1/result.json
