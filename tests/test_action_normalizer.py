@@ -669,7 +669,11 @@ def test_the_synonym_prompt_gives_examples_and_keeps_the_object_out(seeded_ledge
     synonym_prompt = llm.prompts[1]
     assert "「利用」と「使用」" in synonym_prompt
     assert "「ダウンロード」と「取り出し」" in synonym_prompt
-    assert "行為の種類\n   (動詞)が同じなら同義語です" in synonym_prompt
+    assert "動詞そのものが\n   同じ行為を指すなら同義語です" in synonym_prompt
+    # PU12 の直し(第38回): 「含む」「同じ種類」で寄せるのを禁じ、置き換えの目安を足した
+    assert "「Aは Bを含む」" in synonym_prompt
+    assert "「Aと Bは同じ種類の行為だ」" in synonym_prompt
+    assert "置き換えても、条文が規制している" in synonym_prompt
     # 迷ったら寄せない(閉じた選択の「該当なし」)
     assert f"迷ったときは「{NO_MATCH}」を選んでください" in synonym_prompt
 

@@ -1,0 +1,4597 @@
+{
+  "_meta": {
+    "gold": "testdata/action_gold/action_gold_dev2_v1.json",
+    "split": "dev",
+    "registry": "registry/registry.json",
+    "llm": "ollama qwen2.5:14b-instruct",
+    "k": 1,
+    "temperature": 0.0,
+    "note": "ゲートをすり抜けた重大な誤り(誤統合・適用漏れ)が0件なら合格(P9・5.3節 v0.4)。結果を見てプロンプトを直して再実行することはしない(第31回 HANDOFF 5章)"
+  },
+  "summary": {
+    "items": 14,
+    "slipped": 0,
+    "severe": 1,
+    "correct": 10,
+    "by_verdict": {
+      "correct": 10,
+      "mis_merge": 1,
+      "under_applied": 0,
+      "over_applied": 0,
+      "missed": 0,
+      "new_mismatch": 3
+    },
+    "is_new_correct": 12,
+    "existing_choice_total": 7,
+    "existing_choice_correct": 6,
+    "surface_ok": 9,
+    "surface_in_clause": 12,
+    "surface_no_modality": 12,
+    "surface_has_core_verb": 13,
+    "gates": {
+      "action_surface_unverified": 2,
+      "action_synonym_merge": 5,
+      "action_abstract_selected": 1,
+      "action_surface_ambiguous": 2,
+      "new_action_unapproved": 7
+    },
+    "false_alarm_items": 0,
+    "false_alarm_gates": {},
+    "routed_to_human": 13,
+    "routed_design_check_only": 9,
+    "routed_with_suspicion": 4,
+    "automatic": 1,
+    "suspicion_precision": {
+      "raised": 4,
+      "really_wrong": 2
+    },
+    "suspicion_precision_by_gate": {
+      "action_surface_unverified": {
+        "raised": 2,
+        "really_wrong": 2
+      },
+      "action_surface_ambiguous": {
+        "raised": 2,
+        "really_wrong": 0
+      }
+    },
+    "new_action_kind_total": 7,
+    "new_action_kind_matches": 6,
+    "alternatives_items": 4,
+    "alternatives_ambiguous_raised": 2,
+    "routed_by": {
+      "3a": 2,
+      "3c": 5,
+      "4": 7
+    },
+    "route_3a_correct": 2,
+    "route_3c_correct": 4,
+    "synonym_merges": [
+      {
+        "order": 1,
+        "clause_id": "ipa_secguide_v4_6_2_1_item1",
+        "core_verb": "発行",
+        "answer": "提供",
+        "reason": "「発行」は情報を外部に与える行為であり、「提供」と同じ種類の行為であるため。",
+        "verdict": "mis_merge",
+        "correct": false
+      },
+      {
+        "order": 2,
+        "clause_id": "ipa_secguide_v4_6_2_1_item2",
+        "core_verb": "共有",
+        "answer": "共有",
+        "reason": "「共用」と「共有」は同じ行為を表す同義語です",
+        "verdict": "correct",
+        "correct": true
+      },
+      {
+        "order": 5,
+        "clause_id": "ipa_secguide_v4_personnel_6_1_2",
+        "core_verb": "ダウンロード",
+        "answer": "取り出し",
+        "reason": "ダウンロードはデータやファイルを取り出す行為であり、Action台帳の「取り出し」と同じ種類の行為である。",
+        "verdict": "correct",
+        "correct": true
+      },
+      {
+        "order": 7,
+        "clause_id": "ipa_secguide_v4_2_3_3_wifi",
+        "core_verb": "利用",
+        "answer": "使用",
+        "reason": "「利用」と「使用」は同じ行為を表す同義語です",
+        "verdict": "correct",
+        "correct": true
+      },
+      {
+        "order": 11,
+        "clause_id": "ipa_secguide_v4_phys_3_phone",
+        "core_verb": "伝える",
+        "answer": "伝達",
+        "reason": "「伝える」と「伝達」は同じ行為を表す同義語です",
+        "verdict": "correct",
+        "correct": true
+      }
+    ],
+    "extraction_check_items": 1,
+    "extraction_check_hits": 1,
+    "extraction_check_short_hits": 1,
+    "extraction_check_detail": [
+      {
+        "order": 2,
+        "clause_id": "ipa_secguide_v4_6_2_1_item2",
+        "hits": [
+          {
+            "action": "発行",
+            "core_verb": "発行",
+            "length": 2
+          }
+        ]
+      }
+    ],
+    "elapsed_seconds_total": 2207.6,
+    "elapsed_seconds_per_item": 157.7,
+    "llm_calls_total": 33,
+    "errors": 0
+  },
+  "new_action_proposals": [
+    {
+      "order": 4,
+      "clause_id": "ipa_secguide_v4_phys_1_2_level3_carry_in",
+      "proposal": {
+        "name": "持込み",
+        "definition": "情報記憶媒体を持ち込んで持ち込むこと",
+        "kind": "concrete",
+        "parent_suggestion": null,
+        "basis_quotes": [
+          "スマートフォン、USBメモリ、HDD、CD-R、デジタルカメラその他の情報記憶媒体の無断持込み禁止"
+        ],
+        "basis_verified": [
+          true
+        ],
+        "name_modality": [],
+        "definition_modality": []
+      },
+      "expected_kind": [
+        "concrete"
+      ],
+      "kind_matches": true
+    },
+    {
+      "order": 6,
+      "clause_id": "ipa_secguide_v4_2_3_3_store",
+      "proposal": {
+        "name": "保存",
+        "definition": "情報資産を保管すること。",
+        "kind": "concrete",
+        "parent_suggestion": "提供",
+        "basis_quotes": [
+          "社外秘又は極秘の情報資産の保存を禁止する。"
+        ],
+        "basis_verified": [
+          true
+        ],
+        "name_modality": [],
+        "definition_modality": []
+      },
+      "expected_kind": [
+        "concrete"
+      ],
+      "kind_matches": true
+    },
+    {
+      "order": 10,
+      "clause_id": "ipa_secguide_v4_5_6_outdoor",
+      "proposal": {
+        "name": "暗号化",
+        "definition": "情報やデータを、読み取りが困難な形式に変換すること",
+        "kind": "concrete",
+        "parent_suggestion": null,
+        "basis_quotes": [
+          "暗号化する"
+        ],
+        "basis_verified": [
+          true
+        ],
+        "name_modality": [],
+        "definition_modality": []
+      },
+      "expected_kind": [
+        "concrete"
+      ],
+      "kind_matches": true
+    },
+    {
+      "order": 12,
+      "clause_id": "ipa_secguide_v4_phys_3_photo",
+      "proposal": {
+        "name": "録音撮影",
+        "definition": "音声や映像を記録すること",
+        "kind": "concrete",
+        "parent_suggestion": null,
+        "basis_quotes": [
+          "室内での撮影、録音"
+        ],
+        "basis_verified": [
+          true
+        ],
+        "name_modality": [],
+        "definition_modality": []
+      },
+      "expected_kind": [
+        "concrete",
+        "concrete"
+      ],
+      "kind_matches": true
+    },
+    {
+      "order": 13,
+      "clause_id": "mhlw_r7dec_art11_3",
+      "proposal": {
+        "name": "離脱",
+        "definition": "勤務中、職場から離れること。",
+        "kind": "concrete",
+        "parent_suggestion": null,
+        "basis_quotes": [
+          "正当な理由なく勤務場所を離れないこと。"
+        ],
+        "basis_verified": [
+          true
+        ],
+        "name_modality": [],
+        "definition_modality": []
+      },
+      "expected_kind": [
+        "concrete"
+      ],
+      "kind_matches": true
+    },
+    {
+      "order": 14,
+      "clause_id": "mhlw_r7dec_art16_1",
+      "proposal": {
+        "name": "取得",
+        "definition": "情報を不正な方法で入手すること",
+        "kind": "concrete",
+        "parent_suggestion": "提供",
+        "basis_quotes": [
+          "自らの業務に関係のない情報を不当に取得"
+        ],
+        "basis_verified": [
+          true
+        ],
+        "name_modality": [],
+        "definition_modality": []
+      },
+      "expected_kind": [
+        "abstract"
+      ],
+      "kind_matches": false
+    },
+    {
+      "order": 15,
+      "clause_id": "mhlw_r7dec_art58_3_5",
+      "proposal": {
+        "name": "連行",
+        "definition": "他人を特定の場所へ連れること。",
+        "kind": "concrete",
+        "parent_suggestion": null,
+        "basis_quotes": [
+          "受動喫煙を望まない者を喫煙可能な場所に連れて行かないこと。"
+        ],
+        "basis_verified": [
+          true
+        ],
+        "name_modality": [],
+        "definition_modality": []
+      },
+      "expected_kind": [
+        "concrete"
+      ],
+      "kind_matches": true
+    }
+  ],
+  "errors": [],
+  "items": [
+    {
+      "order": 1,
+      "clause_id": "ipa_secguide_v4_6_2_1_item1",
+      "group": "",
+      "expected": {
+        "surface": "利用者1名につき1つを発行",
+        "normalized": "発行",
+        "is_new": true,
+        "core_verb": "発行",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "利用者が使うものを作って渡すこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "利用者1名につき1つを発行",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+        }
+      },
+      "expected_alternatives": [],
+      "matched_expectation": {
+        "surface": "利用者1名につき1つを発行",
+        "normalized": "発行",
+        "is_new": true,
+        "core_verb": "発行",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "利用者が使うものを作って渡すこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "利用者1名につき1つを発行",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+        }
+      },
+      "actual": {
+        "surface": "利用者の認証に用いるアカウントは、利用者1名につき2つ以上を発行する",
+        "removed_modality": [],
+        "core_verb": "発行",
+        "normalized": "提供",
+        "kind": "abstract",
+        "is_new": false
+      },
+      "verdict": "mis_merge",
+      "verdict_label": "誤統合",
+      "route": "3c",
+      "synonym_answer": "提供",
+      "synonym_reason": "「発行」は情報を外部に与える行為であり、「提供」と同じ種類の行為であるため。",
+      "verb_matches": [],
+      "extraction_hits": [],
+      "severe": true,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [
+        "action_surface_unverified"
+      ],
+      "design_check_gates": [
+        "action_synonym_merge",
+        "action_abstract_selected"
+      ],
+      "routed_to_human": true,
+      "design_check_only": false,
+      "surface_ambiguous": false,
+      "new_action_kind_matches": null,
+      "surface": {
+        "ok": false,
+        "in_clause": false,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "action_surface_unverified",
+        "action_synonym_merge",
+        "action_abstract_selected"
+      ],
+      "elapsed_seconds": 97.6,
+      "llm_calls": 2,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "利用者の認証に用いるアカウントは、利用者1名につき2つ以上を発行する",
+              "surface": "利用者の認証に用いるアカウントは、利用者1名につき2つ以上を発行する",
+              "removed_modality": [],
+              "in_clause": false,
+              "modality_found": [],
+              "core_verb": "発行"
+            }
+          ],
+          "surface": "利用者の認証に用いるアカウントは、利用者1名につき2つ以上を発行する",
+          "core_verb": "発行",
+          "removed_modality": [],
+          "choice": "提供",
+          "reason": "動詞の一致は無いが、同義語と判定した: 「発行」は情報を外部に与える行為であり、「提供」と同じ種類の行為であるため。",
+          "definition_part": "",
+          "route": "3c",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "発行",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信"
+            ],
+            "操作": [
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達"
+            ],
+            "共有": [
+              "共用"
+            ],
+            "取り出し": [
+              "取り出し"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ]
+          },
+          "reason": "動詞 '発行' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "発行",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": {
+          "core_verb": "発行",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信"
+            ],
+            "操作": [
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達"
+            ],
+            "共有": [
+              "共用"
+            ],
+            "取り出し": [
+              "取り出し"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ]
+          },
+          "answer": "提供",
+          "reason": "「発行」は情報を外部に与える行為であり、「提供」と同じ種類の行為であるため。",
+          "raw_answer": "提供"
+        },
+        "candidates_considered": [],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 97.6,
+        "llm_calls": 2
+      }
+    },
+    {
+      "order": 2,
+      "clause_id": "ipa_secguide_v4_6_2_1_item2",
+      "group": "",
+      "expected": {
+        "surface": "同一アカウントの他者との共有",
+        "normalized": "共有",
+        "is_new": false,
+        "core_verb": "共有",
+        "kind": "concrete",
+        "parent": "提供"
+      },
+      "expected_alternatives": [
+        {
+          "surface": "複数の利用者が共有するアカウントの発行",
+          "normalized": "発行",
+          "is_new": false,
+          "core_verb": "発行",
+          "kind": "concrete",
+          "parent": null
+        }
+      ],
+      "matched_expectation": {
+        "surface": "同一アカウントの他者との共有",
+        "normalized": "共有",
+        "is_new": false,
+        "core_verb": "共有",
+        "kind": "concrete",
+        "parent": "提供"
+      },
+      "actual": {
+        "surface": "同一アカウントの他者との共有",
+        "removed_modality": [],
+        "core_verb": "共有",
+        "normalized": "共有",
+        "kind": "concrete",
+        "is_new": false
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "3c",
+      "synonym_answer": "共有",
+      "synonym_reason": "「共用」と「共有」は同じ行為を表す同義語です",
+      "verb_matches": [],
+      "extraction_hits": [
+        {
+          "action": "発行",
+          "core_verb": "発行",
+          "length": 2
+        }
+      ],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [
+        "action_surface_ambiguous"
+      ],
+      "design_check_gates": [
+        "action_synonym_merge"
+      ],
+      "routed_to_human": true,
+      "design_check_only": false,
+      "surface_ambiguous": true,
+      "new_action_kind_matches": null,
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "action_surface_ambiguous",
+        "action_synonym_merge"
+      ],
+      "elapsed_seconds": 109.9,
+      "llm_calls": 2,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "同一アカウントの他者との共有",
+              "surface": "同一アカウントの他者との共有",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "共有"
+            },
+            {
+              "raw": "複数の利用者が共有するアカウントの発行",
+              "surface": "複数の利用者が共有するアカウントの発行",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "発行"
+            }
+          ],
+          "surface": "同一アカウントの他者との共有",
+          "core_verb": "共有",
+          "removed_modality": [],
+          "choice": "共有",
+          "reason": "動詞の一致は無いが、同義語と判定した: 「共用」と「共有」は同じ行為を表す同義語です",
+          "definition_part": "",
+          "route": "3c",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "共有",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信"
+            ],
+            "操作": [
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達"
+            ],
+            "共有": [
+              "共用"
+            ],
+            "取り出し": [
+              "取り出し"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行"
+            ]
+          },
+          "reason": "動詞 '共有' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "共有",
+          "hits": [
+            {
+              "action": "発行",
+              "core_verb": "発行",
+              "length": 2
+            }
+          ],
+          "flagged": true,
+          "short_hits": 1
+        },
+        "synonym_judgment": {
+          "core_verb": "共有",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信"
+            ],
+            "操作": [
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達"
+            ],
+            "共有": [
+              "共用"
+            ],
+            "取り出し": [
+              "取り出し"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行"
+            ]
+          },
+          "answer": "共有",
+          "reason": "「共用」と「共有」は同じ行為を表す同義語です",
+          "raw_answer": "共有"
+        },
+        "candidates_considered": [],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 109.9,
+        "llm_calls": 2
+      }
+    },
+    {
+      "order": 3,
+      "clause_id": "ipa_secguide_v4_phys_1_2_level2",
+      "group": "",
+      "expected": {
+        "surface": "情報機器・設備の無断操作",
+        "normalized": "操作",
+        "is_new": false,
+        "core_verb": "操作",
+        "kind": "concrete",
+        "parent": null
+      },
+      "expected_alternatives": [
+        {
+          "surface": "無断持出し",
+          "normalized": "持出し",
+          "is_new": true,
+          "core_verb": "持出し",
+          "kind": "concrete",
+          "parent": null,
+          "definition": {
+            "text": "物を、決められた場所の外へ持って出ること",
+            "status": "provisional",
+            "basis": [
+              {
+                "quote": "無断持出し",
+                "basis": "verbatim"
+              }
+            ],
+            "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+          }
+        }
+      ],
+      "matched_expectation": {
+        "surface": "情報機器・設備の無断操作",
+        "normalized": "操作",
+        "is_new": false,
+        "core_verb": "操作",
+        "kind": "concrete",
+        "parent": null
+      },
+      "actual": {
+        "surface": "無断操作",
+        "removed_modality": [],
+        "core_verb": "操作",
+        "normalized": "操作",
+        "kind": "concrete",
+        "is_new": false
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "3a",
+      "synonym_answer": null,
+      "synonym_reason": "",
+      "verb_matches": [
+        "操作"
+      ],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [
+        "action_surface_ambiguous"
+      ],
+      "design_check_gates": [],
+      "routed_to_human": true,
+      "design_check_only": false,
+      "surface_ambiguous": true,
+      "new_action_kind_matches": null,
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "action_surface_ambiguous"
+      ],
+      "elapsed_seconds": 59.9,
+      "llm_calls": 1,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "無断操作",
+              "surface": "無断操作",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "操作"
+            },
+            {
+              "raw": "無断持出し",
+              "surface": "無断持出し",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "持出し"
+            }
+          ],
+          "surface": "無断操作",
+          "core_verb": "操作",
+          "removed_modality": [],
+          "choice": "操作",
+          "reason": "動詞 '操作' が '操作' の過去の動詞と一致",
+          "definition_part": "",
+          "route": "3a",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "操作",
+          "matches": [
+            {
+              "name": "操作",
+              "reason": "過去の語句の動詞 '操作' と一致"
+            }
+          ],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信"
+            ],
+            "操作": [
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達"
+            ],
+            "共有": [
+              "共用",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ]
+          },
+          "reason": "動詞 '操作' が '操作' の過去の動詞と一致"
+        },
+        "extraction_check": {
+          "core_verb": "操作",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": null,
+        "candidates_considered": [],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 59.9,
+        "llm_calls": 1
+      }
+    },
+    {
+      "order": 4,
+      "clause_id": "ipa_secguide_v4_phys_1_2_level3_carry_in",
+      "group": "",
+      "expected": {
+        "surface": "情報記憶媒体の無断持込み",
+        "normalized": "持込み",
+        "is_new": true,
+        "core_verb": "持込み",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "物を、決められた場所の中へ持って入ること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "情報記憶媒体の無断持込み",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+        }
+      },
+      "expected_alternatives": [],
+      "matched_expectation": {
+        "surface": "情報記憶媒体の無断持込み",
+        "normalized": "持込み",
+        "is_new": true,
+        "core_verb": "持込み",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "物を、決められた場所の中へ持って入ること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "情報記憶媒体の無断持込み",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+        }
+      },
+      "actual": {
+        "surface": "スマートフォン、USBメモリ、HDD、CD-R、デジタルカメラその他の情報記憶媒体の無断持込み",
+        "removed_modality": [],
+        "core_verb": "持込み",
+        "normalized": "持込み",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "4",
+      "synonym_answer": null,
+      "synonym_reason": "「持込み」はAction台帳に掲載されている行為の動詞とは異なる行為を表すため、同義語と判断されません。",
+      "verb_matches": [],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "routed_to_human": true,
+      "design_check_only": true,
+      "surface_ambiguous": false,
+      "new_action_kind_matches": true,
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "elapsed_seconds": 233.0,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "スマートフォン、USBメモリ、HDD、CD-R、デジタルカメラその他の情報記憶媒体の無断持込み",
+              "surface": "スマートフォン、USBメモリ、HDD、CD-R、デジタルカメラその他の情報記憶媒体の無断持込み",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "持込み"
+            }
+          ],
+          "surface": "スマートフォン、USBメモリ、HDD、CD-R、デジタルカメラその他の情報記憶媒体の無断持込み",
+          "core_verb": "持込み",
+          "removed_modality": [],
+          "choice": "該当なし",
+          "reason": "動詞 '持込み' と一致する過去の動詞が台帳に無い／同義語も無い: 「持込み」はAction台帳に掲載されている行為の動詞とは異なる行為を表すため、同義語と判断されません。",
+          "definition_part": "",
+          "route": "4",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "持込み",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達"
+            ],
+            "共有": [
+              "共用",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ]
+          },
+          "reason": "動詞 '持込み' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "持込み",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": {
+          "core_verb": "持込み",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達"
+            ],
+            "共有": [
+              "共用",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ]
+          },
+          "answer": null,
+          "reason": "「持込み」はAction台帳に掲載されている行為の動詞とは異なる行為を表すため、同義語と判断されません。",
+          "raw_answer": "該当なし"
+        },
+        "candidates_considered": [],
+        "new_action_proposal": {
+          "name": "持込み",
+          "definition": "情報記憶媒体を持ち込んで持ち込むこと",
+          "kind": "concrete",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "スマートフォン、USBメモリ、HDD、CD-R、デジタルカメラその他の情報記憶媒体の無断持込み禁止"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "持出し",
+          "name_ratio": 0.333,
+          "definition_overlap": 0.03,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 233.0,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 5,
+      "clause_id": "ipa_secguide_v4_personnel_6_1_2",
+      "group": "",
+      "expected": {
+        "surface": "私有機器への極秘情報及び社外秘情報のダウンロード",
+        "normalized": "取り出し",
+        "is_new": false,
+        "core_verb": "ダウンロード",
+        "kind": "concrete",
+        "parent": null
+      },
+      "expected_alternatives": [],
+      "matched_expectation": {
+        "surface": "私有機器への極秘情報及び社外秘情報のダウンロード",
+        "normalized": "取り出し",
+        "is_new": false,
+        "core_verb": "ダウンロード",
+        "kind": "concrete",
+        "parent": null
+      },
+      "actual": {
+        "surface": "私有機器への極秘情報及び社外秘情報のダウンロード",
+        "removed_modality": [],
+        "core_verb": "ダウンロード",
+        "normalized": "取り出し",
+        "kind": "concrete",
+        "is_new": false
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "3c",
+      "synonym_answer": "取り出し",
+      "synonym_reason": "ダウンロードはデータやファイルを取り出す行為であり、Action台帳の「取り出し」と同じ種類の行為である。",
+      "verb_matches": [],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "action_synonym_merge"
+      ],
+      "routed_to_human": true,
+      "design_check_only": true,
+      "surface_ambiguous": false,
+      "new_action_kind_matches": null,
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "action_synonym_merge"
+      ],
+      "elapsed_seconds": 101.5,
+      "llm_calls": 2,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "私有機器への極秘情報及び社外秘情報のダウンロード",
+              "surface": "私有機器への極秘情報及び社外秘情報のダウンロード",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "ダウンロード"
+            }
+          ],
+          "surface": "私有機器への極秘情報及び社外秘情報のダウンロード",
+          "core_verb": "ダウンロード",
+          "removed_modality": [],
+          "choice": "取り出し",
+          "reason": "動詞の一致は無いが、同義語と判定した: ダウンロードはデータやファイルを取り出す行為であり、Action台帳の「取り出し」と同じ種類の行為である。",
+          "definition_part": "",
+          "route": "3c",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "ダウンロード",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達"
+            ],
+            "共有": [
+              "共用",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ]
+          },
+          "reason": "動詞 'ダウンロード' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "ダウンロード",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": {
+          "core_verb": "ダウンロード",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達"
+            ],
+            "共有": [
+              "共用",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ]
+          },
+          "answer": "取り出し",
+          "reason": "ダウンロードはデータやファイルを取り出す行為であり、Action台帳の「取り出し」と同じ種類の行為である。",
+          "raw_answer": "取り出し"
+        },
+        "candidates_considered": [],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 101.5,
+        "llm_calls": 2
+      }
+    },
+    {
+      "order": 6,
+      "clause_id": "ipa_secguide_v4_2_3_3_store",
+      "group": "",
+      "expected": {
+        "surface": "社外秘又は極秘の情報資産の保存",
+        "normalized": "保存",
+        "is_new": true,
+        "core_verb": "保存",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "データを、機器や媒体に記録して残すこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "社外秘又は極秘の情報資産の保存",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+        }
+      },
+      "expected_alternatives": [],
+      "matched_expectation": {
+        "surface": "社外秘又は極秘の情報資産の保存",
+        "normalized": "保存",
+        "is_new": true,
+        "core_verb": "保存",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "データを、機器や媒体に記録して残すこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "社外秘又は極秘の情報資産の保存",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+        }
+      },
+      "actual": {
+        "surface": "社外秘又は極秘の情報資産の保存",
+        "removed_modality": [],
+        "core_verb": "保存",
+        "normalized": "保存",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "4",
+      "synonym_answer": null,
+      "synonym_reason": "「保存」は台帳に記載されているどの行動とも具体的な行為が異なるため、同義語とはみなせません。",
+      "verb_matches": [],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "routed_to_human": true,
+      "design_check_only": true,
+      "surface_ambiguous": false,
+      "new_action_kind_matches": true,
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "elapsed_seconds": 228.2,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "社外秘又は極秘の情報資産の保存",
+              "surface": "社外秘又は極秘の情報資産の保存",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "保存"
+            }
+          ],
+          "surface": "社外秘又は極秘の情報資産の保存",
+          "core_verb": "保存",
+          "removed_modality": [],
+          "choice": "該当なし",
+          "reason": "動詞 '保存' と一致する過去の動詞が台帳に無い／同義語も無い: 「保存」は台帳に記載されているどの行動とも具体的な行為が異なるため、同義語とはみなせません。",
+          "definition_part": "",
+          "route": "4",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "保存",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達"
+            ],
+            "共有": [
+              "共用",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ]
+          },
+          "reason": "動詞 '保存' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "保存",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": {
+          "core_verb": "保存",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達"
+            ],
+            "共有": [
+              "共用",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ]
+          },
+          "answer": null,
+          "reason": "「保存」は台帳に記載されているどの行動とも具体的な行為が異なるため、同義語とはみなせません。",
+          "raw_answer": "該当なし"
+        },
+        "candidates_considered": [],
+        "new_action_proposal": {
+          "name": "保存",
+          "definition": "情報資産を保管すること。",
+          "kind": "concrete",
+          "parent_suggestion": "提供",
+          "basis_quotes": [
+            "社外秘又は極秘の情報資産の保存を禁止する。"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "伝達",
+          "name_ratio": 0.0,
+          "definition_overlap": 0.158,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 228.2,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 7,
+      "clause_id": "ipa_secguide_v4_2_3_3_wifi",
+      "group": "",
+      "expected": {
+        "surface": "Wi-Fiサービスの利用",
+        "normalized": "使用",
+        "is_new": false,
+        "core_verb": "利用",
+        "kind": "concrete",
+        "parent": null
+      },
+      "expected_alternatives": [],
+      "matched_expectation": {
+        "surface": "Wi-Fiサービスの利用",
+        "normalized": "使用",
+        "is_new": false,
+        "core_verb": "利用",
+        "kind": "concrete",
+        "parent": null
+      },
+      "actual": {
+        "surface": "会社で契約したサービス社外のWi-Fiサービスの利用",
+        "removed_modality": [],
+        "core_verb": "利用",
+        "normalized": "使用",
+        "kind": "concrete",
+        "is_new": false
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "3c",
+      "synonym_answer": "使用",
+      "synonym_reason": "「利用」と「使用」は同じ行為を表す同義語です",
+      "verb_matches": [],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "action_synonym_merge"
+      ],
+      "routed_to_human": true,
+      "design_check_only": true,
+      "surface_ambiguous": false,
+      "new_action_kind_matches": null,
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "action_synonym_merge"
+      ],
+      "elapsed_seconds": 94.2,
+      "llm_calls": 2,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "会社で契約したサービス社外のWi-Fiサービスの利用",
+              "surface": "会社で契約したサービス社外のWi-Fiサービスの利用",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "利用"
+            }
+          ],
+          "surface": "会社で契約したサービス社外のWi-Fiサービスの利用",
+          "core_verb": "利用",
+          "removed_modality": [],
+          "choice": "使用",
+          "reason": "動詞の一致は無いが、同義語と判定した: 「利用」と「使用」は同じ行為を表す同義語です",
+          "definition_part": "",
+          "route": "3c",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "利用",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達"
+            ],
+            "共有": [
+              "共用",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ]
+          },
+          "reason": "動詞 '利用' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "利用",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": {
+          "core_verb": "利用",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達"
+            ],
+            "共有": [
+              "共用",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ]
+          },
+          "answer": "使用",
+          "reason": "「利用」と「使用」は同じ行為を表す同義語です",
+          "raw_answer": "使用"
+        },
+        "candidates_considered": [],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 94.2,
+        "llm_calls": 2
+      }
+    },
+    {
+      "order": 8,
+      "clause_id": "ipa_secguide_v4_5_6_share",
+      "group": "",
+      "expected": {
+        "surface": "社外秘又は極秘の情報ファイルを社外に共有",
+        "normalized": "共有",
+        "is_new": false,
+        "core_verb": "共有",
+        "kind": "concrete",
+        "parent": "提供"
+      },
+      "expected_alternatives": [],
+      "matched_expectation": {
+        "surface": "社外秘又は極秘の情報ファイルを社外に共有",
+        "normalized": "共有",
+        "is_new": false,
+        "core_verb": "共有",
+        "kind": "concrete",
+        "parent": "提供"
+      },
+      "actual": {
+        "surface": "社外秘又は極秘の情報ファイルを社外に共有する",
+        "removed_modality": [],
+        "core_verb": "共有する",
+        "normalized": "共有",
+        "kind": "concrete",
+        "is_new": false
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "3a",
+      "synonym_answer": null,
+      "synonym_reason": "",
+      "verb_matches": [
+        "共有"
+      ],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [],
+      "design_check_gates": [],
+      "routed_to_human": false,
+      "design_check_only": false,
+      "surface_ambiguous": false,
+      "new_action_kind_matches": null,
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [],
+      "elapsed_seconds": 44.6,
+      "llm_calls": 1,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "社外秘又は極秘の情報ファイルを社外に共有する",
+              "surface": "社外秘又は極秘の情報ファイルを社外に共有する",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "共有する"
+            }
+          ],
+          "surface": "社外秘又は極秘の情報ファイルを社外に共有する",
+          "core_verb": "共有する",
+          "removed_modality": [],
+          "choice": "共有",
+          "reason": "動詞 '共有する' が '共有' の過去の動詞と一致",
+          "definition_part": "",
+          "route": "3a",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "共有する",
+          "matches": [
+            {
+              "name": "共有",
+              "reason": "過去の語句の動詞 '共有' と送り仮名の差だけで一致"
+            }
+          ],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達"
+            ],
+            "共有": [
+              "共用",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ]
+          },
+          "reason": "動詞 '共有する' が '共有' の過去の動詞と一致"
+        },
+        "extraction_check": {
+          "core_verb": "共有する",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": null,
+        "candidates_considered": [],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 44.6,
+        "llm_calls": 1
+      }
+    },
+    {
+      "order": 10,
+      "clause_id": "ipa_secguide_v4_5_6_outdoor",
+      "group": "",
+      "expected": {
+        "surface": "極秘又は社外秘の情報資産を送受信",
+        "normalized": "送信",
+        "is_new": false,
+        "core_verb": "送受信",
+        "kind": "concrete",
+        "parent": "提供"
+      },
+      "expected_alternatives": [
+        {
+          "surface": "極秘又は社外秘の情報資産を送受信",
+          "normalized": "受信",
+          "is_new": true,
+          "core_verb": "送受信",
+          "kind": "concrete",
+          "parent": null,
+          "definition": {
+            "text": "送られてきた情報を受け取ること",
+            "status": "provisional",
+            "basis": [
+              {
+                "quote": "極秘又は社外秘の情報資産を送受信",
+                "basis": "verbatim"
+              }
+            ],
+            "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+          }
+        }
+      ],
+      "matched_expectation": {
+        "surface": "極秘又は社外秘の情報資産を送受信",
+        "normalized": "送信",
+        "is_new": false,
+        "core_verb": "送受信",
+        "kind": "concrete",
+        "parent": "提供"
+      },
+      "actual": {
+        "surface": "暗号化する",
+        "removed_modality": [],
+        "core_verb": "暗号化",
+        "normalized": "暗号化",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "new_mismatch",
+      "verdict_label": "新規の取り違え",
+      "route": "4",
+      "synonym_answer": null,
+      "synonym_reason": "「暗号化」は台帳にあるどの行動とも同じ行為とは言えません。",
+      "verb_matches": [],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "routed_to_human": true,
+      "design_check_only": true,
+      "surface_ambiguous": false,
+      "new_action_kind_matches": true,
+      "surface": {
+        "ok": false,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": false
+      },
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "elapsed_seconds": 210.5,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "暗号化する",
+              "surface": "暗号化する",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "暗号化"
+            }
+          ],
+          "surface": "暗号化する",
+          "core_verb": "暗号化",
+          "removed_modality": [],
+          "choice": "該当なし",
+          "reason": "動詞 '暗号化' と一致する過去の動詞が台帳に無い／同義語も無い: 「暗号化」は台帳にあるどの行動とも同じ行為とは言えません。",
+          "definition_part": "",
+          "route": "4",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "暗号化",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ]
+          },
+          "reason": "動詞 '暗号化' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "暗号化",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": {
+          "core_verb": "暗号化",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ]
+          },
+          "answer": null,
+          "reason": "「暗号化」は台帳にあるどの行動とも同じ行為とは言えません。",
+          "raw_answer": "該当なし"
+        },
+        "candidates_considered": [],
+        "new_action_proposal": {
+          "name": "暗号化",
+          "definition": "情報やデータを、読み取りが困難な形式に変換すること",
+          "kind": "concrete",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "暗号化する"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "放置",
+          "name_ratio": 0.0,
+          "definition_overlap": 0.143,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 210.5,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 11,
+      "clause_id": "ipa_secguide_v4_phys_3_phone",
+      "group": "",
+      "expected": {
+        "surface": "従業員の個人情報を伝え",
+        "normalized": "伝達",
+        "is_new": false,
+        "core_verb": "伝え",
+        "kind": "concrete",
+        "parent": "提供"
+      },
+      "expected_alternatives": [],
+      "matched_expectation": {
+        "surface": "従業員の個人情報を伝え",
+        "normalized": "伝達",
+        "is_new": false,
+        "core_verb": "伝え",
+        "kind": "concrete",
+        "parent": "提供"
+      },
+      "actual": {
+        "surface": "従業員の個人情報を伝え",
+        "removed_modality": [
+          "てはならない"
+        ],
+        "core_verb": "伝える",
+        "normalized": "伝達",
+        "kind": "concrete",
+        "is_new": false
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "3c",
+      "synonym_answer": "伝達",
+      "synonym_reason": "「伝える」と「伝達」は同じ行為を表す同義語です",
+      "verb_matches": [],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "action_synonym_merge"
+      ],
+      "routed_to_human": true,
+      "design_check_only": true,
+      "surface_ambiguous": false,
+      "new_action_kind_matches": null,
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "action_synonym_merge"
+      ],
+      "elapsed_seconds": 95.0,
+      "llm_calls": 2,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "従業員の個人情報を伝えてはならない",
+              "surface": "従業員の個人情報を伝え",
+              "removed_modality": [
+                "てはならない"
+              ],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "伝える"
+            }
+          ],
+          "surface": "従業員の個人情報を伝え",
+          "core_verb": "伝える",
+          "removed_modality": [
+            "てはならない"
+          ],
+          "choice": "伝達",
+          "reason": "動詞の一致は無いが、同義語と判定した: 「伝える」と「伝達」は同じ行為を表す同義語です",
+          "definition_part": "",
+          "route": "3c",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "伝える",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ],
+            "受信": [
+              "送受信"
+            ]
+          },
+          "reason": "動詞 '伝える' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "伝える",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": {
+          "core_verb": "伝える",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ],
+            "受信": [
+              "送受信"
+            ]
+          },
+          "answer": "伝達",
+          "reason": "「伝える」と「伝達」は同じ行為を表す同義語です",
+          "raw_answer": "伝達"
+        },
+        "candidates_considered": [],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 95.0,
+        "llm_calls": 2
+      }
+    },
+    {
+      "order": 12,
+      "clause_id": "ipa_secguide_v4_phys_3_photo",
+      "group": "",
+      "expected": {
+        "surface": "室内での撮影、録音",
+        "normalized": "撮影",
+        "is_new": true,
+        "core_verb": "撮影",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "映像を機器で記録すること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "室内での撮影、録音",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+        }
+      },
+      "expected_alternatives": [
+        {
+          "surface": "室内での撮影、録音",
+          "normalized": "録音",
+          "is_new": true,
+          "core_verb": "録音",
+          "kind": "concrete",
+          "parent": null,
+          "definition": {
+            "text": "音声を機器で記録すること",
+            "status": "provisional",
+            "basis": [
+              {
+                "quote": "室内での撮影、録音",
+                "basis": "verbatim"
+              }
+            ],
+            "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+          }
+        }
+      ],
+      "matched_expectation": {
+        "surface": "室内での撮影、録音",
+        "normalized": "撮影",
+        "is_new": true,
+        "core_verb": "撮影",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "映像を機器で記録すること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "室内での撮影、録音",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+        }
+      },
+      "actual": {
+        "surface": "室内での撮影、録音",
+        "removed_modality": [],
+        "core_verb": "撮影",
+        "normalized": "録音撮影",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "4",
+      "synonym_answer": null,
+      "synonym_reason": "「撮影」は台帳にあるどの行動とも同じ行為とは言えません。",
+      "verb_matches": [],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "routed_to_human": true,
+      "design_check_only": true,
+      "surface_ambiguous": false,
+      "new_action_kind_matches": true,
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "elapsed_seconds": 217.8,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "室内での撮影、録音",
+              "surface": "室内での撮影、録音",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "撮影"
+            }
+          ],
+          "surface": "室内での撮影、録音",
+          "core_verb": "撮影",
+          "removed_modality": [],
+          "choice": "該当なし",
+          "reason": "動詞 '撮影' と一致する過去の動詞が台帳に無い／同義語も無い: 「撮影」は台帳にあるどの行動とも同じ行為とは言えません。",
+          "definition_part": "",
+          "route": "4",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "撮影",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ],
+            "受信": [
+              "送受信"
+            ]
+          },
+          "reason": "動詞 '撮影' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "撮影",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": {
+          "core_verb": "撮影",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ],
+            "受信": [
+              "送受信"
+            ]
+          },
+          "answer": null,
+          "reason": "「撮影」は台帳にあるどの行動とも同じ行為とは言えません。",
+          "raw_answer": "該当なし"
+        },
+        "candidates_considered": [],
+        "new_action_proposal": {
+          "name": "録音撮影",
+          "definition": "音声や映像を記録すること",
+          "kind": "concrete",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "室内での撮影、録音"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "立入り",
+          "name_ratio": 0.0,
+          "definition_overlap": 0.111,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 217.8,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 13,
+      "clause_id": "mhlw_r7dec_art11_3",
+      "group": "",
+      "expected": {
+        "surface": "勤務場所を離れ",
+        "normalized": "離席",
+        "is_new": true,
+        "core_verb": "離れ",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "いる場所から離れること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "勤務場所を離れ",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+        }
+      },
+      "expected_alternatives": [],
+      "matched_expectation": {
+        "surface": "勤務場所を離れ",
+        "normalized": "離席",
+        "is_new": true,
+        "core_verb": "離れ",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "いる場所から離れること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "勤務場所を離れ",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+        }
+      },
+      "actual": {
+        "surface": "勤務場所を離れる",
+        "removed_modality": [],
+        "core_verb": "離れる",
+        "normalized": "離脱",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "new_mismatch",
+      "verdict_label": "新規の取り違え",
+      "route": "4",
+      "synonym_answer": null,
+      "synonym_reason": "「離れる」はリストに挙げられたどの行為とも直接的な同義関係がありません。",
+      "verb_matches": [],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [
+        "action_surface_unverified"
+      ],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "routed_to_human": true,
+      "design_check_only": false,
+      "surface_ambiguous": false,
+      "new_action_kind_matches": true,
+      "surface": {
+        "ok": false,
+        "in_clause": false,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved",
+        "action_surface_unverified"
+      ],
+      "elapsed_seconds": 230.9,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "勤務場所を離れる",
+              "surface": "勤務場所を離れる",
+              "removed_modality": [],
+              "in_clause": false,
+              "modality_found": [],
+              "core_verb": "離れる"
+            }
+          ],
+          "surface": "勤務場所を離れる",
+          "core_verb": "離れる",
+          "removed_modality": [],
+          "choice": "該当なし",
+          "reason": "動詞 '離れる' と一致する過去の動詞が台帳に無い／同義語も無い: 「離れる」はリストに挙げられたどの行為とも直接的な同義関係がありません。",
+          "definition_part": "",
+          "route": "4",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "離れる",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ],
+            "受信": [
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ]
+          },
+          "reason": "動詞 '離れる' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "離れる",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": {
+          "core_verb": "離れる",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ],
+            "受信": [
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ]
+          },
+          "answer": null,
+          "reason": "「離れる」はリストに挙げられたどの行為とも直接的な同義関係がありません。",
+          "raw_answer": "該当なし"
+        },
+        "candidates_considered": [],
+        "new_action_proposal": {
+          "name": "離脱",
+          "definition": "勤務中、職場から離れること。",
+          "kind": "concrete",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "正当な理由なく勤務場所を離れないこと。"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "立入り",
+          "name_ratio": 0.0,
+          "definition_overlap": 0.1,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 230.9,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 14,
+      "clause_id": "mhlw_r7dec_art16_1",
+      "group": "",
+      "expected": {
+        "surface": "自らの業務に関係のない情報を不当に取得",
+        "normalized": "取得",
+        "is_new": true,
+        "core_verb": "取得",
+        "kind": "abstract",
+        "parent": null,
+        "definition": {
+          "text": "情報を手に入れること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "自らの業務に関係のない情報を不当に取得",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+        }
+      },
+      "expected_alternatives": [],
+      "matched_expectation": {
+        "surface": "自らの業務に関係のない情報を不当に取得",
+        "normalized": "取得",
+        "is_new": true,
+        "core_verb": "取得",
+        "kind": "abstract",
+        "parent": null,
+        "definition": {
+          "text": "情報を手に入れること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "自らの業務に関係のない情報を不当に取得",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+        }
+      },
+      "actual": {
+        "surface": "自らの業務に関係のない情報を不当に取得",
+        "removed_modality": [
+          "してはならない"
+        ],
+        "core_verb": "取得",
+        "normalized": "取得",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "4",
+      "synonym_answer": null,
+      "synonym_reason": "「取得」はAction台帳に掲載されているどの行為とも直接的な同一性や同義関係がありません。",
+      "verb_matches": [],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "routed_to_human": true,
+      "design_check_only": true,
+      "surface_ambiguous": false,
+      "new_action_kind_matches": false,
+      "surface": {
+        "ok": false,
+        "in_clause": true,
+        "no_modality": false,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "elapsed_seconds": 233.8,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "自らの業務に関係のない情報を不当に取得してはならない",
+              "surface": "自らの業務に関係のない情報を不当に取得",
+              "removed_modality": [
+                "してはならない"
+              ],
+              "in_clause": true,
+              "modality_found": [
+                "ない"
+              ],
+              "core_verb": "取得"
+            }
+          ],
+          "surface": "自らの業務に関係のない情報を不当に取得",
+          "core_verb": "取得",
+          "removed_modality": [
+            "してはならない"
+          ],
+          "choice": "該当なし",
+          "reason": "動詞 '取得' と一致する過去の動詞が台帳に無い／同義語も無い: 「取得」はAction台帳に掲載されているどの行為とも直接的な同一性や同義関係がありません。",
+          "definition_part": "",
+          "route": "4",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "取得",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ],
+            "受信": [
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ"
+            ]
+          },
+          "reason": "動詞 '取得' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "取得",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": {
+          "core_verb": "取得",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ],
+            "受信": [
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ"
+            ]
+          },
+          "answer": null,
+          "reason": "「取得」はAction台帳に掲載されているどの行為とも直接的な同一性や同義関係がありません。",
+          "raw_answer": "該当なし"
+        },
+        "candidates_considered": [],
+        "new_action_proposal": {
+          "name": "取得",
+          "definition": "情報を不正な方法で入手すること",
+          "kind": "concrete",
+          "parent_suggestion": "提供",
+          "basis_quotes": [
+            "自らの業務に関係のない情報を不当に取得"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "取り出し",
+          "name_ratio": 0.333,
+          "definition_overlap": 0.022,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 233.8,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 15,
+      "clause_id": "mhlw_r7dec_art58_3_5",
+      "group": "",
+      "expected": {
+        "surface": "喫煙可能な場所に連れて行か",
+        "normalized": "同伴",
+        "is_new": true,
+        "core_verb": "連れて行",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "人を連れて、ある場所へ行くこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "喫煙可能な場所に連れて行か",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+        }
+      },
+      "expected_alternatives": [],
+      "matched_expectation": {
+        "surface": "喫煙可能な場所に連れて行か",
+        "normalized": "同伴",
+        "is_new": true,
+        "core_verb": "連れて行",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "人を連れて、ある場所へ行くこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "喫煙可能な場所に連れて行か",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第33回追補 4章の表(Kazuhiro 承認 2026-11-20)"
+        }
+      },
+      "actual": {
+        "surface": "受動喫煙を望まない者を喫煙可能な場所に連れて行か",
+        "removed_modality": [
+          "ないこと"
+        ],
+        "core_verb": "連れて行く",
+        "normalized": "連行",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "new_mismatch",
+      "verdict_label": "新規の取り違え",
+      "route": "4",
+      "synonym_answer": null,
+      "synonym_reason": "「連れて行く」は台帳にあるどの行動とも直接的な同義関係がありません。",
+      "verb_matches": [],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "routed_to_human": true,
+      "design_check_only": true,
+      "surface_ambiguous": false,
+      "new_action_kind_matches": true,
+      "surface": {
+        "ok": false,
+        "in_clause": true,
+        "no_modality": false,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "elapsed_seconds": 250.7,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "受動喫煙を望まない者を喫煙可能な場所に連れて行かないこと",
+              "surface": "受動喫煙を望まない者を喫煙可能な場所に連れて行か",
+              "removed_modality": [
+                "ないこと"
+              ],
+              "in_clause": true,
+              "modality_found": [
+                "ない"
+              ],
+              "core_verb": "連れて行く"
+            }
+          ],
+          "surface": "受動喫煙を望まない者を喫煙可能な場所に連れて行か",
+          "core_verb": "連れて行く",
+          "removed_modality": [
+            "ないこと"
+          ],
+          "choice": "該当なし",
+          "reason": "動詞 '連れて行く' と一致する過去の動詞が台帳に無い／同義語も無い: 「連れて行く」は台帳にあるどの行動とも直接的な同義関係がありません。",
+          "definition_part": "",
+          "route": "4",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "連れて行く",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ],
+            "受信": [
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ"
+            ],
+            "取得": [
+              "取得"
+            ]
+          },
+          "reason": "動詞 '連れて行く' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "連れて行く",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": {
+          "core_verb": "連れて行く",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ],
+            "受信": [
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ"
+            ],
+            "取得": [
+              "取得"
+            ]
+          },
+          "answer": null,
+          "reason": "「連れて行く」は台帳にあるどの行動とも直接的な同義関係がありません。",
+          "raw_answer": "該当なし"
+        },
+        "candidates_considered": [],
+        "new_action_proposal": {
+          "name": "連行",
+          "definition": "他人を特定の場所へ連れること。",
+          "kind": "concrete",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "受動喫煙を望まない者を喫煙可能な場所に連れて行かないこと。"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "発行",
+          "name_ratio": 0.5,
+          "definition_overlap": 0.036,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 250.7,
+        "llm_calls": 3
+      }
+    }
+  ],
+  "ledger_log": [
+    {
+      "order": 1,
+      "action": "台帳に追加: 発行(concrete)"
+    },
+    {
+      "order": 2,
+      "action": "語句を追加: 共有 ← 同一アカウントの他者との共有／語句を追加: 発行 ← 複数の利用者が共有するアカウントの発行"
+    },
+    {
+      "order": 3,
+      "action": "語句を追加: 操作 ← 情報機器・設備の無断操作／台帳に追加: 持出し(concrete)"
+    },
+    {
+      "order": 4,
+      "action": "台帳に追加: 持込み(concrete)"
+    },
+    {
+      "order": 5,
+      "action": "語句を追加: 取り出し ← 私有機器への極秘情報及び社外秘情報のダウンロード"
+    },
+    {
+      "order": 6,
+      "action": "台帳に追加: 保存(concrete)"
+    },
+    {
+      "order": 7,
+      "action": "語句を追加: 使用 ← Wi-Fiサービスの利用"
+    },
+    {
+      "order": 8,
+      "action": "語句を追加: 共有 ← 社外秘又は極秘の情報ファイルを社外に共有"
+    },
+    {
+      "order": 10,
+      "action": "語句を追加: 送信 ← 極秘又は社外秘の情報資産を送受信／台帳に追加: 受信(concrete)"
+    },
+    {
+      "order": 11,
+      "action": "語句を追加: 伝達 ← 従業員の個人情報を伝え"
+    },
+    {
+      "order": 12,
+      "action": "台帳に追加: 撮影(concrete)／台帳に追加: 録音(concrete)"
+    },
+    {
+      "order": 13,
+      "action": "台帳に追加: 離席(concrete)"
+    },
+    {
+      "order": 14,
+      "action": "台帳に追加: 取得(abstract)／親を付けた: 取り出し → 取得／親を付けた: 受信 → 取得"
+    },
+    {
+      "order": 15,
+      "action": "台帳に追加: 同伴(concrete)"
+    }
+  ],
+  "ledger_after": [
+    {
+      "name": "送信",
+      "definition": "データや情報を、電子的に宛先へ送ること（転送を含む）",
+      "kind": "concrete",
+      "parent": "提供",
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "従業員個人のアドレスに転送",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+          "core_verb": "転送"
+        },
+        {
+          "text": "従業員個人のアドレスに送信",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+          "core_verb": "送信"
+        },
+        {
+          "text": "極秘又は社外秘の情報資産を送受信",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 5.6 情報資産の社外持ち出し（箇条書き）",
+          "core_verb": "送受信"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "provisional",
+      "definition_status": "provisional",
+      "approved_by": null,
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00",
+        "note": "名前の出典: registry/dmn/aoi_transmission.dmn 送信可否判定の reason_code「外部送信対象外」と、層1 dt_transmission の entry_points(出典の語は「外部送信」)。v1.11 の D82 で名前を「送信」に改めた(外部送信とデータ送信を1つにまとめる)。定義の文は第33回追補のタスクE1 の表(Kazuhiro 承認 2026-11-20)。定義の文そのものは DMN にも登録簿にも無いので definition_status=provisional(PU4)"
+      }
+    },
+    {
+      "name": "操作",
+      "definition": "情報システムや機器を動かしたり、設定を変えたりすること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "特権/管理者権限で操作を行う",
+          "clause_ref": "IPA情報セキュリティ関連規程 6.7 特権アカウント(第3項)",
+          "core_verb": "操作"
+        },
+        {
+          "text": "特権操作",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.1 アクセス制御方針（箇条書き第5項）",
+          "core_verb": "操作"
+        },
+        {
+          "text": "情報機器・設備の無断操作",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 1.2 セキュリティ領域の設定（レベル2領域の表・制限事項）",
+          "core_verb": "操作"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA情報セキュリティ関連規程 6.7 特権アカウント(第3項)",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "特権/管理者権限で操作を行う",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "情報システム（上位の語。条文の語は「本番環境」ではなく操作の対象を指す）"
+        ]
+      }
+    },
+    {
+      "name": "使用",
+      "definition": "物・設備・サービスを使うこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "会社の施設、物品等を使用",
+          "clause_ref": "厚生労働省モデル就業規則 第11条(遵守事項)第1号",
+          "core_verb": "使用"
+        },
+        {
+          "text": "Wi-Fiサービスの利用",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+          "core_verb": "利用"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省モデル就業規則 第11条(遵守事項)第1号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "会社の施設、物品等を使用",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "使う（条文の語は「使用」）"
+        ]
+      }
+    },
+    {
+      "name": "提供",
+      "definition": "情報を、他の組織や人に渡すこと",
+      "kind": "abstract",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "組織、人に提供",
+          "clause_ref": "IPA情報セキュリティ関連規程 人的対策-2(従業員の責務)",
+          "core_verb": "提供"
+        },
+        {
+          "text": "機密を漏洩",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第11条（遵守事項）第5号",
+          "core_verb": "漏洩"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA情報セキュリティ関連規程 人的対策-2(従業員の責務)",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "組織、人に提供",
+            "basis": "verbatim"
+          },
+          {
+            "quote": "当社が営業秘密として管理する情報",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "渡す(条文の語は「提供」。前段設計書 v0.6 の図3の文)"
+        ]
+      }
+    },
+    {
+      "name": "労働指示",
+      "definition": "使用者が、労働者を働かせること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "労働に従事させ",
+          "clause_ref": "厚生労働省モデル就業規則 第21条(時間外及び休日労働等)第3項",
+          "core_verb": "従事させ"
+        },
+        {
+          "text": "就業させ",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第25条（産前産後の休業）第2項",
+          "core_verb": "就業させ"
+        },
+        {
+          "text": "所定労働時間外労働又は休日労働に従事させ",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第21条（時間外及び休日労働等）第4項",
+          "core_verb": "従事させ"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省モデル就業規則 第21条(時間外及び休日労働等)第3項",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "労働に従事させ",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "使用者・労働者（労働法の一般的な語。条文の語は「従業員」）",
+          "働かせる（条文の語は「労働に従事させ」）"
+        ]
+      }
+    },
+    {
+      "name": "伝達",
+      "definition": "情報を、相手に伝えること",
+      "kind": "concrete",
+      "parent": "提供",
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "口頭で伝達",
+          "clause_ref": "情報管理規程 第14条",
+          "core_verb": "伝達"
+        },
+        {
+          "text": "従業員の個人情報を伝え",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+          "core_verb": "伝え"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "情報管理規程 第14条",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "口頭で伝達",
+            "basis": "verbatim"
+          },
+          {
+            "quote": "検査結果その他の医療情報",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "相手(条文の語は「患者又はその代理人」。前段設計書 v0.6 の図3の文)"
+        ]
+      }
+    },
+    {
+      "name": "共有",
+      "definition": "物や情報を、他の人も使える・見られる状態にすること",
+      "kind": "concrete",
+      "parent": "提供",
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "特権アカウント名を2名以上で共用",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.10 利用者アカウント・パスワードの条件（表・特権アカウント列／アカウント名行）",
+          "core_verb": "共用"
+        },
+        {
+          "text": "同一アカウントの他者との共有",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.2.1 認証に関する基本方針（箇条書き第2項）",
+          "core_verb": "共有"
+        },
+        {
+          "text": "社外秘又は極秘の情報ファイルを社外に共有",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 5.6 情報資産の社外持ち出し（箇条書き）",
+          "core_verb": "共有"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.10 利用者アカウント・パスワードの条件（表・特権アカウント列／アカウント名行）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "1つの特権アカウント名を2名以上で共用しない",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "使える・見られる状態にする(条文の語は「共用」。前段設計書 v0.6 の図3の文)"
+        ]
+      }
+    },
+    {
+      "name": "取り出し",
+      "definition": "サーバーなどにあるデータを、手元の機器に取り込む、または書き出すこと",
+      "kind": "concrete",
+      "parent": "取得",
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "メールの取り出し及びエクスポート",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 7.3 電子メールの利用（箇条書き・クラウド型メールの利用）",
+          "core_verb": "取り出し"
+        },
+        {
+          "text": "私有機器への極秘情報及び社外秘情報のダウンロード",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.1.2 テレワークで利用する機器（末尾の文）",
+          "core_verb": "ダウンロード"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 7.3 電子メールの利用（箇条書き・クラウド型メールの利用）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "メールサーバーからのメールの取り出し及びエクスポート",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "データ（条文の語は「メール」）",
+          "手元の機器に取り込む・書き出す（「エクスポート」の言い換え）"
+        ]
+      }
+    },
+    {
+      "name": "就業",
+      "definition": "労働者が、自ら業務に就くこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "就業",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第11条（遵守事項）第6号",
+          "core_verb": "就業"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省「モデル就業規則」解説版 第11条（遵守事項）第6号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "就業",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "労働者が、自ら（主体を示す語。使用者の側の労働指示と区別するため）"
+        ]
+      }
+    },
+    {
+      "name": "放置",
+      "definition": "情報や物を、管理されない状態で置いたままにすること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "原稿、印刷物を放置",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+          "core_verb": "放置"
+        },
+        {
+          "text": "情報資産の放置",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 1.2 セキュリティ領域の設定（レベル1領域の表・制限事項）",
+          "core_verb": "放置"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "原稿、印刷物を放置",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "情報や物（条文の語は「原稿、印刷物」）",
+          "管理されない状態で置いたままにする（「放置」の言い換え）"
+        ]
+      }
+    },
+    {
+      "name": "立入り",
+      "definition": "区域や場所に入ること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "区域には立ち入ら",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第6号",
+          "core_verb": "立ち入"
+        },
+        {
+          "text": "喫煙可能な場所には立ち入ら",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第4号",
+          "core_verb": "立ち入"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第6号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "区域には立ち入ら",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "場所（条文の語は「区域」）",
+          "入る（条文の語は「立ち入ら」）"
+        ]
+      }
+    },
+    {
+      "name": "発行",
+      "definition": "利用者が使うものを作って渡すこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "利用者1名につき1つを発行",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.2.1 認証に関する基本方針（箇条書き第1項）",
+          "core_verb": "発行"
+        },
+        {
+          "text": "複数の利用者が共有するアカウントの発行",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.2.1 認証に関する基本方針（箇条書き第2項）",
+          "core_verb": "発行"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.2.1 認証に関する基本方針（箇条書き第1項）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "利用者1名につき1つを発行",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "持出し",
+      "definition": "物を、決められた場所の外へ持って出ること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "無断持出し",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 1.2 セキュリティ領域の設定（レベル2領域の表・制限事項）",
+          "core_verb": "持出し"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 1.2 セキュリティ領域の設定（レベル2領域の表・制限事項）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "無断持出し",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "持込み",
+      "definition": "物を、決められた場所の中へ持って入ること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "情報記憶媒体の無断持込み",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 1.2 セキュリティ領域の設定（レベル3領域の表・制限事項）",
+          "core_verb": "持込み"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 1.2 セキュリティ領域の設定（レベル3領域の表・制限事項）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "情報記憶媒体の無断持込み",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "保存",
+      "definition": "データを、機器や媒体に記録して残すこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "社外秘又は極秘の情報資産の保存",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+          "core_verb": "保存"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "社外秘又は極秘の情報資産の保存",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "受信",
+      "definition": "送られてきた情報を受け取ること",
+      "kind": "concrete",
+      "parent": "取得",
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "極秘又は社外秘の情報資産を送受信",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 5.6 情報資産の社外持ち出し（箇条書き）",
+          "core_verb": "送受信"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 5.6 情報資産の社外持ち出し（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "極秘又は社外秘の情報資産を送受信",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "撮影",
+      "definition": "映像を機器で記録すること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "室内での撮影、録音",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+          "core_verb": "撮影"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "室内での撮影、録音",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "録音",
+      "definition": "音声を機器で記録すること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "室内での撮影、録音",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+          "core_verb": "録音"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "室内での撮影、録音",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "離席",
+      "definition": "いる場所から離れること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "勤務場所を離れ",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第11条（遵守事項）第3号",
+          "core_verb": "離れ"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省「モデル就業規則」解説版 第11条（遵守事項）第3号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "勤務場所を離れ",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "取得",
+      "definition": "情報を手に入れること",
+      "kind": "abstract",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "自らの業務に関係のない情報を不当に取得",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第16条（個人情報保護）第1項",
+          "core_verb": "取得"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省「モデル就業規則」解説版 第16条（個人情報保護）第1項",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "自らの業務に関係のない情報を不当に取得",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "同伴",
+      "definition": "人を連れて、ある場所へ行くこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "喫煙可能な場所に連れて行か",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第5号",
+          "core_verb": "連れて行"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第5号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "喫煙可能な場所に連れて行か",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    }
+  ]
+}
