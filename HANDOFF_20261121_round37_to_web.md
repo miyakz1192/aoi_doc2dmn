@@ -200,7 +200,8 @@ surface_unverified が立って止まりましたが、**根拠の語句は本�
 
 | コミット | 内容 |
 |---|---|
-| （本資料のコミット） | 保留評価の結果（`docs/eval/action_eval_holdout_20261121.json`・中断分）と本資料 |
+| `c7d3ca9` | 保留評価の結果（`docs/eval/action_eval_holdout_20261121.json`・中断分）と本資料 |
+| （本行を足したコミット） | README の運用の記録に穴1〜5を追記（一目確認 Q2）、運用メモに第37回 K10〜K13 を取り込み |
 
 実行コミットは `72b2a26`（`src`・`testdata`・`registry` は `23b70ec` と同一）。
 
