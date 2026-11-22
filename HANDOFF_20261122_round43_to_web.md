@@ -297,9 +297,9 @@ v4・dev2 ともすり抜け0件で合格なので、**プロンプトも規則�
 
 ```bash
 cd /home/miyakz/aoi_doc2dmn
-git log --oneline -1                      # 8b8529e であることを確かめる
-git status --short                         # 何も出ないことを確かめる
-.venv/bin/python3 -m pytest tests/ -q     # 364件すべてパスすることを確かめる
+git status --short                                   # 何も出ないことを確かめる
+git diff --stat 8b8529e HEAD -- src/ testdata/       # **何も出ない**ことを確かめる（凍結の中身と同じ）
+.venv/bin/python3 -m pytest tests/ -q                # 364件すべてパスすることを確かめる
 
 # 保留評価（1回だけ。約50〜100分）
 .venv/bin/python3 -m src.stage3_frontstage.run_action_eval \
@@ -311,7 +311,7 @@ git status --short                         # 何も出ないことを確かめ�
 
 | # | 確認すること | 状態 |
 |---|---|---|
-| 1 | 凍結コミットのハッシュ | **`8b8529e`**。`git status` はきれい |
+| 1 | 凍結コミットのハッシュ | **`8b8529e`**。`git status` はきれい。**HEAD が `8b8529e` そのものである必要はない**：この回の報告（`dfffa31`）や次の回の HANDOFF が後に積まれるので、確かめるのは `git diff --stat 8b8529e HEAD -- src/ testdata/` が**空**であること（コードと評価用データが凍結の中身と同一であること）。第41回の確認項目1 は「HEAD が `fda0722` であること」と書いていたが、報告のコミットが後に積まれるため実際には成り立たない書き方だった |
 | 2 | テストが全件通る | 364件パス（第42回で +4件） |
 | 3 | 承認の欄が18件すべてに入っている | 入っている（`approved_by: "Kazuhiro"`・`reviewed_at: "2026-11-22"`）。欠けていれば `run_action_eval` が `HoldoutNotApproved` で止まることをテストで確認済み |
 | 4 | **オラクルの期待値（v0.9）** | **正しい 17/18・取りこぼし1件（項目3 使い回し→使用）・すり抜け0件・提案の当たり 1/2。** 記録は `docs/eval/action_eval_holdout_v2_20261122_oracle_v09.json`（4.2節・確認1・確認2） |
