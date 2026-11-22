@@ -12,11 +12,11 @@
 | 2 | プログラム | 末尾の様相を削り、条文にあるかを確かめる | `modality.check_surface` |
 | 3a | プログラム | 中心の動詞を台帳の過去の動詞と比べる。一致が1つならそこへ寄せ、2つ以上なら人に回す | `route_by_verb` |
 | 3b | プログラム | 抜き出した動詞のほかに台帳の動詞が条文に現れたら人に回す(P29) | `check_extraction` |
-| 3c | LLM | 3a で一致が無いときだけ、同義語かを聞く(**定義は渡さない**。W1) | `_judge_synonym` |
-| 4 | LLM | 同義語も無ければ新規候補の名前・定義・段(旧 手順5) | `_propose_action` |
+| 3c | LLM | 3a で一致が無いときだけ、同義語かを聞く(**定義は渡さない**。W1)。答えは提案として残すだけで、寄せはしない(P33) | `_judge_synonym` |
+| 4 | LLM | 3a で一致が無ければ必ず新規候補の名前・定義・段(旧 手順5) | `_propose_action` |
 
-1件あたりの LLM の呼び出しは、3a で寄せたら1回、3c まで進めば2回、新規候補なら3回で
-ある(k=1。P7)。
+1件あたりの LLM の呼び出しは、3a で寄せたら1回、そうでなければ3回(抜き出し・提案・
+新規候補)である(k=1。P7・P33)。
 
 ## v0.4(第31回)での変更
 
@@ -48,6 +48,22 @@
   `SynonymJudgment.off_list` に記録して手順4 へ進める
 - プロンプトの文面は変えていない。第39回で、文面の直しは効かないと分かったため
   (dev2 は判定が1件も変わらず、v4 は正しいが12→11に減った)
+
+## v0.9(第42回)での変更
+
+- **同義語の判定(3c)を「寄せ」から「提案」に格下げした**(P33)。3a で動詞が一致
+  しなければ、3c が既存の名前を返しても**必ず新規候補(手順4)にする**。3c の答えは
+  「既存の〇〇の同義語かもしれない」という提案として Trace に残し、
+  `action_synonym_suggested`(設計上の確認)でレビューに添える。人が提案を受け入れれば
+  その動詞を過去の語句に足し、次からは 3a で寄る(P30)
+- **P31 を廃止した**。3c の候補は抽象・具体の両方の段に戻す。定義は渡さない(W1)。
+  プロンプトの文面も変えない
+- 理由: 3c の誤りは v0.6 の手順3 で8/8、v0.7 の 3c で6/11、v0.8 の 3c で5/10 と
+  一貫して高い。P31 で抽象を外しても LLM は「該当なし」に倒れず、別の具体の Action を
+  選び直したので、重大な誤りが4件→6件に増えた(前段 7.6節)。寄せるべき場面では
+  当てるので、寄せる力は抜いて人への提案として生かす
+- **`action_synonym_merge` を廃止**(P33)。寄せる道が無くなるので `RETIRED_GATES` に
+  移した(区分は設計上の確認のまま。過去の生データを数え直すため)
 
 ## 判断したこと(設計書に書かれていない点)
 
@@ -205,7 +221,8 @@ class NormalizationRun:
     choice: str
     reason: str
     definition_part: str
-    # 寄せた手順(P27): "3a"(動詞の一致)・"3c"(同義語)・"4"(新規候補)
+    # 寄せた手順(P27・P33): "3a"(動詞の一致)・"4"(新規候補)。v0.9 で 3c の答えでは
+    # 寄せなくなったので、"3c" は立たない(過去の記録を読み直すために値は残す)
     route: str = "4"
     considered: list[dict] = field(default_factory=list)
 
@@ -332,15 +349,15 @@ class ActionNormalizationResult:
 # --------------------------------------------------------------------------
 
 
-def concrete_entries(ledger: ActionLedger) -> list[ActionEntry]:
-    """同義語の判定(手順3c)に渡す候補は、具体の段の Action だけ(P31)。
+def synonym_candidates(ledger: ActionLedger) -> list[ActionEntry]:
+    """同義語の判定(手順3c)に渡す候補(P33)。台帳の**全段**を渡す。
 
-    抽象の段に寄るのは手順3a で動詞が一致したときだけで、そのときは
-    `action_abstract_selected` が立つ。抽象に寄せるべき新しい動詞
-    (例「漏洩」→提供)は新規候補として人に回り、人が同義語として承認すれば
-    台帳の過去の語句に足される(P30・P31)。
+    v0.8 では具体の段だけに絞っていた(P31)。抽象の Action への誤った寄せを構造で
+    塞ぐつもりだったが、LLM は候補から抽象が消えると「該当なし」に倒れず、別の
+    具体の Action を選び直した(前段 7.6節)。v0.9 では 3c の答えで寄せること自体を
+    やめた(P33)ので、候補を絞る理由が無くなった。提案は広い候補から選べたほうがよい。
     """
-    return [e for e in ledger.entries if e.kind == ACTION_CONCRETE]
+    return list(ledger.entries)
 
 
 def _verb_block(entries: list[ActionEntry]) -> str:
@@ -348,10 +365,10 @@ def _verb_block(entries: list[ActionEntry]) -> str:
 
     定義を渡さないのが v0.7 の要点である(P27)。定義を読むと「渡す」「得る」と
     言い換えられる行為がすべて抽象の「提供」に吸い寄せられた(第37回 穴2)。
-    v0.8 からは、渡すのを具体の段だけにした(P31)。
+    v0.8 では渡すのを具体の段だけにしたが(P31)、v0.9 で全段に戻した(P33)。
     """
     if not entries:
-        return "（台帳に具体の段の Action はありません）"
+        return "（台帳に Action はありません）"
     lines = []
     for i, entry in enumerate(entries, 1):
         verbs = entry.core_verbs()
@@ -623,13 +640,14 @@ class ActionNormalizer:
     ) -> SynonymJudgment:
         """手順3c: 動詞の一致が無かったときだけ、同義語かを LLM に聞く(P27・W1)。
 
-        渡すのは中心の動詞と、台帳の**具体の段の** Action の名前・過去の動詞だけで
-        ある。**定義と抽象の段は渡さない**(P27・P31)。第37回の誤統合8件は、定義を
-        読んで「一番近い既存」を選んだ結果だった(抽象の「提供」への寄せが5件。前段
-        7.4節)。第39回では、定義を渡さなくても抽象の「提供」への寄せが残ったので、
-        候補そのものから抽象の段を外した(前段 7.5節)。
+        渡すのは中心の動詞と、台帳の Action の名前・過去の動詞だけである。**定義は
+        渡さない**(W1)。第37回の誤統合8件は、定義を読んで「一番近い既存」を選んだ
+        結果だった(抽象の「提供」への寄せが5件。前段 7.4節)。
+
+        v0.9 からは、この答えで既存に寄せることはしない(P33)。答えは提案として
+        Trace に残すだけなので、候補は全段に戻してある。
         """
-        entries = concrete_entries(ledger)
+        entries = synonym_candidates(ledger)
         offered = {e.name: e.core_verbs() for e in entries}
         prompt = SYNONYM_PROMPT.format(
             core_verb=candidate.core_verb,
@@ -642,12 +660,11 @@ class ActionNormalizer:
         reason = str(parsed.get("reason", ""))
         off_list = bool(raw) and answer is None and raw != NO_MATCH
         if off_list:
-            # 閉じた選択を外れた答え(渡していない名前)は「該当なし」として扱い、
-            # 手順4(新規候補)へ進める(P5・P31)。抽象の段の名前もここに入る
-            where = "台帳の抽象の段" if ledger.find(raw) is not None else "台帳の外"
+            # 閉じた選択を外れた答え(台帳に無い名前)は「提案なし」として扱う(P5)。
+            # v0.9 では、どちらにしても出力は新規候補である(P33)
             reason = (
-                f"[候補に渡していない名前 {raw!r}({where})が返されたので"
-                "同義語なしとして扱った] " + reason
+                f"[候補に渡していない名前 {raw!r}(台帳の外)が返されたので"
+                "提案なしとして扱った] " + reason
             )
         return SynonymJudgment(
             core_verb=candidate.core_verb,
@@ -708,6 +725,8 @@ class ActionNormalizer:
 
         手順は v0.7 で変わった(P27。4.7節)。寄せるかどうかは**動詞の規則**で決め、
         LLM は語句と動詞の抜き出し(手順1)と、同義語の判定(手順3c)だけを行う。
+        v0.9 では、3c の答えで寄せることをやめた(P33。4.8節)。3a で動詞が一致しなければ
+        必ず新規候補にし、3c の答えは提案として Trace に残す。
         """
         started = time.monotonic()
         self.calls = 0
@@ -736,15 +755,17 @@ class ActionNormalizer:
             route = "3a"
             reason = routing.reason
         else:
+            # P33: 3c の答えでは寄せない。必ず新規候補(手順4)にし、答えは提案として残す
             synonym = self._judge_synonym(primary, ledger)
+            choice = NO_MATCH
+            route = "4"
             if synonym.answer is not None:
-                choice = synonym.answer
-                route = "3c"
-                reason = f"動詞の一致は無いが、同義語と判定した: {synonym.reason}"
+                reason = (
+                    f"{routing.reason}／同義語の提案あり(寄せない。P33): "
+                    f"{synonym.answer!r} — {synonym.reason}"
+                )
             else:
-                choice = NO_MATCH
-                route = "4"
-                reason = f"{routing.reason}／同義語も無い: {synonym.reason}"
+                reason = f"{routing.reason}／同義語の提案も無い: {synonym.reason}"
 
         run = NormalizationRun(
             temperature=self.temperature,
@@ -790,8 +811,9 @@ class ActionNormalizer:
             action_surface_ambiguous=(
                 len(candidates) > 1 or routing.ambiguous or extraction.flagged
             ),
-            # P30: 動詞が合わないまま寄せたのは、同義語の判定で寄せた場合だけ
-            action_synonym_merge=route == "3c",
+            # P33: 3c の答えでは寄せないので、新規候補にしたうえで提案を添える。
+            # action_synonym_merge(v0.8 まで)は廃止した(RETIRED_GATES)
+            action_synonym_suggested=synonym is not None and synonym.answer is not None,
             action_abstract_selected=(
                 existing_kind == ACTION_ABSTRACT
                 if not is_new

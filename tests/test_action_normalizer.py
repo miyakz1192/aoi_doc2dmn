@@ -91,6 +91,17 @@ def seeded_ledger() -> ActionLedger:
     )
 
 
+# v0.9: 3a で寄らなければ必ず手順4 を通るので、名前を見ないテストでも新規候補の
+# 応答が必要になる(P33)
+DEFAULT_PROPOSAL = {
+    "name": "（既定の新規候補）",
+    "definition": "テスト用の定義",
+    "kind": "concrete",
+    "parent": None,
+    "basis_quotes": [],
+}
+
+
 def _responses(
     candidates: list[dict],
     choice: str,
@@ -98,16 +109,18 @@ def _responses(
     proposal: dict | None = None,
     considered: list[dict] | None = None,
 ) -> list[dict]:
-    """k=1 の呼び出しの応答を組み立てる(v0.7 の手順。P27)。
+    """k=1 の呼び出しの応答を組み立てる(v0.9 の手順。P27・P33)。
 
     1回目は抜き出し(手順1)。2回目は**同義語の判定**(手順3c)で、`choice` に台帳の
     名前を渡すと「同義語である」と答え、`NO_MATCH` を渡すと同義語なしになる。
     手順3a(動詞の一致)で寄った場合、2回目は呼ばれないので使われない。
+
+    v0.9 では 3c の答えで寄せないので(P33)、3a で寄らなければ必ず3回目(新規候補)が
+    呼ばれる。`proposal` を渡さないときは、名前を見ない既定の候補を返す。
     """
     out: list[dict] = [{"candidates": candidates, "rationale": "(固定)"}]
     out.append({"synonym_of": choice, "reason": f"{choice} と同義(固定)"})
-    if proposal is not None:
-        out.append(proposal)
+    out.append(proposal if proposal is not None else DEFAULT_PROPOSAL)
     return out
 
 
@@ -260,12 +273,13 @@ def test_the_name_rule_list_excludes_the_plain_negation():
 
 
 def test_normalization_runs_once_at_temperature_zero(seeded_ledger):
-    """P7 v0.4: k=1。呼び出しは抜き出しと選択の2回で、温度は 0.0。"""
+    """P7 v0.4・P33: k=1。1件あたりの呼び出しは、3a で寄れば1回、そうでなければ
+    3回(抜き出し・同義語の提案・新規候補)で、温度はどれも 0.0。"""
     result, llm = _normalize(
         seeded_ledger, CLAUSE, [{"surface": SURFACE, "core_verb": "使用"}], "送信"
     )
-    assert llm.temperatures == [TEMPERATURE, TEMPERATURE]
-    assert result.trace.llm_calls == 2
+    assert llm.temperatures == [TEMPERATURE, TEMPERATURE, TEMPERATURE]
+    assert result.trace.llm_calls == 3
     # 廃止したゲートは名前ごと無くなっている(P7)
     assert "action_mapping_unstable" not in result.gates.gate_names()
 
@@ -347,22 +361,71 @@ def test_two_verb_matches_go_to_a_human(seeded_ledger):
     assert result.action.normalized == "送信"
 
 
-def test_a_synonym_merge_raises_the_design_check_gate(seeded_ledger):
-    """手順3c(P27・P30): 動詞が一致しないが同義語と判定して寄せたら
-    `action_synonym_merge`。"""
+def test_a_synonym_answer_is_only_a_suggestion_and_never_merges(seeded_ledger):
+    """P33: 3c が既存の名前を返しても寄せず、新規候補にして提案として残す。"""
     seeded_ledger.record_surface("送信", "情報を送信", "あおいの既存DMN", "送信")
+    proposal = {"name": "転送", "definition": "情報を別の宛先に送ること",
+                "kind": "concrete", "parent": None, "basis_quotes": []}
     result, llm = _normalize(
         seeded_ledger,
         "極秘の情報を社外に転送してはならない。",
         [{"surface": "社外に転送", "core_verb": "転送"}],
         "送信",
+        proposal=proposal,
     )
-    assert result.action.normalized == "送信"
-    assert result.trace.run.route == "3c"
-    assert "action_synonym_merge" in result.gates.gate_names()
+    # 出力は新規候補。既存の「送信」には寄せない
+    assert result.action.normalized == "転送"
+    assert result.action.is_new is True
+    assert result.trace.run.route == "4"
+    # 提案は Trace に残り、設計上の確認のゲートが立つ
     assert result.trace.synonym_judgment.answer == "送信"
-    assert result.trace.llm_calls == 2
-    assert len(llm.prompts) == 2
+    assert "action_synonym_suggested" in result.gates.gate_names()
+    assert "action_synonym_merge" not in result.gates.gate_names()
+    assert "P33" in result.trace.run.reason
+    assert result.trace.llm_calls == 3
+    assert len(llm.prompts) == 3
+
+
+def test_no_synonym_means_no_suggestion_gate(seeded_ledger):
+    """P33: 3c が「該当なし」なら、提案のゲートは立たない。"""
+    seeded_ledger.record_surface("送信", "情報を送信", "あおいの既存DMN", "送信")
+    proposal = {"name": "転送", "definition": "情報を別の宛先に送ること",
+                "kind": "concrete", "parent": None, "basis_quotes": []}
+    result, _ = _normalize(
+        seeded_ledger,
+        "極秘の情報を社外に転送してはならない。",
+        [{"surface": "社外に転送", "core_verb": "転送"}],
+        NO_MATCH,
+        proposal=proposal,
+    )
+    assert result.action.is_new is True
+    assert result.trace.synonym_judgment.answer is None
+    assert "action_synonym_suggested" not in result.gates.gate_names()
+
+
+def test_the_retired_synonym_merge_gate_is_counted_as_a_design_check(seeded_ledger):
+    """P33: `action_synonym_merge` は廃止したが、過去の生データを数え直すときは
+    当時の区分(設計上の確認)で数える。"""
+    from src.stage3_generate.ir_schema import (
+        DESIGN_CHECK_GATES,
+        RETIRED_GATES,
+        gate_kind,
+    )
+
+    assert "action_synonym_merge" not in DESIGN_CHECK_GATES
+    assert "action_synonym_merge" in RETIRED_GATES
+    assert gate_kind("action_synonym_merge") == "design_check"
+    assert "action_synonym_suggested" in DESIGN_CHECK_GATES
+    assert gate_kind("action_synonym_suggested") == "design_check"
+    # 立つことはない
+    seeded_ledger.record_surface("送信", "情報を送信", "あおいの既存DMN", "送信")
+    result, _ = _normalize(
+        seeded_ledger,
+        "極秘の情報を社外に転送してはならない。",
+        [{"surface": "社外に転送", "core_verb": "転送"}],
+        "送信",
+    )
+    assert "action_synonym_merge" not in result.gates.gate_names()
 
 
 def test_the_retired_verb_mismatch_gate_is_gone(seeded_ledger):
@@ -497,8 +560,9 @@ def test_abstract_selected_raises_the_gate(seeded_ledger):
     assert result.chosen_kind == "abstract"
 
 
-def test_the_synonym_candidates_never_include_an_abstract_action(seeded_ledger):
-    """P31: 3c に渡す候補は具体の段だけ。抽象の段は名前も動詞も渡さない。"""
+def test_the_synonym_candidates_include_the_abstract_actions_again(seeded_ledger):
+    """P33(P31 の廃止): 3c に渡す候補は台帳の全段に戻した。寄せはしないので、
+    提案は広い候補から選べたほうがよい。"""
     seeded_ledger.add(
         ActionEntry(
             name="提供",
@@ -517,17 +581,18 @@ def test_the_synonym_candidates_never_include_an_abstract_action(seeded_ledger):
         proposal=proposal,
     )
     synonym_prompt = llm.prompts[1]
-    assert "提供（これまでの動詞" not in synonym_prompt  # 一覧に抽象は入らない
-    assert "送信（これまでの動詞" in synonym_prompt  # 具体の段は渡す
+    assert "提供（これまでの動詞" in synonym_prompt  # 抽象の段も渡す(P31 の廃止)
+    assert "送信（これまでの動詞" in synonym_prompt
     assert result.trace.synonym_judgment is not None
-    assert "提供" not in result.trace.synonym_judgment.offered
+    assert "提供" in result.trace.synonym_judgment.offered
     assert result.action.is_new is True
 
 
-def test_an_abstract_name_returned_by_the_synonym_step_goes_to_a_new_action(
+def test_an_abstract_suggestion_is_kept_as_a_suggestion_and_never_merged(
     seeded_ledger,
 ):
-    """P31: 渡していない名前(抽象の段)が返ってきたら新規候補へ進め、件数を残す。"""
+    """P33: 抽象の段の名前が返っても、寄せずに提案として残す(第37回・第39回の
+    「提供」への誤統合は、ここで前段の出力から外れる)。"""
     seeded_ledger.add(
         ActionEntry(
             name="提供",
@@ -545,11 +610,15 @@ def test_an_abstract_name_returned_by_the_synonym_step_goes_to_a_new_action(
         "提供",  # 渡していない抽象の段の名前を返してきた
         proposal=proposal,
     )
-    assert result.trace.synonym_judgment.off_list is True
-    assert result.trace.synonym_judgment.answer is None
-    assert "台帳の抽象の段" in result.trace.synonym_judgment.reason
+    # 候補に入っているので「渡していない名前」ではない(P31 を廃止した)
+    assert result.trace.synonym_judgment.off_list is False
+    assert result.trace.synonym_judgment.answer == "提供"
     assert result.trace.run.route == "4"
     assert result.action.is_new is True
+    assert result.action.normalized == "漏洩"
+    assert "action_synonym_suggested" in result.gates.gate_names()
+    # 抽象に寄せていないので、抽象の段のゲートは立たない
+    assert "action_abstract_selected" not in result.gates.gate_names()
 
 
 # --------------------------------------------------------------------------
@@ -865,6 +934,9 @@ def taught_ledger(action_gold, seeded_ledger) -> ActionLedger:
 def test_mis_merge_is_an_unrelated_existing_action(action_gold, taught_ledger):
     """誤統合: 親子関係にない既存の Action に寄せた(重大)。"""
     item = action_gold["items"][14]  # 物理3(正解は新規の「放置」)
+    # v0.9: 3c の答えでは寄せない(P33)ので、既存に寄るのは手順3a だけ。人が
+    # 「放置」を「使用」の同義語として承認し、過去の語句に足した状態を作る(P30)
+    taught_ledger.record_surface("使用", "原稿、印刷物を放置", item["clause_ref"], "放置")
     result, _ = _normalize(
         taught_ledger, item["text"],
         [{"surface": "原稿、印刷物を放置しない", "core_verb": "放置"}], "使用",
@@ -873,11 +945,12 @@ def test_mis_merge_is_an_unrelated_existing_action(action_gold, taught_ledger):
     assert classify(item, result, taught_ledger) == "mis_merge"
     verdict = judge(item, result, taught_ledger)
     assert verdict.severe is True
-    # v0.7: 動詞が一致しないかぎり寄らないので、誤統合は同義語の判定(手順3c)でしか
-    # 起きない。そのゲートが立つのですり抜けない(P30)
-    assert verdict.route == "3c"
-    assert "action_synonym_merge" in verdict.gates
-    assert verdict.slipped is False
+    assert verdict.route == "3a"
+    assert "action_synonym_merge" not in verdict.gates
+    # v0.9 で誤統合が起きる道は手順3a だけになった。3a の寄せにはゲートが立たない
+    # ので、この1件はすり抜ける。ただしそこへ至るには、人が誤った同義語を承認して
+    # 動詞を過去の語句に足している必要がある(P30)
+    assert verdict.slipped is True
 
 
 def test_under_applied_is_choosing_a_descendant_of_the_right_abstract_action(
@@ -885,6 +958,9 @@ def test_under_applied_is_choosing_a_descendant_of_the_right_abstract_action(
 ):
     """適用漏れ: 正解は抽象的な Action なのに、その子孫を選んだ(重大)。"""
     item = action_gold["items"][2]  # 人的対策-2(正解は抽象の「提供」)
+    # v0.9: 既存に寄るのは手順3a だけ(P33)。人が「提供」を「送信」の同義語として
+    # 誤って承認した状態を作る(P30)
+    seeded_ledger.record_surface("送信", "組織、人に提供", item["clause_ref"], "提供")
     result, _ = _normalize(
         seeded_ledger, item["text"],
         [{"surface": "組織、人に提供してはならない", "core_verb": "提供"}], "送信",
@@ -941,6 +1017,57 @@ def test_missing_an_existing_action_is_counted_as_a_miss(action_gold, taught_led
     assert verdict.severe is False
     assert verdict.route == "4"
     assert "new_action_unapproved" in verdict.gates
+
+
+def test_a_missed_item_with_a_right_suggestion_can_be_rescued(
+    action_gold, taught_ledger
+):
+    """P33 の指標: 取りこぼしのうち、提案が正解と一致していた件は人が救える。"""
+    item = action_gold["items"][5]  # 6.1⑤(正解は既存の「操作」)
+    proposal = {
+        "name": "私有機器使用",
+        "definition": "私有機器を使うこと",
+        "kind": "concrete",
+        "parent": None,
+        "basis_quotes": [],
+    }
+    result, _ = _normalize(
+        taught_ledger, item["text"],
+        [{"surface": "社有機器及び指定経路（VPN等）からのみ実施", "core_verb": "実施"}],
+        "操作",  # 3c は正解の既存を提案した
+        proposal=proposal, clause_ref=item["clause_ref"],
+    )
+    verdict = judge(item, result, taught_ledger)
+    # 寄せはしないので、出力は取りこぼしのまま
+    assert verdict.verdict == "missed"
+    assert verdict.is_new is True
+    assert verdict.synonym_suggestion == "操作"
+    assert verdict.suggestion_in_scope is True
+    assert verdict.suggestion_hit is True
+    assert verdict.suggestion_rescues_missed is True
+    assert verdict.suggestion_false_alarm is False
+    assert "action_synonym_suggested" in verdict.gates
+
+
+def test_a_suggestion_on_a_new_action_is_a_false_alarm(action_gold, taught_ledger):
+    """P33 の指標: 正解が新規なのに提案が出たら、提案の誤報として数える。"""
+    item = action_gold["items"][14]  # 物理3(正解は新規の「放置」)
+    proposal = {"name": "放置", "definition": "置いたままにすること",
+                "kind": "concrete", "parent": None, "basis_quotes": []}
+    result, _ = _normalize(
+        taught_ledger, item["text"],
+        [{"surface": "原稿、印刷物を放置しない", "core_verb": "放置"}],
+        "使用",  # 3c が誤って既存を提案した
+        proposal=proposal, clause_ref=item["clause_ref"],
+    )
+    verdict = judge(item, result, taught_ledger)
+    assert verdict.verdict == "correct"  # 出力そのものは正しい(新規の「放置」)
+    assert verdict.suggestion_false_alarm is True
+    assert verdict.suggestion_in_scope is False  # 正解が新規なので分母に入らない
+    assert verdict.suggestion_hit is False
+    # 設計上の確認なので、正しい結果でもゲートの誤報には数えない(P21・W2)
+    assert "action_synonym_suggested" in verdict.gates
+    assert "action_synonym_suggested" not in verdict.false_alarm_gates
 
 
 def test_choosing_the_right_existing_action_is_correct(action_gold, taught_ledger):
@@ -1229,8 +1356,9 @@ def test_either_action_of_a_line_of_expectations_is_correct():
 def test_an_unrelated_action_on_a_line_of_expectations_is_a_mis_merge():
     """P25: 並びのどれとも親子関係にない既存を選べば誤統合(重大)。"""
     item, ledger = _alt_item(), _alt_ledger()
-    # v0.7: 「複写」を抜き出すと手順3a で正しく寄るので、台帳に無い動詞を抜き出し、
-    # 同義語の判定(手順3c)が「放置」と誤って答えた場合で確かめる
+    # v0.9: 既存に寄るのは手順3a だけ(P33)。「書類」が「放置」の過去の語句に
+    # 誤って足された状態を作る
+    ledger.record_surface("放置", "書類", item["clause_ref"], "書類")
     result, _ = _normalize(
         ledger, item["text"], [{"surface": "書類", "core_verb": "書類"}], "放置",
         clause_ref=item["clause_ref"],
@@ -1238,7 +1366,8 @@ def test_an_unrelated_action_on_a_line_of_expectations_is_a_mis_merge():
     verdict = judge(item, result, ledger)
     assert verdict.verdict == "mis_merge"
     assert verdict.severe is True
-    assert "action_synonym_merge" in verdict.gates
+    assert verdict.route == "3a"
+    assert "action_synonym_merge" not in verdict.gates
 
 
 def test_the_ambiguous_gate_is_by_design_on_a_line_of_expectations():
@@ -1289,6 +1418,8 @@ def test_choosing_a_descendant_of_a_new_abstract_action_is_under_applied():
                        "basis": [], "general_terms": []},
         "review": {"approved_by": "pytest"},
     }
+    # v0.9: 既存に寄るのは手順3a だけ(P33)
+    ledger.record_surface("持出し", "書類を移動", item["clause_ref"], "移動")
     result, _ = _normalize(
         ledger, item["text"], [{"surface": "書類を移動", "core_verb": "移動"}], "持出し",
         clause_ref=item["clause_ref"],

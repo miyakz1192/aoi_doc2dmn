@@ -191,11 +191,12 @@ class ItemResult:
     core_verb: str
     verdict: str
     gates: list[str]
-    # v0.7: どの手順で寄せたか("3a"・"3c"・"4")と、同義語の判定の答え(P27)
+    # v0.7: どの手順で寄せたか("3a"・"4")。v0.9 で 3c の答えでは寄せない(P33)
     route: str
-    synonym_answer: Optional[str]
-    synonym_reason: str
-    # P31: 3c が、渡していない名前(抽象の段や台帳の外)を返した件
+    # P33: 手順3c の提案(既存の Action の名前か None)と、その理由。寄せには使わない
+    synonym_suggestion: Optional[str]
+    synonym_suggestion_reason: str
+    # 3c が台帳に無い名前を返した件(提案なしとして扱う)
     synonym_off_list: bool
     verb_matches: list[str]
     extraction_hits: list[dict]
@@ -291,6 +292,36 @@ class ItemResult:
         return proposal.get("kind") in expected_kinds
 
     @property
+    def gold_has_existing(self) -> bool:
+        """正解(並びを含む)に既存の Action があるか(P33 の提案の指標の分母)。"""
+        return any(not e["is_new"] for e in self.expectations)
+
+    @property
+    def suggestion_in_scope(self) -> bool:
+        """提案の当たりを測る対象か: 正解が既存で、3a で寄らなかった件(P33)。"""
+        return self.gold_has_existing and self.route != "3a"
+
+    @property
+    def suggestion_hit(self) -> bool:
+        """3c の提案が、正解(並びを含む)の既存の Action と一致したか(P33)。"""
+        if self.synonym_suggestion is None:
+            return False
+        return any(
+            (not e["is_new"]) and e["normalized"] == self.synonym_suggestion
+            for e in self.expectations
+        )
+
+    @property
+    def suggestion_false_alarm(self) -> bool:
+        """正解が全部新規なのに提案が出た(P33 の提案の誤報)。"""
+        return (not self.gold_has_existing) and self.synonym_suggestion is not None
+
+    @property
+    def suggestion_rescues_missed(self) -> bool:
+        """取りこぼしのうち、提案が正解と一致していた件(人が受け入れれば救える)。"""
+        return self.verdict == "missed" and self.suggestion_hit
+
+    @property
     def surface_ok(self) -> bool:
         return (
             self.surface_in_clause
@@ -317,9 +348,13 @@ class ItemResult:
             "verdict": self.verdict,
             "verdict_label": CLASS_LABELS[self.verdict],
             "route": self.route,
-            "synonym_answer": self.synonym_answer,
-            "synonym_reason": self.synonym_reason,
+            "synonym_suggestion": self.synonym_suggestion,
+            "synonym_suggestion_reason": self.synonym_suggestion_reason,
             "synonym_off_list": self.synonym_off_list,
+            "suggestion_in_scope": self.suggestion_in_scope,
+            "suggestion_hit": self.suggestion_hit,
+            "suggestion_false_alarm": self.suggestion_false_alarm,
+            "suggestion_rescues_missed": self.suggestion_rescues_missed,
             "verb_matches": list(self.verb_matches),
             "extraction_hits": [dict(h) for h in self.extraction_hits],
             "severe": self.severe,
@@ -417,12 +452,12 @@ def judge(item: dict, result: ActionNormalizationResult, ledger: ActionLedger) -
         verdict=verdict,
         gates=result.gates.gate_names(),
         route=run.route,
-        synonym_answer=(
+        synonym_suggestion=(
             result.trace.synonym_judgment.answer
             if result.trace.synonym_judgment
             else None
         ),
-        synonym_reason=(
+        synonym_suggestion_reason=(
             result.trace.synonym_judgment.reason
             if result.trace.synonym_judgment
             else ""
@@ -858,7 +893,7 @@ def run(
             1 for r in results if r.is_alternatives and r.surface_ambiguous
         ),
         # --- v0.7 で足した指標(P27〜P30・PU12) ---
-        # どの手順で寄せたか
+        # どの手順で寄せたか(v0.9 では "3c" は立たない。P33)
         "routed_by": {
             route: sum(1 for r in results if r.route == route)
             for route in ("3a", "3c", "4")
@@ -867,35 +902,48 @@ def run(
         "route_3a_correct": sum(
             1 for r in results if r.route == "3a" and r.correct
         ),
-        # 手順3c(同義語)で寄せた件のうち、正しかった件数(PU12: 誤った同義語の判定)
-        "route_3c_correct": sum(
-            1 for r in results if r.route == "3c" and r.correct
+        # --- v0.9 で足した指標(P33。3c は提案だけになった) ---
+        # 提案の当たり: 正解が既存で 3a で寄らなかった件のうち、提案が正解と一致した数
+        "suggestion_scope": sum(1 for r in results if r.suggestion_in_scope),
+        "suggestion_hits": sum(
+            1 for r in results if r.suggestion_in_scope and r.suggestion_hit
         ),
-        # 手順3c が、渡していない名前(抽象の段や台帳の外)を返した件数(P31)
+        # 提案の誤報: 正解が全部新規なのに提案が出た件数
+        "suggestion_false_alarms": sum(1 for r in results if r.suggestion_false_alarm),
+        # 提案で救える取りこぼし: 取りこぼしのうち、提案が正解と一致していた件数
+        "suggestion_rescues_missed": sum(
+            1 for r in results if r.suggestion_rescues_missed
+        ),
+        "suggestions": [
+            {
+                "order": r.order,
+                "clause_id": r.clause_id,
+                "core_verb": r.core_verb,
+                "suggestion": r.synonym_suggestion,
+                "reason": r.synonym_suggestion_reason,
+                "verdict": r.verdict,
+                "expected": r.expected.get("normalized"),
+                "expected_is_new": r.expected.get("is_new"),
+                "in_scope": r.suggestion_in_scope,
+                "hit": r.suggestion_hit,
+                "false_alarm": r.suggestion_false_alarm,
+                "rescues_missed": r.suggestion_rescues_missed,
+            }
+            for r in results
+            if r.synonym_suggestion is not None
+        ],
+        # 3c が台帳に無い名前を返した件数
         "synonym_off_list": sum(1 for r in results if r.synonym_off_list),
         "synonym_off_list_detail": [
             {
                 "order": r.order,
                 "clause_id": r.clause_id,
                 "core_verb": r.core_verb,
-                "reason": r.synonym_reason,
+                "reason": r.synonym_suggestion_reason,
                 "verdict": r.verdict,
             }
             for r in results
             if r.synonym_off_list
-        ],
-        "synonym_merges": [
-            {
-                "order": r.order,
-                "clause_id": r.clause_id,
-                "core_verb": r.core_verb,
-                "answer": r.synonym_answer,
-                "reason": r.synonym_reason,
-                "verdict": r.verdict,
-                "correct": r.correct,
-            }
-            for r in results
-            if r.route == "3c"
         ],
         # 手順3b(P29): 条文に台帳の別の動詞が残っていた件数と、短い動詞で当たった数
         "extraction_check_items": sum(1 for r in results if r.extraction_hits),
@@ -965,14 +1013,25 @@ def print_summary(out: dict) -> None:
         print(
             f"  寄せ方: 手順3a(動詞の一致) {routed.get('3a', 0)}件"
             f"（正しい {s.get('route_3a_correct', 0)}）／"
-            f"手順3c(同義語) {routed.get('3c', 0)}件"
-            f"（正しい {s.get('route_3c_correct', 0)}）／"
             f"新規候補 {routed.get('4', 0)}件"
+            + (
+                f"／手順3c で寄せた {routed.get('3c', 0)}件"
+                if routed.get("3c")
+                else "（手順3c は提案だけ。P33）"
+            )
+        )
+    if "suggestion_scope" in s:
+        scope = s["suggestion_scope"]
+        print(
+            f"  手順3c の提案（P33）: 当たり {s['suggestion_hits']}/{scope}"
+            f"（正解が既存で 3a で寄らなかった件）／"
+            f"誤報 {s['suggestion_false_alarms']}件（正解が新規なのに提案が出た）／"
+            f"救える取りこぼし {s['suggestion_rescues_missed']}件"
         )
     if s.get("synonym_off_list"):
         print(
-            f"  手順3c が渡していない名前を返した（P31）: {s['synonym_off_list']}件"
-            "（該当なしとして新規候補へ回した）"
+            f"  手順3c が台帳に無い名前を返した: {s['synonym_off_list']}件"
+            "（提案なしとして扱った）"
         )
     if s.get("extraction_check_items"):
         print(
@@ -1062,10 +1121,12 @@ def print_summary(out: dict) -> None:
                     f"{[m['name'] for m in verb.get('matches', [])]}"
                     f"（{verb.get('reason')}）"
                 )
-            if i.get("synonym_answer") or i.get("route") == "3c":
+            if i.get("synonym_suggestion"):
+                hit = "正解と一致" if i.get("suggestion_hit") else "正解と違う"
                 print(
-                    f"      同義語の判定(手順3c): {i.get('synonym_answer')!r}"
-                    f"（{i.get('synonym_reason')}）"
+                    f"      同義語の提案(手順3c。寄せていない): "
+                    f"{i.get('synonym_suggestion')!r}（{hit}）"
+                    f"（{i.get('synonym_suggestion_reason')}）"
                 )
             if i.get("extraction_hits"):
                 print(f"      抜き出しの検査(手順3b): {i['extraction_hits']}")

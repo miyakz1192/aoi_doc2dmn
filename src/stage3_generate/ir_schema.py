@@ -120,6 +120,18 @@ v1(コミット 9e66776)との差分は同書 付録A。
 - **追加**: `action_synonym_merge`(P27・P30)。動詞が一致しなかったが、LLM が同義語と
   判定して既存に寄せた場合に立つ。**設計上の確認**に入れる(誤報に数えない。W2)
 
+## v1.13 で変わった点(前段設計書 v0.9 の4.8節・P33)
+
+同義語の判定(手順3c)を「寄せ」から「提案」に格下げしたので、前段のゲートを
+入れ替えた。IR の型は変わっていない。
+
+- **廃止**: `action_synonym_merge`(P33)。3c の答えで既存に寄せることをやめたので、
+  「同義語と判定して寄せた」が起きない。名前は `RETIRED_GATES` に残す(当時の区分は
+  設計上の確認)
+- **追加**: `action_synonym_suggested`(P33)。動詞が一致せず新規候補にしたが、3c が
+  既存の Action を提案した場合に立つ。**設計上の確認**に入れる(寄せていないので
+  出力の誤りではない。人が提案を受け入れれば動詞を過去の語句に足す。P30)
+
 ## 引き継ぐ原則(設計書1.4)
 
 - 4点セットの同時生成、複合 fact 禁止、FIRST と行の順序、来歴の表し方、Action 正規化
@@ -175,7 +187,7 @@ SUSPICION_GATES: tuple[str, ...] = (
 DESIGN_CHECK_GATES: tuple[str, ...] = (
     "new_action_unapproved",
     "action_abstract_selected",
-    "action_synonym_merge",
+    "action_synonym_suggested",
 )
 
 # 廃止したゲート(P30・P7)。立つことはないが、過去の評価の記録(第32回・第37回の
@@ -187,6 +199,10 @@ RETIRED_GATES: dict[str, str] = {
     # 寄せ方を動詞の規則にしたので廃止(P30。第38回)。動詞が一致しなければ
     # そもそも既存に寄せないため、「寄せたが動詞が合わない」が起きない
     "action_verb_mismatch": "suspicion",
+    # 同義語の判定を提案に格下げしたので廃止(P33。第42回)。3c の答えで既存に
+    # 寄せることをやめたため、「同義語と判定して寄せた」が起きない。代わりに
+    # action_synonym_suggested が立つ
+    "action_synonym_merge": "design_check",
 }
 
 
@@ -838,8 +854,11 @@ class ReviewGates:
     # 行為の語句の候補が2つ出た(P17)。どちらが規制の対象かを人が見る。
     action_surface_ambiguous: bool = False
     # 動詞が一致しなかったが、LLM が同義語と判定して既存に寄せた(P27・P30)。
-    # 寄せ方を動詞の規則にしたので、「動詞が合わないまま寄せた」はここだけで起きる。
+    # v0.9 で廃止(P33)。立つことはないが、過去の記録を読み直すために名前は残す。
     action_synonym_merge: bool = False
+    # 動詞が一致しなかったので新規候補にしたが、LLM が「既存の〇〇の同義語かも
+    # しれない」と提案した(P33)。寄せはしないので、人が提案を受け入れるかを見る。
+    action_synonym_suggested: bool = False
     # 抽象的な段の Action を選んだ(P15)。禁止が子すべてに及ぶので人が段を確かめる。
     action_abstract_selected: bool = False
     # 新規候補の名前・定義に規範の様相の語がある(P16)。
@@ -863,6 +882,7 @@ class ReviewGates:
             "action_surface_unverified",
             "action_surface_ambiguous",
             "action_synonym_merge",
+            "action_synonym_suggested",
             "action_abstract_selected",
             "action_name_rule",
             "action_possible_duplicate",
@@ -891,6 +911,10 @@ class ReviewGates:
         if self.action_synonym_merge:
             out.append(
                 "動詞は一致しなかったが、同義語と判定して既存の Action に寄せた"
+            )
+        if self.action_synonym_suggested:
+            out.append(
+                "新規候補にしたが、既存の Action の同義語かもしれないという提案がある"
             )
         if self.action_abstract_selected:
             out.append("抽象的な段の Action を選んだ(段は正しいか)")
