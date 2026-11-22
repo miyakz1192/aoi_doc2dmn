@@ -1,6 +1,10 @@
 ---
-description: 最新の HANDOFF_*_to_claudecode.md を pull して実行し、報告を push する
+description: Claude Code 側。最新の HANDOFF_*_to_claudecode.md を pull して実行し、報告を push する
 ---
+
+これは **Claude Code 側（実装・実験者）** の手順である。claude.ai 側（作戦検討者）の
+`/next`（スキル `aoi-next`）とは役割が逆なので、名前を分けてある。受け渡しの分担は
+`docs/handoff_protocol.md` にある。
 
 次の手順で作業する。
 

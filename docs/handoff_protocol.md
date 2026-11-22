@@ -45,7 +45,22 @@ Kazuhiro さんの手によるファイルのコピーではなく、このリ�
 3. 作業が終わったら、報告を `HANDOFF_*_to_web.md` として書き、**コミットして push する**。
 4. 運用メモの止まる条件（S1〜S5）に当たったら、そこで止まって報告する。
 
-この手順は、カスタムコマンド `/next`（`.claude/commands/next.md`）として置いてある。
+この手順は、カスタムコマンド **`/next-code`**（`.claude/commands/next-code.md`）として置いてある。
+
+### どちらで何を打つか（2026-11-22 に整理）
+
+`/next` という名前は、claude.ai 側のスキル `aoi-next`（アカウントに同期されている）が
+使っている。中身は作戦検討者の手順で、Claude Code 側の手順とは役割が逆である。
+同じ名前で役割が違うと取り違えるので、名前を分けた。
+
+| 打つ場所 | コマンド | すること |
+|---|---|---|
+| claude.ai（作戦検討） | `/next` （スキル `aoi-next`） | 最新の報告（`HANDOFF_*_to_web.md`）を読み、判断が要る点を出す。判断を受けたら次の `HANDOFF_*_to_claudecode.md` を main に push する |
+| Claude Code（実装・実験） | **`/next-code`** | `git pull` し、最新の `HANDOFF_*_to_claudecode.md` を実行し、報告を `HANDOFF_*_to_web.md` として push する |
+
+Claude Code のセッションで `/next` を打つと、同期済みスキルの方が起動する。その手順の
+「番号が一番大きいのが `_to_claudecode.md` なら Claude Code の作業待ち」という分岐に
+当たるので、そこからこの `/next-code` の手順に移ればよい。
 
 ### 衝突が起きたとき
 
