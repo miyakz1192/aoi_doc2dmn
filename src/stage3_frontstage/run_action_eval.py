@@ -120,26 +120,38 @@ def expectations(item: dict) -> list[dict]:
     return [item["expected"], *item.get("expected_alternatives", [])]
 
 
-def _matches(expected: dict, chosen: str, is_new: bool) -> bool:
+def actual_core_verb(result) -> str:
+    """前段が抜き出した中心の動詞(P32 の比べ方に使う)。
+
+    分類し直し(`recompute_metrics`)では Trace の無い入れ物を渡すので、`core_verb`
+    を直接持っている場合もそこから読む。
+    """
+    trace = getattr(result, "trace", None)
+    run = getattr(trace, "run", None) if trace is not None else None
+    candidates = getattr(run, "candidates", None) if run is not None else None
+    if candidates:
+        return candidates[0].core_verb
+    return str(getattr(result, "core_verb", "") or "")
+
+
+def _matches(expected: dict, chosen: str, is_new: bool, core_verb: str = "") -> bool:
     """出力が1つの正解と一致するか。
 
     既存を選んだ場合は Action 名で比べる。
 
     新規にした場合、名前は文字列そのままでは比べない(名前の付け方には幅があり、人が
-    承認して決める。5.1節)。ただし v0.7 からは**名前の動詞**を比べる(Q2・第37回 穴1)。
-    出力の名前が、正解の名前か正解の中心の動詞と一致しなければ、別の行為を新規に
-    したことになる(第37回の項目10: 正解は受信、出力は暗号化)。比べ方は手順3a と同じ
-    `core_verbs_match`(使役の有無が違えば別の行為。P28)。
+    承認して決める。5.1節)。v0.8 からは、**前段が抜き出した中心の動詞**を正解の
+    中心の動詞と比べる(P32・第40回 Q2')。名前は比べない。「離脱」と「離席」、
+    「連行」と「同伴」のように、同じ行為に別の名前を付けただけの件を誤りに
+    数えないためである。比べ方は手順3a と同じ `core_verbs_match`(使役の有無が
+    違えば別の行為。P28)。
     """
     if is_new:
         if not expected["is_new"]:
             return False
-        compared = [
-            v
-            for v in (expected["normalized"], expected.get("core_verb", ""))
-            if v
-        ]
-        return core_verbs_match(chosen, compared)[0]
+        target = expected.get("core_verb") or expected["normalized"]
+        # 中心の動詞が取れない入れ物(古い生データ)では、名前で比べるしかない
+        return core_verbs_match(core_verb or chosen, [target])[0]
     return (not expected["is_new"]) and chosen == expected["normalized"]
 
 
@@ -183,6 +195,8 @@ class ItemResult:
     route: str
     synonym_answer: Optional[str]
     synonym_reason: str
+    # P31: 3c が、渡していない名前(抽象の段や台帳の外)を返した件
+    synonym_off_list: bool
     verb_matches: list[str]
     extraction_hits: list[dict]
     surface_in_clause: bool
@@ -305,6 +319,7 @@ class ItemResult:
             "route": self.route,
             "synonym_answer": self.synonym_answer,
             "synonym_reason": self.synonym_reason,
+            "synonym_off_list": self.synonym_off_list,
             "verb_matches": list(self.verb_matches),
             "extraction_hits": [dict(h) for h in self.extraction_hits],
             "severe": self.severe,
@@ -339,15 +354,16 @@ def classify(item: dict, result: ActionNormalizationResult, ledger: ActionLedger
     options = expectations(item)
     chosen = result.action.normalized
     is_new = result.action.is_new
+    core_verb = actual_core_verb(result)
     # P25: 並びのどれか1つと一致すれば正しい
-    if any(_matches(exp, chosen, is_new) for exp in options):
+    if any(_matches(exp, chosen, is_new, core_verb) for exp in options):
         return "correct"
     if is_new:
-        if any(exp["is_new"] for exp in options):
-            # 正解も新規だが、別の行為を新規にした(5.1節 v0.7。重さは中)
-            return "new_mismatch"
-        # 新規にしたが、どの正解も既存だった
-        return "missed"
+        if any(not exp["is_new"] for exp in options):
+            # 正解に既存の Action があるのに新規にした = 取りこぼし(P32・第40回 Q2')
+            return "missed"
+        # 正解も全部新規だが、中心の動詞が合わない(5.1節 v0.8。重さは中)
+        return "new_mismatch"
     # 誤りの分類は、出力に最も近い正解(同じ系統のもの)と比べて決める(P25)
     expected = nearest_expectation(options, chosen, ledger)
     relation = ledger.relation(expected["normalized"], chosen)
@@ -371,7 +387,12 @@ def judge(item: dict, result: ActionNormalizationResult, ledger: ActionLedger) -
             (
                 exp
                 for exp in options
-                if _matches(exp, result.action.normalized, result.action.is_new)
+                if _matches(
+                    exp,
+                    result.action.normalized,
+                    result.action.is_new,
+                    actual_core_verb(result),
+                )
             ),
             options[0],
         )
@@ -405,6 +426,11 @@ def judge(item: dict, result: ActionNormalizationResult, ledger: ActionLedger) -
             result.trace.synonym_judgment.reason
             if result.trace.synonym_judgment
             else ""
+        ),
+        synonym_off_list=(
+            result.trace.synonym_judgment.off_list
+            if result.trace.synonym_judgment
+            else False
         ),
         verb_matches=(
             result.trace.verb_routing.matched_names if result.trace.verb_routing else []
@@ -845,6 +871,19 @@ def run(
         "route_3c_correct": sum(
             1 for r in results if r.route == "3c" and r.correct
         ),
+        # 手順3c が、渡していない名前(抽象の段や台帳の外)を返した件数(P31)
+        "synonym_off_list": sum(1 for r in results if r.synonym_off_list),
+        "synonym_off_list_detail": [
+            {
+                "order": r.order,
+                "clause_id": r.clause_id,
+                "core_verb": r.core_verb,
+                "reason": r.synonym_reason,
+                "verdict": r.verdict,
+            }
+            for r in results
+            if r.synonym_off_list
+        ],
         "synonym_merges": [
             {
                 "order": r.order,
@@ -929,6 +968,11 @@ def print_summary(out: dict) -> None:
             f"手順3c(同義語) {routed.get('3c', 0)}件"
             f"（正しい {s.get('route_3c_correct', 0)}）／"
             f"新規候補 {routed.get('4', 0)}件"
+        )
+    if s.get("synonym_off_list"):
+        print(
+            f"  手順3c が渡していない名前を返した（P31）: {s['synonym_off_list']}件"
+            "（該当なしとして新規候補へ回した）"
         )
     if s.get("extraction_check_items"):
         print(

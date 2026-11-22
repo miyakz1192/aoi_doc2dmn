@@ -40,6 +40,15 @@
 - 手順3 の選択のプロンプト(定義を渡して台帳から選ばせる形)は無くなった。第37回の
   誤統合8件は、定義を読んで「一番近い既存」を選んだ結果だった(前段 7.4節)
 
+## v0.8(第40回)での変更
+
+- **同義語の判定(3c)の候補を具体の段だけにした**(P31)。抽象の Action(提供・取得)
+  への誤った寄せを構造で塞ぐ。抽象に寄るのは 3a で動詞が一致したときだけ
+- 渡していない名前(抽象の段を含む)が返ってきたら「該当なし」として扱い、
+  `SynonymJudgment.off_list` に記録して手順4 へ進める
+- プロンプトの文面は変えていない。第39回で、文面の直しは効かないと分かったため
+  (dev2 は判定が1件も変わらず、v4 は正しいが12→11に減った)
+
 ## 判断したこと(設計書に書かれていない点)
 
 - **中心の動詞の比べ方**: 完全一致、またはどちらかがもう片方を含むこと
@@ -67,7 +76,7 @@ from typing import Optional, Protocol
 from src.stage3_generate.ir_schema import ActionRef, ReviewGates
 from src.stage3_generate.registry import ACTION_ABSTRACT, ACTION_CONCRETE
 
-from .action_ledger import NO_MATCH, ActionLedger, DuplicateCheck
+from .action_ledger import NO_MATCH, ActionEntry, ActionLedger, DuplicateCheck
 from .modality import (
     MODALITY_WORDS,
     NORMATIVE_MODALITY_WORDS,
@@ -174,6 +183,7 @@ class SynonymJudgment:
     answer: Optional[str]
     reason: str
     raw_answer: str = ""
+    off_list: bool = False
 
     def to_json(self) -> dict:
         return {
@@ -182,6 +192,7 @@ class SynonymJudgment:
             "answer": self.answer,
             "reason": self.reason,
             "raw_answer": self.raw_answer,
+            "off_list": self.off_list,
         }
 
 
@@ -321,16 +332,28 @@ class ActionNormalizationResult:
 # --------------------------------------------------------------------------
 
 
-def _verb_block(ledger: ActionLedger) -> str:
+def concrete_entries(ledger: ActionLedger) -> list[ActionEntry]:
+    """同義語の判定(手順3c)に渡す候補は、具体の段の Action だけ(P31)。
+
+    抽象の段に寄るのは手順3a で動詞が一致したときだけで、そのときは
+    `action_abstract_selected` が立つ。抽象に寄せるべき新しい動詞
+    (例「漏洩」→提供)は新規候補として人に回り、人が同義語として承認すれば
+    台帳の過去の語句に足される(P30・P31)。
+    """
+    return [e for e in ledger.entries if e.kind == ACTION_CONCRETE]
+
+
+def _verb_block(entries: list[ActionEntry]) -> str:
     """同義語の判定(手順3c)に渡す台帳の一覧(名前と過去の動詞だけ。W1)。
 
     定義を渡さないのが v0.7 の要点である(P27)。定義を読むと「渡す」「得る」と
     言い換えられる行為がすべて抽象の「提供」に吸い寄せられた(第37回 穴2)。
+    v0.8 からは、渡すのを具体の段だけにした(P31)。
     """
-    if not ledger.entries:
-        return "（台帳は空です。既存の Action はありません）"
+    if not entries:
+        return "（台帳に具体の段の Action はありません）"
     lines = []
-    for i, entry in enumerate(ledger.entries, 1):
+    for i, entry in enumerate(entries, 1):
         verbs = entry.core_verbs()
         shown = "、".join(verbs) if verbs else "（まだ無い）"
         lines.append(f"{i}. {entry.name}（これまでの動詞: {shown}）")
@@ -600,29 +623,39 @@ class ActionNormalizer:
     ) -> SynonymJudgment:
         """手順3c: 動詞の一致が無かったときだけ、同義語かを LLM に聞く(P27・W1)。
 
-        渡すのは中心の動詞と、台帳の Action の名前・過去の動詞だけである。**定義は
-        渡さない。**第37回の誤統合8件は、定義を読んで「一番近い既存」を選んだ結果
-        だった(抽象の「提供」への寄せが5件。前段 7.4節)。
+        渡すのは中心の動詞と、台帳の**具体の段の** Action の名前・過去の動詞だけで
+        ある。**定義と抽象の段は渡さない**(P27・P31)。第37回の誤統合8件は、定義を
+        読んで「一番近い既存」を選んだ結果だった(抽象の「提供」への寄せが5件。前段
+        7.4節)。第39回では、定義を渡さなくても抽象の「提供」への寄せが残ったので、
+        候補そのものから抽象の段を外した(前段 7.5節)。
         """
-        offered = {e.name: e.core_verbs() for e in ledger.entries}
+        entries = concrete_entries(ledger)
+        offered = {e.name: e.core_verbs() for e in entries}
         prompt = SYNONYM_PROMPT.format(
             core_verb=candidate.core_verb,
-            verb_block=_verb_block(ledger),
+            verb_block=_verb_block(entries),
             no_match=NO_MATCH,
         )
         parsed = self._ask(prompt)
         raw = str(parsed.get("synonym_of", "")).strip()
         answer: Optional[str] = raw if raw in offered else None
         reason = str(parsed.get("reason", ""))
-        if raw and answer is None and raw != NO_MATCH:
-            # 閉じた選択を外れた答え(台帳にない名前)は「該当なし」として扱う(P5)
-            reason = f"[台帳にない名前 {raw!r} が返されたので同義語なしとして扱った] " + reason
+        off_list = bool(raw) and answer is None and raw != NO_MATCH
+        if off_list:
+            # 閉じた選択を外れた答え(渡していない名前)は「該当なし」として扱い、
+            # 手順4(新規候補)へ進める(P5・P31)。抽象の段の名前もここに入る
+            where = "台帳の抽象の段" if ledger.find(raw) is not None else "台帳の外"
+            reason = (
+                f"[候補に渡していない名前 {raw!r}({where})が返されたので"
+                "同義語なしとして扱った] " + reason
+            )
         return SynonymJudgment(
             core_verb=candidate.core_verb,
             offered=offered,
             answer=answer,
             reason=reason,
             raw_answer=raw,
+            off_list=off_list,
         )
 
     def _propose_action(

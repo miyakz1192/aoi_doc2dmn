@@ -471,7 +471,34 @@ def test_the_verb_routing_is_recorded_even_for_a_new_action(seeded_ledger):
 
 
 def test_abstract_selected_raises_the_gate(seeded_ledger):
-    """P15: 抽象的な段を選んだら、禁止が子すべてに及ぶので人が段を確かめる。"""
+    """P15・P31: 抽象の段に寄るのは 3a で動詞が一致したときだけ。ゲートは立つ。
+
+    v0.8 で 3c の候補から抽象の段を外したので(P31)、抽象に寄る道は手順3a だけに
+    なった。人が同義語を承認して台帳の過去の語句に足した動詞は、次から 3a で寄る
+    (P30)。ここでは「漏洩」が承認済みとして入っている状態を作る。
+    """
+    seeded_ledger.add(
+        ActionEntry(
+            name="提供",
+            definition="手段を問わず、情報を他の組織や人に渡すこと",
+            kind="abstract",
+        )
+    )
+    seeded_ledger.record_surface("提供", "機密を漏洩", "第11条⑤", "漏洩")
+    result, llm = _normalize(
+        seeded_ledger,
+        "機密を漏洩しないこと。",
+        [{"surface": "漏洩しないこと", "core_verb": "漏洩"}],
+        NO_MATCH,
+    )
+    assert result.trace.run.route == "3a"
+    assert len(llm.prompts) == 1  # 3a で寄ったので LLM は抜き出しの1回だけ
+    assert "action_abstract_selected" in result.gates.gate_names()
+    assert result.chosen_kind == "abstract"
+
+
+def test_the_synonym_candidates_never_include_an_abstract_action(seeded_ledger):
+    """P31: 3c に渡す候補は具体の段だけ。抽象の段は名前も動詞も渡さない。"""
     seeded_ledger.add(
         ActionEntry(
             name="提供",
@@ -480,14 +507,49 @@ def test_abstract_selected_raises_the_gate(seeded_ledger):
         )
     )
     seeded_ledger.record_surface("提供", "組織、人に提供", "人的対策-2", "提供")
+    proposal = {"name": "漏洩", "definition": "機密が外に出ること",
+                "kind": "concrete", "parent": None, "basis_quotes": []}
+    result, llm = _normalize(
+        seeded_ledger,
+        "機密を漏洩しないこと。",
+        [{"surface": "漏洩しないこと", "core_verb": "漏洩"}],
+        NO_MATCH,
+        proposal=proposal,
+    )
+    synonym_prompt = llm.prompts[1]
+    assert "提供（これまでの動詞" not in synonym_prompt  # 一覧に抽象は入らない
+    assert "送信（これまでの動詞" in synonym_prompt  # 具体の段は渡す
+    assert result.trace.synonym_judgment is not None
+    assert "提供" not in result.trace.synonym_judgment.offered
+    assert result.action.is_new is True
+
+
+def test_an_abstract_name_returned_by_the_synonym_step_goes_to_a_new_action(
+    seeded_ledger,
+):
+    """P31: 渡していない名前(抽象の段)が返ってきたら新規候補へ進め、件数を残す。"""
+    seeded_ledger.add(
+        ActionEntry(
+            name="提供",
+            definition="手段を問わず、情報を他の組織や人に渡すこと",
+            kind="abstract",
+        )
+    )
+    seeded_ledger.record_surface("提供", "組織、人に提供", "人的対策-2", "提供")
+    proposal = {"name": "漏洩", "definition": "機密が外に出ること",
+                "kind": "concrete", "parent": None, "basis_quotes": []}
     result, _ = _normalize(
         seeded_ledger,
         "機密を漏洩しないこと。",
         [{"surface": "漏洩しないこと", "core_verb": "漏洩"}],
-        "提供",
+        "提供",  # 渡していない抽象の段の名前を返してきた
+        proposal=proposal,
     )
-    assert "action_abstract_selected" in result.gates.gate_names()
-    assert result.chosen_kind == "abstract"
+    assert result.trace.synonym_judgment.off_list is True
+    assert result.trace.synonym_judgment.answer is None
+    assert "台帳の抽象の段" in result.trace.synonym_judgment.reason
+    assert result.trace.run.route == "4"
+    assert result.action.is_new is True
 
 
 # --------------------------------------------------------------------------
@@ -580,7 +642,8 @@ def test_a_name_outside_the_ledger_is_treated_as_no_match(seeded_ledger):
         "台帳に無い名前", proposal=proposal,
     )
     assert result.action.is_new is True
-    assert "台帳にない名前" in result.trace.run.reason
+    assert "候補に渡していない名前" in result.trace.run.reason
+    assert "台帳の外" in result.trace.run.reason
 
 
 # --------------------------------------------------------------------------
@@ -839,9 +902,13 @@ def test_over_applied_is_choosing_the_parent_of_the_right_concrete_action(
     for item in action_gold["items"][:3]:
         teach(seeded_ledger, item)
     item = action_gold["items"][4]  # 第14条(正解は具体の「伝達」)
+    # v0.8: 3c の候補から抽象は外れたので(P31)、抽象に寄るのは 3a で動詞が
+    # 一致したときだけ。人が「伝達」を同義語として承認し、提供の過去の語句に
+    # 足した状態を作る(P30)
+    seeded_ledger.record_surface("提供", "口頭で伝達", item["clause_ref"], "伝達")
     result, _ = _normalize(
         seeded_ledger, item["text"],
-        [{"surface": "口頭で伝達してはならない", "core_verb": "伝達"}], "提供",
+        [{"surface": "口頭で伝達してはならない", "core_verb": "伝達"}], NO_MATCH,
         clause_ref=item["clause_ref"],
     )
     teach(seeded_ledger, item)
@@ -1030,20 +1097,20 @@ def test_the_design_check_gates_are_not_counted_as_false_alarms(action_gold, see
     for item in action_gold["items"][:3]:
         teach(seeded_ledger, item)
     item = action_gold["items"][7]  # 第11条⑤(正解は既存の抽象「提供」)
+    # v0.8: 抽象に寄るのは 3a だけ(P31)。人が「漏洩」を同義語として承認し、
+    # 提供の過去の語句に足した状態を作る(P30)
+    seeded_ledger.record_surface("提供", "機密を漏洩", item["clause_ref"], "漏洩")
     result, _ = _normalize(
         seeded_ledger, item["text"],
-        [{"surface": "漏洩しないこと", "core_verb": "漏洩"}], "提供",
+        [{"surface": "漏洩しないこと", "core_verb": "漏洩"}], NO_MATCH,
         clause_ref=item["clause_ref"],
     )
     verdict = judge(item, result, seeded_ledger)
     assert verdict.verdict == "correct"
     assert "action_abstract_selected" in verdict.gates
-    # v0.7: 同義語で寄せた(手順3c)ので action_synonym_merge も立つ。どちらも
-    # 設計上の確認なので、正しい答えでも誤報は0件になる(W2・P30)
-    assert verdict.design_check_gates == [
-        "action_synonym_merge",
-        "action_abstract_selected",
-    ]
+    # 3a で寄ったので action_synonym_merge は立たない。設計上の確認だけなので、
+    # 正しい答えでも誤報は0件になる(W2・P30・P31)
+    assert verdict.design_check_gates == ["action_abstract_selected"]
     assert verdict.suspicion_gates == []
     assert verdict.false_alarm_gates == []
     # 人に回ったが、立ったのは設計上の確認だけ

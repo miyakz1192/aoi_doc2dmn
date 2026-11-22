@@ -403,3 +403,193 @@ def test_dev2_loads_its_ledger_from_the_seed(dev2):
     ledger = load_ledger(dev2, REGISTRY_PATH)
     assert len(ledger.entries) == 11
     assert ledger.find("提供").kind == "abstract"
+
+
+# --------------------------------------------------------------------------
+# 第40回 パートC: 新しい保留評価セット v2(付録B。Kazuhiro 承認 2026-11-22)
+# --------------------------------------------------------------------------
+
+HOLDOUT_V2_PATH = GOLD_DIR / "action_gold_holdout_v2.json"
+CLAUSES_V2_PATH = (
+    Path(__file__).resolve().parents[1] / "testdata" / "clauses" / "clauses_holdout_v2.json"
+)
+CANDIDATES_V4_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "testdata" / "candidates" / "candidates_round4.json"
+)
+
+
+@pytest.fixture(scope="module")
+def holdout2() -> dict:
+    return json.loads(HOLDOUT_V2_PATH.read_text(encoding="utf-8"))
+
+
+@pytest.fixture(scope="module")
+def clauses2() -> dict:
+    return json.loads(CLAUSES_V2_PATH.read_text(encoding="utf-8"))
+
+
+@pytest.fixture(scope="module")
+def candidates4() -> dict:
+    return json.loads(CANDIDATES_V4_PATH.read_text(encoding="utf-8"))
+
+
+def test_holdout_v2_declares_the_split_and_the_approval(holdout2):
+    """パートC: split は holdout、status は approved、18件とも承認済み。"""
+    meta = holdout2["_meta"]
+    assert meta["split"] == "holdout"
+    assert meta["status"] == "approved"
+    assert meta["items"] == 18
+    assert len(holdout2["items"]) == 18
+    for item in holdout2["items"]:
+        assert item["review"]["approved_by"] == "Kazuhiro", item["order"]
+        assert item["review"]["reviewed_at"] == "2026-11-22", item["order"]
+    check_holdout_is_approved(holdout2)  # 止まらない
+
+
+def test_holdout_v2_is_in_the_candidate_order(holdout2, candidates4):
+    """パートC: order と並びは candidates_round4.json の順(評価に入れる18件だけ)。"""
+    excluded = {e["clause_id"] for e in holdout2["_meta"]["excluded"]}
+    assert len(excluded) == 12
+    wanted = [
+        c["candidate_id"]
+        for c in candidates4["candidates"]
+        if c["candidate_id"] not in excluded
+    ]
+    assert [i["clause_id"] for i in holdout2["items"]] == wanted
+    assert [i["order"] for i in holdout2["items"]] == list(range(1, 19))
+
+
+def test_holdout_v2_copies_the_clause_text_verbatim(holdout2, candidates4):
+    """パートC: 条文は候補ファイルから逐語で写す。"""
+    by_id = {c["candidate_id"]: c for c in candidates4["candidates"]}
+    for item in holdout2["items"]:
+        cand = by_id[item["clause_id"]]
+        assert item["text"] == cand["text_raw"], item["order"]
+        assert item["source"]["locator"] == cand["source"]["locator"], item["order"]
+        assert item["source"]["file"].endswith("candidates_round4.json")
+
+
+def test_holdout_v2_surfaces_are_verbatim_without_modality(holdout2):
+    """P14・P4: surface は条文の逐語で、様相の語を含まず、中心の動詞を含む。"""
+    from src.stage3_frontstage.modality import find_modality
+
+    for item in holdout2["items"]:
+        for exp in expectations(item):
+            assert exp["surface"] in item["text"], (item["order"], exp["surface"])
+            assert find_modality(exp["surface"]) == [], (item["order"], exp["surface"])
+            assert exp["core_verb"] in exp["surface"], (item["order"], exp["core_verb"])
+
+
+def test_holdout_v2_new_actions_have_a_provisional_definition(holdout2):
+    """パートC: 新規の Action の定義は provisional で、出典は付録B。"""
+    new_count = 0
+    for item in holdout2["items"]:
+        for exp in expectations(item):
+            if not exp["is_new"]:
+                assert "definition" not in exp, (item["order"], exp["normalized"])
+                continue
+            new_count += 1
+            definition = exp["definition"]
+            assert definition["text"]
+            assert definition["status"] == "provisional"
+            assert "付録B" in definition["source"]
+            assert definition["basis"][0]["basis"] == "verbatim"
+            assert definition["basis"][0]["quote"] in item["text"]
+            assert exp["kind"] == "concrete"
+            assert exp["parent"] is None
+    assert new_count == 14
+
+
+def test_holdout_v2_starts_from_the_two_dev_sets_taught_to_the_end(
+    holdout2, dev_v4, dev2
+):
+    """パートC: 出発点の台帳は v4(18件) → dev2(14件)を足し終えた状態(21件)。"""
+    ledger = load_ledger(dev_v4, REGISTRY_PATH)
+    for item in dev_v4["items"]:
+        teach(ledger, item)
+    for item in dev2["items"]:
+        teach(ledger, item)
+    rebuilt = ledger.to_json()
+    assert len(rebuilt) == 21
+    assert rebuilt == holdout2["ledger_seed"]
+
+
+def test_holdout_v2_ledger_has_the_two_abstract_actions(holdout2):
+    """付録B: 抽象は提供と取得。送信・伝達・共有は提供の子、取り出し・受信は取得の子。"""
+    ledger = ActionLedger.from_json(holdout2["ledger_seed"])
+    assert len(ledger.entries) == 21
+    for name in ("提供", "取得"):
+        assert ledger.find(name).kind == "abstract", name
+    for child in ("送信", "伝達", "共有"):
+        assert ledger.find(child).parent == "提供", child
+    for child in ("取り出し", "受信"):
+        assert ledger.find(child).parent == "取得", child
+    # P28: 使役を付けたまま記録する(タスクC1)
+    assert ledger.find("労働指示").core_verbs() == ["従事させ", "就業させ", "従事させ"]
+
+
+def test_holdout_v2_loads_its_ledger_from_the_seed(holdout2):
+    """`_meta.ledger_source` が seed なら、登録簿ではなく ledger_seed から作る。"""
+    ledger = load_ledger(holdout2, REGISTRY_PATH)
+    assert len(ledger.entries) == 21
+
+
+def test_holdout_v2_stops_when_a_value_or_the_approval_is_missing(holdout2):
+    """第33回4.3節: 承認の欄が欠けていたら、split=holdout では評価が止まる。"""
+    broken = copy.deepcopy(holdout2)
+    broken["items"][0]["review"]["approved_by"] = None
+    with pytest.raises(HoldoutNotApproved):
+        check_holdout_is_approved(broken)
+    # 正解の値が入っていない形(仕組みだけのファイル)でも止まる
+    missing = copy.deepcopy(holdout2)
+    missing["items"][3]["expected"] = {}
+    with pytest.raises(HoldoutNotApproved):
+        check_holdout_is_approved(missing)
+
+
+def test_holdout_v2_records_the_two_drafts_and_the_random_seed(holdout2):
+    """パートC: 2案の一致率と乱数の種を記録として残す(運用メモ 3章)。"""
+    review = holdout2["_meta"]["review_process"]
+    assert review["agreement"] == "30件中20件が一致"
+    assert review["random_seed"] == 20261122
+    assert "Opus" in review["plan_a"]
+    assert "Sonnet" in review["plan_b"]
+
+
+def test_the_labels_cover_all_thirty_candidates(clauses2, candidates4, holdout2):
+    """パートC2: 30件すべてに軸1・軸2のラベルを付ける(評価に入れない12件も)。"""
+    assert len(clauses2["clauses"]) == 30
+    assert [c["clause_id"] for c in clauses2["clauses"]] == [
+        c["candidate_id"] for c in candidates4["candidates"]
+    ]
+    in_eval = [c for c in clauses2["clauses"] if c["in_action_eval"]]
+    assert len(in_eval) == 18
+    assert {c["clause_id"] for c in in_eval} == {i["clause_id"] for i in holdout2["items"]}
+    for clause in clauses2["clauses"]:
+        oracle = clause["oracle"]
+        assert oracle["axis1"] in ("ハード制約", "判断ガイド")
+        assert oracle["axis2"] in ("宣言的", "手続き的")
+        assert oracle["cell_id"]
+        assert clause["text_raw"] == clause["text_filled"]
+    # 評価に入れる18件は、付録B 表1 のとおり全部 ハード制約 × 宣言的
+    for clause in in_eval:
+        assert (clause["oracle"]["axis1"], clause["oracle"]["axis2"]) == (
+            "ハード制約",
+            "宣言的",
+        ), clause["clause_id"]
+
+
+def test_the_excluded_twelve_keep_the_reason_from_the_appendix(clauses2, holdout2):
+    """付録B 表2: 外す12件は、理由を正解ファイルに残し、ラベルは条文ファイルに入れる。"""
+    excluded = {e["clause_id"]: e for e in holdout2["_meta"]["excluded"]}
+    assert len(excluded) == 12
+    by_id = {c["clause_id"]: c for c in clauses2["clauses"]}
+    for clause_id, entry in excluded.items():
+        assert entry["reason"]
+        clause = by_id[clause_id]
+        assert clause["in_action_eval"] is False
+        assert (clause["oracle"]["axis1"], clause["oracle"]["axis2"]) == (
+            entry["axis1"],
+            entry["axis2"],
+        ), clause_id

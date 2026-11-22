@@ -1,0 +1,309 @@
+{
+  "items": 14,
+  "by_verdict": {
+    "correct": 5,
+    "mis_merge": 8,
+    "under_applied": 0,
+    "over_applied": 0,
+    "missed": 1,
+    "new_mismatch": 0
+  },
+  "severe": 8,
+  "slipped": 0,
+  "false_alarm_items": 4,
+  "changed": [
+    {
+      "order": 10,
+      "clause_id": "ipa_secguide_v4_5_6_outdoor",
+      "expected": "送信",
+      "expected_is_new": false,
+      "actual": "暗号化",
+      "actual_is_new": true,
+      "verdict_v2": "correct",
+      "verdict_v3": "missed",
+      "label_v2": "正しい",
+      "label_v3": "取りこぼし",
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": []
+    }
+  ],
+  "rows": [
+    {
+      "order": 1,
+      "clause_id": "ipa_secguide_v4_6_2_1_item1",
+      "expected": "発行",
+      "expected_is_new": true,
+      "actual": "提供",
+      "actual_is_new": false,
+      "verdict_v2": "mis_merge",
+      "verdict_v3": "mis_merge",
+      "label_v2": "誤統合",
+      "label_v3": "誤統合",
+      "gates": [
+        "action_surface_unverified",
+        "action_verb_mismatch",
+        "action_abstract_selected"
+      ],
+      "severe": true,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 2,
+      "clause_id": "ipa_secguide_v4_6_2_1_item2",
+      "expected": "共有",
+      "expected_is_new": false,
+      "actual": "共有",
+      "actual_is_new": false,
+      "verdict_v2": "correct",
+      "verdict_v3": "correct",
+      "label_v2": "正しい",
+      "label_v3": "正しい",
+      "gates": [
+        "action_surface_ambiguous",
+        "action_verb_mismatch"
+      ],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [
+        "action_surface_ambiguous",
+        "action_verb_mismatch"
+      ]
+    },
+    {
+      "order": 3,
+      "clause_id": "ipa_secguide_v4_phys_1_2_level2",
+      "expected": "操作",
+      "expected_is_new": false,
+      "actual": "操作",
+      "actual_is_new": false,
+      "verdict_v2": "correct",
+      "verdict_v3": "correct",
+      "label_v2": "正しい",
+      "label_v3": "正しい",
+      "gates": [
+        "action_surface_ambiguous"
+      ],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [
+        "action_surface_ambiguous"
+      ]
+    },
+    {
+      "order": 4,
+      "clause_id": "ipa_secguide_v4_phys_1_2_level3_carry_in",
+      "expected": "持込み",
+      "expected_is_new": true,
+      "actual": "持出し",
+      "actual_is_new": false,
+      "verdict_v2": "mis_merge",
+      "verdict_v3": "mis_merge",
+      "label_v2": "誤統合",
+      "label_v3": "誤統合",
+      "gates": [
+        "action_verb_mismatch"
+      ],
+      "severe": true,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 5,
+      "clause_id": "ipa_secguide_v4_personnel_6_1_2",
+      "expected": "取り出し",
+      "expected_is_new": false,
+      "actual": "提供",
+      "actual_is_new": false,
+      "verdict_v2": "mis_merge",
+      "verdict_v3": "mis_merge",
+      "label_v2": "誤統合",
+      "label_v3": "誤統合",
+      "gates": [
+        "action_verb_mismatch",
+        "action_abstract_selected"
+      ],
+      "severe": true,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 6,
+      "clause_id": "ipa_secguide_v4_2_3_3_store",
+      "expected": "保存",
+      "expected_is_new": true,
+      "actual": "提供",
+      "actual_is_new": false,
+      "verdict_v2": "mis_merge",
+      "verdict_v3": "mis_merge",
+      "label_v2": "誤統合",
+      "label_v3": "誤統合",
+      "gates": [
+        "action_verb_mismatch",
+        "action_abstract_selected"
+      ],
+      "severe": true,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 7,
+      "clause_id": "ipa_secguide_v4_2_3_3_wifi",
+      "expected": "使用",
+      "expected_is_new": false,
+      "actual": "使用",
+      "actual_is_new": false,
+      "verdict_v2": "correct",
+      "verdict_v3": "correct",
+      "label_v2": "正しい",
+      "label_v3": "正しい",
+      "gates": [
+        "action_verb_mismatch"
+      ],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [
+        "action_verb_mismatch"
+      ]
+    },
+    {
+      "order": 8,
+      "clause_id": "ipa_secguide_v4_5_6_share",
+      "expected": "共有",
+      "expected_is_new": false,
+      "actual": "共有",
+      "actual_is_new": false,
+      "verdict_v2": "correct",
+      "verdict_v3": "correct",
+      "label_v2": "正しい",
+      "label_v3": "正しい",
+      "gates": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 10,
+      "clause_id": "ipa_secguide_v4_5_6_outdoor",
+      "expected": "送信",
+      "expected_is_new": false,
+      "actual": "暗号化",
+      "actual_is_new": true,
+      "verdict_v2": "correct",
+      "verdict_v3": "missed",
+      "label_v2": "正しい",
+      "label_v3": "取りこぼし",
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 11,
+      "clause_id": "ipa_secguide_v4_phys_3_phone",
+      "expected": "伝達",
+      "expected_is_new": false,
+      "actual": "伝達",
+      "actual_is_new": false,
+      "verdict_v2": "correct",
+      "verdict_v3": "correct",
+      "label_v2": "正しい",
+      "label_v3": "正しい",
+      "gates": [
+        "action_verb_mismatch"
+      ],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [
+        "action_verb_mismatch"
+      ]
+    },
+    {
+      "order": 12,
+      "clause_id": "ipa_secguide_v4_phys_3_photo",
+      "expected": "撮影",
+      "expected_is_new": true,
+      "actual": "提供",
+      "actual_is_new": false,
+      "verdict_v2": "mis_merge",
+      "verdict_v3": "mis_merge",
+      "label_v2": "誤統合",
+      "label_v3": "誤統合",
+      "gates": [
+        "action_verb_mismatch",
+        "action_abstract_selected"
+      ],
+      "severe": true,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 13,
+      "clause_id": "mhlw_r7dec_art11_3",
+      "expected": "離席",
+      "expected_is_new": true,
+      "actual": "立入り",
+      "actual_is_new": false,
+      "verdict_v2": "mis_merge",
+      "verdict_v3": "mis_merge",
+      "label_v2": "誤統合",
+      "label_v3": "誤統合",
+      "gates": [
+        "action_surface_unverified",
+        "action_verb_mismatch"
+      ],
+      "severe": true,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 14,
+      "clause_id": "mhlw_r7dec_art16_1",
+      "expected": "取得",
+      "expected_is_new": true,
+      "actual": "提供",
+      "actual_is_new": false,
+      "verdict_v2": "mis_merge",
+      "verdict_v3": "mis_merge",
+      "label_v2": "誤統合",
+      "label_v3": "誤統合",
+      "gates": [
+        "action_verb_mismatch",
+        "action_abstract_selected"
+      ],
+      "severe": true,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 15,
+      "clause_id": "mhlw_r7dec_art58_3_5",
+      "expected": "同伴",
+      "expected_is_new": true,
+      "actual": "立入り",
+      "actual_is_new": false,
+      "verdict_v2": "mis_merge",
+      "verdict_v3": "mis_merge",
+      "label_v2": "誤統合",
+      "label_v3": "誤統合",
+      "gates": [
+        "action_verb_mismatch"
+      ],
+      "severe": true,
+      "slipped": false,
+      "false_alarm_gates": []
+    }
+  ],
+  "_meta": {
+    "label": "第37回(旧保留用14件・v0.6)",
+    "result": "docs/eval/action_eval_holdout_20261121.json",
+    "gold": "testdata/action_gold/action_gold_holdout_v1.json",
+    "rule": "P32(第40回 Q2'): 新規どうしは中心の動詞で比べる。正解に既存があれば取りこぼし"
+  }
+}

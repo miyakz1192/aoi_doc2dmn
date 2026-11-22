@@ -1,0 +1,349 @@
+{
+  "items": 18,
+  "by_verdict": {
+    "correct": 12,
+    "mis_merge": 2,
+    "under_applied": 1,
+    "over_applied": 2,
+    "missed": 1,
+    "new_mismatch": 0
+  },
+  "severe": 3,
+  "slipped": 0,
+  "false_alarm_items": 1,
+  "changed": [],
+  "rows": [
+    {
+      "order": 1,
+      "clause_id": "ipa_secguide_v4_6_7_1",
+      "expected": "操作",
+      "expected_is_new": true,
+      "actual": "操作",
+      "actual_is_new": true,
+      "verdict_v2": "correct",
+      "verdict_v3": "correct",
+      "label_v2": "正しい",
+      "label_v3": "正しい",
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 2,
+      "clause_id": "mhlw_r7dec_art11_1",
+      "expected": "使用",
+      "expected_is_new": true,
+      "actual": "操作",
+      "actual_is_new": false,
+      "verdict_v2": "mis_merge",
+      "verdict_v3": "mis_merge",
+      "label_v2": "誤統合",
+      "label_v3": "誤統合",
+      "gates": [
+        "action_synonym_merge"
+      ],
+      "severe": true,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 3,
+      "clause_id": "ipa_secguide_v4_personnel_2",
+      "expected": "提供",
+      "expected_is_new": true,
+      "actual": "提供",
+      "actual_is_new": true,
+      "verdict_v2": "correct",
+      "verdict_v3": "correct",
+      "label_v2": "正しい",
+      "label_v3": "正しい",
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 4,
+      "clause_id": "mhlw_r7dec_art21_3",
+      "expected": "労働指示",
+      "expected_is_new": true,
+      "actual": "労働指示",
+      "actual_is_new": true,
+      "verdict_v2": "correct",
+      "verdict_v3": "correct",
+      "label_v2": "正しい",
+      "label_v3": "正しい",
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 5,
+      "clause_id": "aoi_johokanri_art14",
+      "expected": "伝達",
+      "expected_is_new": true,
+      "actual": "提供",
+      "actual_is_new": false,
+      "verdict_v2": "over_applied",
+      "verdict_v3": "over_applied",
+      "label_v2": "過剰適用",
+      "label_v3": "過剰適用",
+      "gates": [
+        "action_synonym_merge",
+        "action_abstract_selected"
+      ],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 6,
+      "clause_id": "ipa_secguide_v4_6_1_5",
+      "expected": "操作",
+      "expected_is_new": false,
+      "actual": "使用",
+      "actual_is_new": false,
+      "verdict_v2": "mis_merge",
+      "verdict_v3": "mis_merge",
+      "label_v2": "誤統合",
+      "label_v3": "誤統合",
+      "gates": [
+        "action_surface_ambiguous"
+      ],
+      "severe": true,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 7,
+      "clause_id": "ipa_secguide_v4_6_10_priv_name",
+      "expected": "共有",
+      "expected_is_new": true,
+      "actual": "提供",
+      "actual_is_new": false,
+      "verdict_v2": "over_applied",
+      "verdict_v3": "over_applied",
+      "label_v2": "過剰適用",
+      "label_v3": "過剰適用",
+      "gates": [
+        "action_synonym_merge",
+        "action_abstract_selected"
+      ],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 8,
+      "clause_id": "mhlw_r7dec_art11_5",
+      "expected": "提供",
+      "expected_is_new": false,
+      "actual": "伝達",
+      "actual_is_new": false,
+      "verdict_v2": "under_applied",
+      "verdict_v3": "under_applied",
+      "label_v2": "適用漏れ",
+      "label_v3": "適用漏れ",
+      "gates": [
+        "action_synonym_merge"
+      ],
+      "severe": true,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 9,
+      "clause_id": "ipa_secguide_v4_2_3_3_forward",
+      "expected": "送信",
+      "expected_is_new": false,
+      "actual": "送信",
+      "actual_is_new": false,
+      "verdict_v2": "correct",
+      "verdict_v3": "correct",
+      "label_v2": "正しい",
+      "label_v3": "正しい",
+      "gates": [
+        "action_synonym_merge"
+      ],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 10,
+      "clause_id": "ipa_secguide_v4_2_3_3_send",
+      "expected": "送信",
+      "expected_is_new": false,
+      "actual": "送信",
+      "actual_is_new": false,
+      "verdict_v2": "correct",
+      "verdict_v3": "correct",
+      "label_v2": "正しい",
+      "label_v3": "正しい",
+      "gates": [
+        "action_synonym_merge"
+      ],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 11,
+      "clause_id": "ipa_secguide_v4_7_3_export",
+      "expected": "取り出し",
+      "expected_is_new": true,
+      "actual": "取り出し及びエクスポート",
+      "actual_is_new": true,
+      "verdict_v2": "correct",
+      "verdict_v3": "correct",
+      "label_v2": "正しい",
+      "label_v3": "正しい",
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 12,
+      "clause_id": "mhlw_r7dec_art11_6",
+      "expected": "就業",
+      "expected_is_new": true,
+      "actual": "就業",
+      "actual_is_new": true,
+      "verdict_v2": "correct",
+      "verdict_v3": "correct",
+      "label_v2": "正しい",
+      "label_v3": "正しい",
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 13,
+      "clause_id": "mhlw_r7dec_art25_2",
+      "expected": "労働指示",
+      "expected_is_new": false,
+      "actual": "就業指示",
+      "actual_is_new": true,
+      "verdict_v2": "missed",
+      "verdict_v3": "missed",
+      "label_v2": "取りこぼし",
+      "label_v3": "取りこぼし",
+      "gates": [
+        "new_action_unapproved",
+        "action_surface_ambiguous",
+        "action_possible_duplicate"
+      ],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 14,
+      "clause_id": "mhlw_r7dec_art21_4",
+      "expected": "労働指示",
+      "expected_is_new": false,
+      "actual": "労働指示",
+      "actual_is_new": false,
+      "verdict_v2": "correct",
+      "verdict_v3": "correct",
+      "label_v2": "正しい",
+      "label_v3": "正しい",
+      "gates": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 15,
+      "clause_id": "ipa_secguide_v4_phys_3_printer",
+      "expected": "放置",
+      "expected_is_new": true,
+      "actual": "放置",
+      "actual_is_new": true,
+      "verdict_v2": "correct",
+      "verdict_v3": "correct",
+      "label_v2": "正しい",
+      "label_v3": "正しい",
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 16,
+      "clause_id": "ipa_secguide_v4_phys_1_2_level1",
+      "expected": "放置",
+      "expected_is_new": false,
+      "actual": "放置",
+      "actual_is_new": false,
+      "verdict_v2": "correct",
+      "verdict_v3": "correct",
+      "label_v2": "正しい",
+      "label_v3": "正しい",
+      "gates": [
+        "action_surface_ambiguous"
+      ],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [
+        "action_surface_ambiguous"
+      ]
+    },
+    {
+      "order": 17,
+      "clause_id": "mhlw_r7dec_art58_3_6",
+      "expected": "立入り",
+      "expected_is_new": true,
+      "actual": "立入り",
+      "actual_is_new": true,
+      "verdict_v2": "correct",
+      "verdict_v3": "correct",
+      "label_v2": "正しい",
+      "label_v3": "正しい",
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": []
+    },
+    {
+      "order": 18,
+      "clause_id": "mhlw_r7dec_art58_3_4",
+      "expected": "立入り",
+      "expected_is_new": false,
+      "actual": "立入り",
+      "actual_is_new": false,
+      "verdict_v2": "correct",
+      "verdict_v3": "correct",
+      "label_v2": "正しい",
+      "label_v3": "正しい",
+      "gates": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": []
+    }
+  ],
+  "_meta": {
+    "label": "第39回 v4(開発用18件・v0.7)",
+    "result": "docs/eval/action_eval_v4_20261121_v07.json",
+    "gold": "testdata/action_gold/action_gold_v4.json",
+    "rule": "P32(第40回 Q2'): 新規どうしは中心の動詞で比べる。正解に既存があれば取りこぼし"
+  }
+}

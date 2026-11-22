@@ -104,13 +104,70 @@ def test_reclassifying_round32_with_the_v3_answers():
     out = reclassify(result, gold_v3, ROOT / "registry" / "registry.json")
     assert out["slipped"] == 0
     assert out["by_verdict"] == {
-        "correct": 13, "mis_merge": 2, "under_applied": 0, "over_applied": 2,
+        "correct": 12, "mis_merge": 2, "under_applied": 0, "over_applied": 2,
         "missed": 1,
-        # 5.1節 v0.7 の「新規の取り違え」: 第32回は0件(新規どうしの4件は
-        # 「私的使用／使用」のように名前の動詞が正解と一致する)
-        "new_mismatch": 0,
+        # P32(v0.8): 新規どうしは中心の動詞だけで比べる。項目4 は正解も出力も
+        # 「労働指示」だが、v3 の正解の動詞が「従事」(使役の直しは v4 で入れた)、
+        # 出力が「従事させ」なので、P28 で不一致になる。v3 の正解が P28 より前の
+        # ものであることによる見かけの1件で、v4 の正解で分類し直すと正しいに戻る
+        # (`test_reclassifying_round32_with_the_v4_answers`)
+        "new_mismatch": 1,
     }
-    assert out["changed"] == []
     item9 = out["rows"][8]
     assert (item9["expected"], item9["expected_is_new"], item9["actual"]) == ("送信", False, "提供")
     assert item9["verdict_v3"] == "over_applied"
+    item4 = out["rows"][3]
+    assert item4["clause_id"] == "mhlw_r7dec_art21_3"
+    assert (item4["verdict_v2"], item4["verdict_v3"]) == ("correct", "new_mismatch")
+
+
+def test_reclassifying_round32_with_the_v4_answers():
+    """P32: v4 の正解(使役を直した中心の動詞。タスクC1)なら、第32回は変わらない。"""
+    from src.stage3_frontstage.recompute_metrics import reclassify
+
+    result = json.loads(
+        (ROOT / "docs" / "eval" / "action_eval_20261108.json").read_text(encoding="utf-8")
+    )
+    gold_v4 = json.loads(
+        (ROOT / "testdata" / "action_gold" / "action_gold_v4.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    out = reclassify(result, gold_v4, ROOT / "registry" / "registry.json")
+    assert out["slipped"] == 0
+    assert out["by_verdict"]["correct"] == 13
+    assert out["by_verdict"]["new_mismatch"] == 0
+    assert out["changed"] == []
+
+
+def test_the_new_mismatch_is_only_for_answers_that_are_all_new():
+    """P32: 正解に既存の Action があれば、新規にしたのは取りこぼしに数える。
+
+    第37回・第39回の項目10(正解は既存の「送信」、出力は新規の「暗号化」)が、
+    v0.7 の「新規の取り違え」から「取りこぼし」に変わる(第40回 Q2')。
+    """
+    from src.stage3_frontstage.recompute_metrics import reclassify
+
+    result = json.loads(
+        (ROOT / "docs" / "eval" / "action_eval_dev2_20261121_v07.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    gold = json.loads(
+        (ROOT / "testdata" / "action_gold" / "action_gold_dev2_v1.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    out = reclassify(result, gold, ROOT / "registry" / "registry.json")
+    assert out["slipped"] == 0
+    # 名前の違いだけだった2件(離脱/離席・連行/同伴)は正しいに戻る
+    assert out["by_verdict"]["correct"] == 12
+    assert out["by_verdict"]["new_mismatch"] == 0
+    assert out["by_verdict"]["missed"] == 1
+    changed = {r["clause_id"]: (r["verdict_v2"], r["verdict_v3"]) for r in out["rows"]
+               if r["verdict_v2"] != r["verdict_v3"]}
+    assert changed == {
+        "ipa_secguide_v4_5_6_outdoor": ("new_mismatch", "missed"),
+        "mhlw_r7dec_art11_3": ("new_mismatch", "correct"),
+        "mhlw_r7dec_art58_3_5": ("new_mismatch", "correct"),
+    }

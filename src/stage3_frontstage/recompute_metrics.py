@@ -162,7 +162,9 @@ def reclassify(result: dict, gold_v3: dict, registry_path: str | Path) -> dict:
         old = by_id[item["clause_id"]]
         actual_name = D82_RENAME.get(old["actual"]["normalized"], old["actual"]["normalized"])
         fake = SimpleNamespace(
-            action=SimpleNamespace(normalized=actual_name, is_new=old["actual"]["is_new"])
+            action=SimpleNamespace(normalized=actual_name, is_new=old["actual"]["is_new"]),
+            # P32: 新規どうしは中心の動詞で比べるので、生データの動詞を渡す
+            core_verb=old["actual"].get("core_verb", ""),
         )
         teach(ledger, item)  # 正解を足してから分類する(run_action_eval と同じ順)
         verdict = classify(item, fake, ledger)
