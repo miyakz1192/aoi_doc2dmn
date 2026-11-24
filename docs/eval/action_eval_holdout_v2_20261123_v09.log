@@ -1,0 +1,144 @@
+[ 1/18] 項目1 ipa_secguide_v4_6_2_2 (台帳 21件) ...
+      [OK] 正しい [手順3a] surface='多要素認証の使用'(削った様相=[]／動詞='使用') → '使用'(concrete, is_new=False) ゲート=['action_surface_ambiguous'] 74秒／1回
+      語句を追加: 使用 ← 以下のいずれかの要素から2種類以上を選択し、利用
+[ 2/18] 項目2 ipa_secguide_v4_6_5_outdoor (台帳 21件) ...
+      [OK] 正しい [手順3a] surface='他者が画面を盗み見可能な環境で利用'(削った様相=['しない']／動詞='利用') → '使用'(concrete, is_new=False) ゲート=[] 46秒／1回
+      語句を追加: 使用 ← 他者が画面を盗み見可能な環境で利用
+[ 3/18] 項目3 ipa_secguide_v4_6_10_password_reuse (台帳 21件) ...
+      [NG] 取りこぼし [手順4] surface='機器やサービス間でのパスワードの使い回し'(削った様相=[]／動詞='使い回し') → '再利用'(concrete, is_new=True) ゲート=['new_action_unapproved', 'action_synonym_suggested'] 245秒／3回
+      語句を追加: 使用 ← 機器やサービス間でのパスワードの使い回し
+[ 4/18] 項目4 ipa_secguide_v4_7_1_link (台帳 21件) ...
+      [OK] 正しい [手順4] surface='リンクアクセス'(削った様相=[]／動詞='アクセス') → 'リンクアクセス'(concrete, is_new=True) ゲート=['new_action_unapproved', 'action_surface_unverified'] 251秒／3回
+      台帳に追加: アクセス(concrete)
+[ 5/18] 項目5 ipa_secguide_v4_2_2_public_order (台帳 22件) ...
+      [OK] 正しい [手順3a] surface='公序良俗に反するサイトへのアクセス'(削った様相=[]／動詞='アクセス') → 'アクセス'(concrete, is_new=False) ゲート=[] 49秒／1回
+      語句を追加: アクセス ← 公序良俗に反するサイトへのアクセス
+[ 6/18] 項目6 ipa_secguide_v4_2_2_mobile_code (台帳 22件) ...
+      [OK] 正しい [手順4] surface='モバイルコードを実行'(削った様相=['しない']／動詞='実行') → '実行'(concrete, is_new=True) ゲート=['new_action_unapproved', 'action_surface_ambiguous'] 245秒／3回
+      台帳に追加: 実行(concrete)
+[ 7/18] 項目7 ipa_secguide_v4_personnel_6_4_2_cloud (台帳 23件) ...
+      [OK] 正しい [手順3a] surface='業務関連データの送受信、保存、共有'(削った様相=[]／動詞='送受信') → '送信'(concrete, is_new=False) ゲート=['action_surface_ambiguous'] 47秒／1回
+      語句を追加: 使用 ← 業務関連データの送受信、保存、共有に利用／語句を追加: 保存 ← 業務関連データの送受信、保存／語句を追加: 共有 ← 業務関連データの送受信、保存、共有／語句を追加: 送信 ← 業務関連データの送受信／語句を追加: 受信 ← 業務関連データの送受信
+[ 8/18] 項目8 ipa_secguide_v4_personnel_6_2_1_install (台帳 23件) ...
+      [OK] 正しい [手順4] surface='社内標準外ソフトウェアのインストール'(削った様相=[]／動詞='インストール') → 'インストール'(concrete, is_new=True) ゲート=['new_action_unapproved'] 267秒／3回
+      台帳に追加: インストール(concrete)
+[ 9/18] 項目9 ipa_secguide_v4_personnel_6_2_2_modify (台帳 24件) ...
+      [NG] 新規の取り違え [手順4] surface='不正な改造を行う'(削った様相=[]／動詞='行う') → '改造'(concrete, is_new=True) ゲート=['new_action_unapproved'] 270秒／3回
+      台帳に追加: 改造(concrete)
+[10/18] 項目10 ipa_secguide_v4_personnel_6_4_3_lock (台帳 25件) ...
+      [OK] 正しい [手順4] surface='他者（家族を含む）にテレワーク用の情報機器を操作させ'(削った様相=['ない']／動詞='操作させる') → '操作させる'(concrete, is_new=True) ゲート=['new_action_unapproved', 'action_surface_ambiguous', 'action_synonym_suggested', 'action_possible_duplicate'] 286秒／3回
+      台帳に追加: 操作させ(concrete)／語句を追加: 離席 ← 離席時にスクリーンセーバーや画面をロック
+[11/18] 項目11 ipa_secguide_v4_personnel_6_4_3_input (台帳 26件) ...
+      [OK] 正しい [手順4] surface='ID・パスワードなどの認証情報、会社の重要情報、個人情報などの重要情報を入力・表示'(削った様相=['しない']／動詞='入力・表示') → '表示'(concrete, is_new=True) ゲート=['new_action_unapproved'] 279秒／3回
+      台帳に追加: 入力(concrete)／台帳に追加: 表示(concrete)
+[12/18] 項目12 ipa_secguide_v4_personnel_6_4_4_leave (台帳 28件) ...
+      [OK] 正しい [手順3a] surface='放置'(削った様相=['しない']／動詞='放置') → '放置'(concrete, is_new=False) ゲート=[] 43秒／1回
+      語句を追加: 放置 ← 機器や書類は目の届く範囲に置き放置
+[13/18] 項目13 ipa_secguide_v4_personnel_6_4_4_discard (台帳 28件) ...
+      [OK] 正しい [手順4] surface='外出先で書類やCD・DVDなどの媒体を廃棄'(削った様相=['しない']／動詞='廃棄') → '廃棄'(concrete, is_new=True) ゲート=['new_action_unapproved'] 284秒／3回
+      台帳に追加: 廃棄(concrete)
+[14/18] 項目14 ipa_secguide_v4_2_3_3_operate_hours (台帳 29件) ...
+      [OK] 正しい [手順4] surface='機器は原則として勤務時間のみ稼働させる'(削った様相=[]／動詞='稼働させる') → '稼働'(concrete, is_new=True) ゲート=['new_action_unapproved', 'action_possible_duplicate'] 305秒／3回
+      台帳に追加: 稼働(concrete)
+[15/18] 項目15 ipa_secguide_v4_2_3_4_connect (台帳 30件) ...
+      [OK] 正しい [手順4] surface='社内のパソコンやサーバーへの接続'(削った様相=[]／動詞='接続') → 'アクセス'(concrete, is_new=True) ゲート=['new_action_unapproved', 'action_synonym_suggested', 'action_possible_duplicate'] 285秒／3回
+      台帳に追加: 接続(concrete)
+[16/18] 項目16 mhlw_r7dec_art58_3_2 (台帳 31件) ...
+      [OK] 正しい [手順4] surface='安全装置を取り外したり、その効力を失わせる'(削った様相=[]／動詞='取り外す') → '取り外し'(concrete, is_new=True) ゲート=['new_action_unapproved', 'action_possible_duplicate'] 299秒／3回
+      台帳に追加: 取り外し(concrete)／台帳に追加: 無効化(concrete)
+[17/18] 項目17 mhlw_r7dec_art58_3_3 (台帳 33件) ...
+      [NG] 新規の取り違え [手順4] surface='保護具の着用'(削った様相=[]／動詞='着用') → '着用'(concrete, is_new=True) ゲート=['new_action_unapproved'] 289秒／3回
+      台帳に追加: 作業(concrete)
+[18/18] 項目18 mhlw_r7dec_art58_3_7 (台帳 34件) ...
+      [OK] 正しい [手順4] surface='物品を置か'(削った様相=['ない']／動詞='置か') → '配置'(concrete, is_new=True) ゲート=['new_action_unapproved', 'action_synonym_suggested'] 306秒／3回
+      台帳に追加: 配置(concrete)
+
+== 集計 ==
+  件数: 18
+  **すり抜け(ゲートが立たなかった重大な誤り): 0件**（合格の条件は0件。P9）
+  重大な誤り(誤統合・適用漏れ): 0件
+    正しい: 15件
+    誤統合: 0件
+    適用漏れ: 0件
+    過剰適用: 0件
+    取りこぼし: 1件
+    新規の取り違え: 2件
+  既存か新規かの判定: 17/18
+  既存の Action の選択: 4/6
+  surface の3条件: 15/18（部分文字列 17／様相なし 18／中心の動詞 16）
+  寄せ方: 手順3a(動詞の一致) 5件（正しい 5）／新規候補 13件（手順3c は提案だけ。P33）
+  手順3c の提案（P33）: 当たり 1/2（正解が既存で 3a で寄らなかった件）／誤報 2件（正解が新規なのに提案が出た）／救える取りこぼし 1件
+  抜き出しの検査（P29）: 4件で台帳の別の動詞が条文に残っていた（当たった動詞 6個／うち1〜2文字 5個）
+  立ったゲート:
+    new_action_unapproved: 13件（設計上の確認）
+    action_surface_ambiguous: 4件（疑い）
+    action_synonym_suggested: 4件（設計上の確認）
+    action_possible_duplicate: 4件（疑い）
+    action_surface_unverified: 1件（疑い）
+  ゲートの誤報（疑いのゲートだけ。P21）: 7件 {'action_surface_ambiguous': 2, 'action_surface_unverified': 1, 'action_possible_duplicate': 4}
+  人に回る割合: 15/18（疑いのゲートあり 8／設計上の確認だけ 7／自動で通った 3）
+  疑いのゲートの適合率: 0/8（0%）
+    action_possible_duplicate: 0/4
+    action_surface_ambiguous: 0/4
+    action_surface_unverified: 0/1
+  新規候補の段の一致: 12/12（P23）
+  正解が並びの項目: 4件（action_surface_ambiguous が立った 2件。P25）
+  所要時間: 合計 3872秒／1件あたり 215秒（LLM 呼び出し 44回）
+
+== 新規候補の一覧（名前・定義に条件が入っているかは人が判定する。P23）==
+  [ 3] ipa_secguide_v4_6_10_password_reuse: '再利用'（段=concrete／正解の段=[]→―／親の案=None）
+       定義: パスワードを異なる機器やサービスで使用すること
+       根拠の語句: ['機器やサービス間でのパスワードの使い回しをしない']
+  [ 4] ipa_secguide_v4_7_1_link: 'リンクアクセス'（段=concrete／正解の段=['concrete']→一致／親の案=None）
+       定義: ウェブサイトや電子メール等にあるリンクをクリックして情報に接続すること
+       根拠の語句: ['電子メールに記載されているリンクや、他のウェブサイト等に設置されているリンクは、偽サイトへの誘導である可能性があるためアクセスしない。']
+  [ 6] ipa_secguide_v4_2_2_mobile_code: '実行'（段=concrete／正解の段=['concrete']→一致／親の案=None）
+       定義: プログラムやアプリケーションを起動して動作させること
+       根拠の語句: ['モバイルコードを実行']
+  [ 8] ipa_secguide_v4_personnel_6_2_1_install: 'インストール'（段=concrete／正解の段=['concrete']→一致／親の案=None）
+       定義: ソフトウェアやプログラムを機器に取り付け、利用可能にする行為
+       根拠の語句: ['社内標準外ソフトウェアのインストール']
+  [ 9] ipa_secguide_v4_personnel_6_2_2_modify: '改造'（段=concrete／正解の段=['concrete']→一致／親の案=操作）
+       定義: 機器やソフトウェアに対して、元の状態から変更を加えること
+       根拠の語句: ['不正な改造を行うことを禁止する（脱獄・root化）']
+  [10] ipa_secguide_v4_personnel_6_4_3_lock: '操作させる'（段=concrete／正解の段=['concrete']→一致／親の案=提供）
+       定義: 他者に対して情報機器やシステムを動かさせること
+       根拠の語句: ['他者（家族を含む）にテレワーク用の情報機器を操作させ']
+  [11] ipa_secguide_v4_personnel_6_4_3_input: '表示'（段=concrete／正解の段=['concrete', 'concrete']→一致／親の案=null）
+       定義: 情報を画面上で見ること
+       根拠の語句: ['ID・パスワードなどの認証情報、会社の重要情報、個人情報などの重要情報を入力・表示しない']
+  [13] ipa_secguide_v4_personnel_6_4_4_discard: '廃棄'（段=concrete／正解の段=['concrete']→一致／親の案=None）
+       定義: 物や情報を、適切な方法で処分すること
+       根拠の語句: ['外出先で書類やCD・DVDなどの媒体を廃棄しない。']
+  [14] ipa_secguide_v4_2_3_3_operate_hours: '稼働'（段=concrete／正解の段=['concrete']→一致／親の案=None）
+       定義: 機器やシステムを動かすこと
+       根拠の語句: ['機器は原則として勤務時間のみ稼働させる']
+  [15] ipa_secguide_v4_2_3_4_connect: 'アクセス'（段=concrete／正解の段=['concrete']→一致／親の案=null）
+       定義: ネットワーク上の場所に接続して開くこと
+       根拠の語句: ['社内のパソコンやサーバーへの接続']
+  [16] mhlw_r7dec_art58_3_2: '取り外し'（段=concrete／正解の段=['concrete', 'concrete']→一致／親の案=None）
+       定義: 安全装置を取り外すこと。
+       根拠の語句: ['安全装置を取り外したり、その効力を失わせるようなことはしないこと。']
+  [17] mhlw_r7dec_art58_3_3: '着用'（段=concrete／正解の段=['concrete']→一致／親の案=None）
+       定義: 保護具を身につけること
+       根拠の語句: ['保護具の着用']
+  [18] mhlw_r7dec_art58_3_7: '配置'（段=concrete／正解の段=['concrete']→一致／親の案=None）
+       定義: 物品を、特定の場所へ置くこと。
+       根拠の語句: ['物品を置か']
+
+== 誤り(1件ずつ) ==
+  [取りこぼし／軽〜中] ipa_secguide_v4_6_10_password_reuse: 正解 使用(concrete, is_new=False) → 出力 再利用(concrete, is_new=True)
+      ゲート: ['new_action_unapproved', 'action_synonym_suggested']
+      手順: 4／理由: 動詞 '使い回し' と一致する過去の動詞が台帳に無い／同義語の提案あり(寄せない。P33): '使用' — 「使い回し」とは物品や資源の再利用を意味しており、既存の「使用」に含まれる行為であるため。
+      動詞の一致(手順3a): '使い回し' → []（動詞 '使い回し' と一致する過去の動詞が台帳に無い）
+      同義語の提案(手順3c。寄せていない): '使用'（正解と一致）（「使い回し」とは物品や資源の再利用を意味しており、既存の「使用」に含まれる行為であるため。）
+  [新規の取り違え／軽〜中] ipa_secguide_v4_personnel_6_2_2_modify: 正解 改造(concrete, is_new=True) → 出力 改造(concrete, is_new=True)
+      ゲート: ['new_action_unapproved']
+      手順: 4／理由: 動詞 '行う' と一致する過去の動詞が台帳に無い／同義語の提案も無い: 「行う」は台帳にあるどの行動とも直接的に同じ行為とは言えません。
+      動詞の一致(手順3a): '行う' → []（動詞 '行う' と一致する過去の動詞が台帳に無い）
+  [新規の取り違え／軽〜中] mhlw_r7dec_art58_3_3: 正解 作業(concrete, is_new=True) → 出力 着用(concrete, is_new=True)
+      ゲート: ['new_action_unapproved']
+      手順: 4／理由: 動詞 '着用' と一致する過去の動詞が台帳に無い／同義語の提案も無い: 「着用」は台帳にあるどの行為とも直接的な同義関係にはなっていない。
+      動詞の一致(手順3a): '着用' → []（動詞 '着用' と一致する過去の動詞が台帳に無い）
+
+結果: out/action_eval_holdout_v2/result_holdout.json
