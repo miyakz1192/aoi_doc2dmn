@@ -1,0 +1,7908 @@
+{
+  "_meta": {
+    "gold": "testdata/action_gold/action_gold_dev3_v1.json",
+    "split": "dev",
+    "registry": "registry/registry.json",
+    "llm": "oracle(偽物)",
+    "k": 1,
+    "temperature": 0.0,
+    "note": "ゲートをすり抜けた重大な誤り(誤統合・適用漏れ)が0件なら合格(P9・5.3節 v0.4)。結果を見てプロンプトを直して再実行することはしない(第31回 HANDOFF 5章)"
+  },
+  "summary": {
+    "items": 18,
+    "slipped": 0,
+    "severe": 0,
+    "correct": 17,
+    "by_verdict": {
+      "correct": 17,
+      "mis_merge": 0,
+      "under_applied": 0,
+      "over_applied": 0,
+      "missed": 1,
+      "new_mismatch": 0
+    },
+    "is_new_correct": 17,
+    "existing_choice_total": 6,
+    "existing_choice_correct": 5,
+    "surface_ok": 18,
+    "surface_in_clause": 18,
+    "surface_no_modality": 18,
+    "surface_has_core_verb": 18,
+    "gates": {
+      "action_surface_ambiguous": 6,
+      "new_action_unapproved": 13,
+      "action_synonym_suggested": 1,
+      "action_possible_duplicate": 3
+    },
+    "false_alarm_items": 4,
+    "false_alarm_gates": {
+      "action_surface_ambiguous": 2,
+      "action_possible_duplicate": 2
+    },
+    "routed_to_human": 15,
+    "routed_design_check_only": 8,
+    "routed_with_suspicion": 7,
+    "automatic": 3,
+    "suspicion_precision": {
+      "raised": 7,
+      "really_wrong": 1
+    },
+    "suspicion_precision_by_gate": {
+      "action_surface_ambiguous": {
+        "raised": 6,
+        "really_wrong": 0
+      },
+      "action_possible_duplicate": {
+        "raised": 3,
+        "really_wrong": 1
+      }
+    },
+    "new_action_kind_total": 12,
+    "new_action_kind_matches": 12,
+    "alternatives_items": 4,
+    "alternatives_ambiguous_raised": 4,
+    "routed_by": {
+      "3a": 5,
+      "3c": 0,
+      "4": 13
+    },
+    "route_3a_correct": 5,
+    "suggestion_scope": 2,
+    "suggestion_hits": 1,
+    "suggestion_false_alarms": 0,
+    "suggestion_rescues_missed": 1,
+    "suggestions": [
+      {
+        "order": 3,
+        "clause_id": "ipa_secguide_v4_6_10_password_reuse",
+        "core_verb": "使い回し",
+        "suggestion": "使用",
+        "reason": "(正解)",
+        "verdict": "missed",
+        "expected": "使用",
+        "expected_is_new": false,
+        "in_scope": true,
+        "hit": true,
+        "false_alarm": false,
+        "rescues_missed": true
+      }
+    ],
+    "name_quality_total": 13,
+    "name_collides_with_existing": 1,
+    "name_includes_object": 0,
+    "name_quality_detail": [
+      {
+        "order": 3,
+        "clause_id": "ipa_secguide_v4_6_10_password_reuse",
+        "name": "使用",
+        "core_verb": "使い回し",
+        "collides_with_existing": true,
+        "includes_object": false,
+        "extra": "",
+        "verdict": "missed"
+      }
+    ],
+    "synonym_off_list": 0,
+    "synonym_off_list_detail": [],
+    "extraction_check_items": 4,
+    "extraction_check_hits": 7,
+    "extraction_check_short_hits": 4,
+    "extraction_check_detail": [
+      {
+        "order": 1,
+        "clause_id": "ipa_secguide_v4_6_2_2",
+        "hits": [
+          {
+            "action": "使用",
+            "core_verb": "使用",
+            "length": 2
+          }
+        ]
+      },
+      {
+        "order": 6,
+        "clause_id": "ipa_secguide_v4_2_2_mobile_code",
+        "hits": [
+          {
+            "action": "取り出し",
+            "core_verb": "ダウンロード",
+            "length": 6
+          }
+        ]
+      },
+      {
+        "order": 7,
+        "clause_id": "ipa_secguide_v4_personnel_6_4_2_cloud",
+        "hits": [
+          {
+            "action": "送信",
+            "core_verb": "送受信",
+            "length": 3
+          },
+          {
+            "action": "共有",
+            "core_verb": "共有",
+            "length": 2
+          },
+          {
+            "action": "保存",
+            "core_verb": "保存",
+            "length": 2
+          },
+          {
+            "action": "受信",
+            "core_verb": "送受信",
+            "length": 3
+          }
+        ]
+      },
+      {
+        "order": 10,
+        "clause_id": "ipa_secguide_v4_personnel_6_4_3_lock",
+        "hits": [
+          {
+            "action": "操作",
+            "core_verb": "操作",
+            "length": 2
+          }
+        ]
+      }
+    ],
+    "elapsed_seconds_total": 0.0,
+    "elapsed_seconds_per_item": 0.0,
+    "llm_calls_total": 44,
+    "errors": 0
+  },
+  "new_action_proposals": [
+    {
+      "order": 3,
+      "clause_id": "ipa_secguide_v4_6_10_password_reuse",
+      "proposal": {
+        "name": "使用",
+        "definition": "",
+        "kind": "concrete",
+        "parent_suggestion": null,
+        "basis_quotes": [],
+        "basis_verified": [],
+        "name_modality": [],
+        "definition_modality": []
+      },
+      "expected_kind": [],
+      "kind_matches": null
+    },
+    {
+      "order": 4,
+      "clause_id": "ipa_secguide_v4_7_1_link",
+      "proposal": {
+        "name": "アクセス",
+        "definition": "ネットワーク上の場所に接続して開くこと",
+        "kind": "concrete",
+        "parent_suggestion": null,
+        "basis_quotes": [
+          "他のウェブサイト等に設置されているリンクは、偽サイトへの誘導である可能性があるためアクセス"
+        ],
+        "basis_verified": [
+          true
+        ],
+        "name_modality": [],
+        "definition_modality": []
+      },
+      "expected_kind": [
+        "concrete"
+      ],
+      "kind_matches": true
+    },
+    {
+      "order": 6,
+      "clause_id": "ipa_secguide_v4_2_2_mobile_code",
+      "proposal": {
+        "name": "実行",
+        "definition": "プログラムを動かすこと",
+        "kind": "concrete",
+        "parent_suggestion": null,
+        "basis_quotes": [
+          "モバイルコード(クライアントパソコン側で動作するプログラム)を実行"
+        ],
+        "basis_verified": [
+          true
+        ],
+        "name_modality": [],
+        "definition_modality": []
+      },
+      "expected_kind": [
+        "concrete"
+      ],
+      "kind_matches": true
+    },
+    {
+      "order": 8,
+      "clause_id": "ipa_secguide_v4_personnel_6_2_1_install",
+      "proposal": {
+        "name": "インストール",
+        "definition": "ソフトウェアを機器に組み込んで使える状態にすること",
+        "kind": "concrete",
+        "parent_suggestion": null,
+        "basis_quotes": [
+          "社内標準外ソフトウェアのインストール"
+        ],
+        "basis_verified": [
+          true
+        ],
+        "name_modality": [],
+        "definition_modality": []
+      },
+      "expected_kind": [
+        "concrete"
+      ],
+      "kind_matches": true
+    },
+    {
+      "order": 9,
+      "clause_id": "ipa_secguide_v4_personnel_6_2_2_modify",
+      "proposal": {
+        "name": "改造",
+        "definition": "機器やソフトウェアに手を加えて作りを変えること",
+        "kind": "concrete",
+        "parent_suggestion": null,
+        "basis_quotes": [
+          "不正な改造を行う"
+        ],
+        "basis_verified": [
+          true
+        ],
+        "name_modality": [],
+        "definition_modality": []
+      },
+      "expected_kind": [
+        "concrete"
+      ],
+      "kind_matches": true
+    },
+    {
+      "order": 10,
+      "clause_id": "ipa_secguide_v4_personnel_6_4_3_lock",
+      "proposal": {
+        "name": "操作させ",
+        "definition": "他の人に機器を動かさせること",
+        "kind": "concrete",
+        "parent_suggestion": null,
+        "basis_quotes": [
+          "他者（家族を含む）にテレワーク用の情報機器を操作させ"
+        ],
+        "basis_verified": [
+          true
+        ],
+        "name_modality": [],
+        "definition_modality": []
+      },
+      "expected_kind": [
+        "concrete"
+      ],
+      "kind_matches": true
+    },
+    {
+      "order": 11,
+      "clause_id": "ipa_secguide_v4_personnel_6_4_3_input",
+      "proposal": {
+        "name": "入力",
+        "definition": "情報を機器に打ち込むこと",
+        "kind": "concrete",
+        "parent_suggestion": null,
+        "basis_quotes": [
+          "重要情報を入力"
+        ],
+        "basis_verified": [
+          true
+        ],
+        "name_modality": [],
+        "definition_modality": []
+      },
+      "expected_kind": [
+        "concrete",
+        "concrete"
+      ],
+      "kind_matches": true
+    },
+    {
+      "order": 13,
+      "clause_id": "ipa_secguide_v4_personnel_6_4_4_discard",
+      "proposal": {
+        "name": "廃棄",
+        "definition": "物を捨てること",
+        "kind": "concrete",
+        "parent_suggestion": null,
+        "basis_quotes": [
+          "外出先で書類やCD・DVDなどの媒体を廃棄"
+        ],
+        "basis_verified": [
+          true
+        ],
+        "name_modality": [],
+        "definition_modality": []
+      },
+      "expected_kind": [
+        "concrete"
+      ],
+      "kind_matches": true
+    },
+    {
+      "order": 14,
+      "clause_id": "ipa_secguide_v4_2_3_3_operate_hours",
+      "proposal": {
+        "name": "稼働",
+        "definition": "機器を動いている状態にすること",
+        "kind": "concrete",
+        "parent_suggestion": null,
+        "basis_quotes": [
+          "機器は原則として勤務時間のみ稼働させ"
+        ],
+        "basis_verified": [
+          true
+        ],
+        "name_modality": [],
+        "definition_modality": []
+      },
+      "expected_kind": [
+        "concrete"
+      ],
+      "kind_matches": true
+    },
+    {
+      "order": 15,
+      "clause_id": "ipa_secguide_v4_2_3_4_connect",
+      "proposal": {
+        "name": "接続",
+        "definition": "機器を他の機器やネットワークにつなぐこと",
+        "kind": "concrete",
+        "parent_suggestion": null,
+        "basis_quotes": [
+          "社内のパソコンやサーバーへの接続"
+        ],
+        "basis_verified": [
+          true
+        ],
+        "name_modality": [],
+        "definition_modality": []
+      },
+      "expected_kind": [
+        "concrete"
+      ],
+      "kind_matches": true
+    },
+    {
+      "order": 16,
+      "clause_id": "mhlw_r7dec_art58_3_2",
+      "proposal": {
+        "name": "取り外し",
+        "definition": "付いている物を外すこと",
+        "kind": "concrete",
+        "parent_suggestion": null,
+        "basis_quotes": [
+          "安全装置を取り外"
+        ],
+        "basis_verified": [
+          true
+        ],
+        "name_modality": [],
+        "definition_modality": []
+      },
+      "expected_kind": [
+        "concrete",
+        "concrete"
+      ],
+      "kind_matches": true
+    },
+    {
+      "order": 17,
+      "clause_id": "mhlw_r7dec_art58_3_3",
+      "proposal": {
+        "name": "作業",
+        "definition": "業務として具体的な仕事を行うこと",
+        "kind": "concrete",
+        "parent_suggestion": null,
+        "basis_quotes": [
+          "保護具の着用が必要な作業"
+        ],
+        "basis_verified": [
+          true
+        ],
+        "name_modality": [],
+        "definition_modality": []
+      },
+      "expected_kind": [
+        "concrete"
+      ],
+      "kind_matches": true
+    },
+    {
+      "order": 18,
+      "clause_id": "mhlw_r7dec_art58_3_7",
+      "proposal": {
+        "name": "配置",
+        "definition": "物をある場所に置くこと",
+        "kind": "concrete",
+        "parent_suggestion": null,
+        "basis_quotes": [
+          "通路、避難口又は消火設備のある所に物品を置か"
+        ],
+        "basis_verified": [
+          true
+        ],
+        "name_modality": [],
+        "definition_modality": []
+      },
+      "expected_kind": [
+        "concrete"
+      ],
+      "kind_matches": true
+    }
+  ],
+  "errors": [],
+  "items": [
+    {
+      "order": 1,
+      "clause_id": "ipa_secguide_v4_6_2_2",
+      "group": "",
+      "expected": {
+        "surface": "以下のいずれかの要素から2種類以上を選択し、利用",
+        "normalized": "使用",
+        "is_new": false,
+        "core_verb": "利用",
+        "kind": "concrete",
+        "parent": null
+      },
+      "expected_alternatives": [],
+      "matched_expectation": {
+        "surface": "以下のいずれかの要素から2種類以上を選択し、利用",
+        "normalized": "使用",
+        "is_new": false,
+        "core_verb": "利用",
+        "kind": "concrete",
+        "parent": null
+      },
+      "actual": {
+        "surface": "以下のいずれかの要素から2種類以上を選択し、利用",
+        "removed_modality": [],
+        "core_verb": "利用",
+        "normalized": "使用",
+        "kind": "concrete",
+        "is_new": false
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "3a",
+      "synonym_suggestion": null,
+      "synonym_suggestion_reason": "",
+      "synonym_off_list": false,
+      "suggestion_in_scope": false,
+      "suggestion_hit": false,
+      "suggestion_false_alarm": false,
+      "suggestion_rescues_missed": false,
+      "verb_matches": [
+        "使用"
+      ],
+      "extraction_hits": [
+        {
+          "action": "使用",
+          "core_verb": "使用",
+          "length": 2
+        }
+      ],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [
+        "action_surface_ambiguous"
+      ],
+      "suspicion_gates": [
+        "action_surface_ambiguous"
+      ],
+      "design_check_gates": [],
+      "routed_to_human": true,
+      "design_check_only": false,
+      "surface_ambiguous": true,
+      "new_action_kind_matches": null,
+      "name_quality": null,
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "action_surface_ambiguous"
+      ],
+      "elapsed_seconds": 0.0,
+      "llm_calls": 1,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "以下のいずれかの要素から2種類以上を選択し、利用",
+              "surface": "以下のいずれかの要素から2種類以上を選択し、利用",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "利用"
+            }
+          ],
+          "surface": "以下のいずれかの要素から2種類以上を選択し、利用",
+          "core_verb": "利用",
+          "removed_modality": [],
+          "choice": "使用",
+          "reason": "動詞 '利用' が '使用' の過去の動詞と一致",
+          "definition_part": "",
+          "route": "3a",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "利用",
+          "matches": [
+            {
+              "name": "使用",
+              "reason": "過去の語句の動詞 '利用' と一致"
+            }
+          ],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ],
+            "受信": [
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ]
+          },
+          "reason": "動詞 '利用' が '使用' の過去の動詞と一致"
+        },
+        "extraction_check": {
+          "core_verb": "利用",
+          "hits": [
+            {
+              "action": "使用",
+              "core_verb": "使用",
+              "length": 2
+            }
+          ],
+          "flagged": true,
+          "short_hits": 1
+        },
+        "synonym_judgment": null,
+        "candidates_considered": [],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 0.0,
+        "llm_calls": 1
+      }
+    },
+    {
+      "order": 2,
+      "clause_id": "ipa_secguide_v4_6_5_outdoor",
+      "group": "",
+      "expected": {
+        "surface": "他者が画面を盗み見可能な環境で利用",
+        "normalized": "使用",
+        "is_new": false,
+        "core_verb": "利用",
+        "kind": "concrete",
+        "parent": null
+      },
+      "expected_alternatives": [],
+      "matched_expectation": {
+        "surface": "他者が画面を盗み見可能な環境で利用",
+        "normalized": "使用",
+        "is_new": false,
+        "core_verb": "利用",
+        "kind": "concrete",
+        "parent": null
+      },
+      "actual": {
+        "surface": "他者が画面を盗み見可能な環境で利用",
+        "removed_modality": [],
+        "core_verb": "利用",
+        "normalized": "使用",
+        "kind": "concrete",
+        "is_new": false
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "3a",
+      "synonym_suggestion": null,
+      "synonym_suggestion_reason": "",
+      "synonym_off_list": false,
+      "suggestion_in_scope": false,
+      "suggestion_hit": false,
+      "suggestion_false_alarm": false,
+      "suggestion_rescues_missed": false,
+      "verb_matches": [
+        "使用"
+      ],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [],
+      "design_check_gates": [],
+      "routed_to_human": false,
+      "design_check_only": false,
+      "surface_ambiguous": false,
+      "new_action_kind_matches": null,
+      "name_quality": null,
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [],
+      "elapsed_seconds": 0.0,
+      "llm_calls": 1,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "他者が画面を盗み見可能な環境で利用",
+              "surface": "他者が画面を盗み見可能な環境で利用",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "利用"
+            }
+          ],
+          "surface": "他者が画面を盗み見可能な環境で利用",
+          "core_verb": "利用",
+          "removed_modality": [],
+          "choice": "使用",
+          "reason": "動詞 '利用' が '使用' の過去の動詞と一致",
+          "definition_part": "",
+          "route": "3a",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "利用",
+          "matches": [
+            {
+              "name": "使用",
+              "reason": "過去の語句の動詞 '利用' と一致"
+            }
+          ],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ],
+            "受信": [
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ]
+          },
+          "reason": "動詞 '利用' が '使用' の過去の動詞と一致"
+        },
+        "extraction_check": {
+          "core_verb": "利用",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": null,
+        "candidates_considered": [],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 0.0,
+        "llm_calls": 1
+      }
+    },
+    {
+      "order": 3,
+      "clause_id": "ipa_secguide_v4_6_10_password_reuse",
+      "group": "",
+      "expected": {
+        "surface": "機器やサービス間でのパスワードの使い回し",
+        "normalized": "使用",
+        "is_new": false,
+        "core_verb": "使い回し",
+        "kind": "concrete",
+        "parent": null
+      },
+      "expected_alternatives": [],
+      "matched_expectation": {
+        "surface": "機器やサービス間でのパスワードの使い回し",
+        "normalized": "使用",
+        "is_new": false,
+        "core_verb": "使い回し",
+        "kind": "concrete",
+        "parent": null
+      },
+      "actual": {
+        "surface": "機器やサービス間でのパスワードの使い回し",
+        "removed_modality": [],
+        "core_verb": "使い回し",
+        "normalized": "使用",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "missed",
+      "verdict_label": "取りこぼし",
+      "route": "4",
+      "synonym_suggestion": "使用",
+      "synonym_suggestion_reason": "(正解)",
+      "synonym_off_list": false,
+      "suggestion_in_scope": true,
+      "suggestion_hit": true,
+      "suggestion_false_alarm": false,
+      "suggestion_rescues_missed": true,
+      "verb_matches": [],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [
+        "action_possible_duplicate"
+      ],
+      "design_check_gates": [
+        "new_action_unapproved",
+        "action_synonym_suggested"
+      ],
+      "routed_to_human": true,
+      "design_check_only": false,
+      "surface_ambiguous": false,
+      "new_action_kind_matches": null,
+      "name_quality": {
+        "name": "使用",
+        "core_verb": "使い回し",
+        "collides_with_existing": true,
+        "includes_object": false,
+        "extra": ""
+      },
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved",
+        "action_synonym_suggested",
+        "action_possible_duplicate"
+      ],
+      "elapsed_seconds": 0.0,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "機器やサービス間でのパスワードの使い回し",
+              "surface": "機器やサービス間でのパスワードの使い回し",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "使い回し"
+            }
+          ],
+          "surface": "機器やサービス間でのパスワードの使い回し",
+          "core_verb": "使い回し",
+          "removed_modality": [],
+          "choice": "該当なし",
+          "reason": "動詞 '使い回し' と一致する過去の動詞が台帳に無い／同義語の提案あり(寄せない。P33): '使用' — (正解)",
+          "definition_part": "",
+          "route": "4",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "使い回し",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ],
+            "受信": [
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ]
+          },
+          "reason": "動詞 '使い回し' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "使い回し",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": {
+          "core_verb": "使い回し",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ],
+            "受信": [
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ]
+          },
+          "answer": "使用",
+          "reason": "(正解)",
+          "raw_answer": "使用",
+          "off_list": false
+        },
+        "candidates_considered": [],
+        "new_action_proposal": {
+          "name": "使用",
+          "definition": "",
+          "kind": "concrete",
+          "parent_suggestion": null,
+          "basis_quotes": [],
+          "basis_verified": [],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "使用",
+          "name_ratio": 1.0,
+          "definition_overlap": 0.0,
+          "flagged": true,
+          "reason": "名前の類似 1.00 >= 0.6／名前が互いに含まれる('使用'／'使用')／名前の末尾の体言が同じ('使用')",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 0.0,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 4,
+      "clause_id": "ipa_secguide_v4_7_1_link",
+      "group": "",
+      "expected": {
+        "surface": "他のウェブサイト等に設置されているリンクは、偽サイトへの誘導である可能性があるためアクセス",
+        "normalized": "アクセス",
+        "is_new": true,
+        "core_verb": "アクセス",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "ネットワーク上の場所に接続して開くこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "他のウェブサイト等に設置されているリンクは、偽サイトへの誘導である可能性があるためアクセス",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "expected_alternatives": [],
+      "matched_expectation": {
+        "surface": "他のウェブサイト等に設置されているリンクは、偽サイトへの誘導である可能性があるためアクセス",
+        "normalized": "アクセス",
+        "is_new": true,
+        "core_verb": "アクセス",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "ネットワーク上の場所に接続して開くこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "他のウェブサイト等に設置されているリンクは、偽サイトへの誘導である可能性があるためアクセス",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "actual": {
+        "surface": "他のウェブサイト等に設置されているリンクは、偽サイトへの誘導である可能性があるためアクセス",
+        "removed_modality": [],
+        "core_verb": "アクセス",
+        "normalized": "アクセス",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "4",
+      "synonym_suggestion": null,
+      "synonym_suggestion_reason": "(正解)",
+      "synonym_off_list": false,
+      "suggestion_in_scope": false,
+      "suggestion_hit": false,
+      "suggestion_false_alarm": false,
+      "suggestion_rescues_missed": false,
+      "verb_matches": [],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "routed_to_human": true,
+      "design_check_only": true,
+      "surface_ambiguous": false,
+      "new_action_kind_matches": true,
+      "name_quality": {
+        "name": "アクセス",
+        "core_verb": "アクセス",
+        "collides_with_existing": false,
+        "includes_object": false,
+        "extra": ""
+      },
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "elapsed_seconds": 0.0,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "他のウェブサイト等に設置されているリンクは、偽サイトへの誘導である可能性があるためアクセス",
+              "surface": "他のウェブサイト等に設置されているリンクは、偽サイトへの誘導である可能性があるためアクセス",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "アクセス"
+            }
+          ],
+          "surface": "他のウェブサイト等に設置されているリンクは、偽サイトへの誘導である可能性があるためアクセス",
+          "core_verb": "アクセス",
+          "removed_modality": [],
+          "choice": "該当なし",
+          "reason": "動詞 'アクセス' と一致する過去の動詞が台帳に無い／同義語の提案も無い: (正解)",
+          "definition_part": "",
+          "route": "4",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "アクセス",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ],
+            "受信": [
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ]
+          },
+          "reason": "動詞 'アクセス' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "アクセス",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": {
+          "core_verb": "アクセス",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ],
+            "受信": [
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ]
+          },
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        },
+        "candidates_considered": [],
+        "new_action_proposal": {
+          "name": "アクセス",
+          "definition": "ネットワーク上の場所に接続して開くこと",
+          "kind": "concrete",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "他のウェブサイト等に設置されているリンクは、偽サイトへの誘導である可能性があるためアクセス"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "立入り",
+          "name_ratio": 0.0,
+          "definition_overlap": 0.125,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 0.0,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 5,
+      "clause_id": "ipa_secguide_v4_2_2_public_order",
+      "group": "",
+      "expected": {
+        "surface": "公序良俗に反するサイトへのアクセス",
+        "normalized": "アクセス",
+        "is_new": false,
+        "core_verb": "アクセス",
+        "kind": "concrete",
+        "parent": null
+      },
+      "expected_alternatives": [],
+      "matched_expectation": {
+        "surface": "公序良俗に反するサイトへのアクセス",
+        "normalized": "アクセス",
+        "is_new": false,
+        "core_verb": "アクセス",
+        "kind": "concrete",
+        "parent": null
+      },
+      "actual": {
+        "surface": "公序良俗に反するサイトへのアクセス",
+        "removed_modality": [],
+        "core_verb": "アクセス",
+        "normalized": "アクセス",
+        "kind": "concrete",
+        "is_new": false
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "3a",
+      "synonym_suggestion": null,
+      "synonym_suggestion_reason": "",
+      "synonym_off_list": false,
+      "suggestion_in_scope": false,
+      "suggestion_hit": false,
+      "suggestion_false_alarm": false,
+      "suggestion_rescues_missed": false,
+      "verb_matches": [
+        "アクセス"
+      ],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [],
+      "design_check_gates": [],
+      "routed_to_human": false,
+      "design_check_only": false,
+      "surface_ambiguous": false,
+      "new_action_kind_matches": null,
+      "name_quality": null,
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [],
+      "elapsed_seconds": 0.0,
+      "llm_calls": 1,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "公序良俗に反するサイトへのアクセス",
+              "surface": "公序良俗に反するサイトへのアクセス",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "アクセス"
+            }
+          ],
+          "surface": "公序良俗に反するサイトへのアクセス",
+          "core_verb": "アクセス",
+          "removed_modality": [],
+          "choice": "アクセス",
+          "reason": "動詞 'アクセス' が 'アクセス' の過去の動詞と一致",
+          "definition_part": "",
+          "route": "3a",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "アクセス",
+          "matches": [
+            {
+              "name": "アクセス",
+              "reason": "過去の語句の動詞 'アクセス' と一致"
+            }
+          ],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ],
+            "受信": [
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス"
+            ]
+          },
+          "reason": "動詞 'アクセス' が 'アクセス' の過去の動詞と一致"
+        },
+        "extraction_check": {
+          "core_verb": "アクセス",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": null,
+        "candidates_considered": [],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 0.0,
+        "llm_calls": 1
+      }
+    },
+    {
+      "order": 6,
+      "clause_id": "ipa_secguide_v4_2_2_mobile_code",
+      "group": "",
+      "expected": {
+        "surface": "モバイルコード(クライアントパソコン側で動作するプログラム)を実行",
+        "normalized": "実行",
+        "is_new": true,
+        "core_verb": "実行",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "プログラムを動かすこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "モバイルコード(クライアントパソコン側で動作するプログラム)を実行",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "expected_alternatives": [],
+      "matched_expectation": {
+        "surface": "モバイルコード(クライアントパソコン側で動作するプログラム)を実行",
+        "normalized": "実行",
+        "is_new": true,
+        "core_verb": "実行",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "プログラムを動かすこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "モバイルコード(クライアントパソコン側で動作するプログラム)を実行",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "actual": {
+        "surface": "モバイルコード(クライアントパソコン側で動作するプログラム)を実行",
+        "removed_modality": [],
+        "core_verb": "実行",
+        "normalized": "実行",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "4",
+      "synonym_suggestion": null,
+      "synonym_suggestion_reason": "(正解)",
+      "synonym_off_list": false,
+      "suggestion_in_scope": false,
+      "suggestion_hit": false,
+      "suggestion_false_alarm": false,
+      "suggestion_rescues_missed": false,
+      "verb_matches": [],
+      "extraction_hits": [
+        {
+          "action": "取り出し",
+          "core_verb": "ダウンロード",
+          "length": 6
+        }
+      ],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [
+        "action_surface_ambiguous"
+      ],
+      "suspicion_gates": [
+        "action_surface_ambiguous"
+      ],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "routed_to_human": true,
+      "design_check_only": false,
+      "surface_ambiguous": true,
+      "new_action_kind_matches": true,
+      "name_quality": {
+        "name": "実行",
+        "core_verb": "実行",
+        "collides_with_existing": false,
+        "includes_object": false,
+        "extra": ""
+      },
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved",
+        "action_surface_ambiguous"
+      ],
+      "elapsed_seconds": 0.0,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "モバイルコード(クライアントパソコン側で動作するプログラム)を実行",
+              "surface": "モバイルコード(クライアントパソコン側で動作するプログラム)を実行",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "実行"
+            }
+          ],
+          "surface": "モバイルコード(クライアントパソコン側で動作するプログラム)を実行",
+          "core_verb": "実行",
+          "removed_modality": [],
+          "choice": "該当なし",
+          "reason": "動詞 '実行' と一致する過去の動詞が台帳に無い／同義語の提案も無い: (正解)",
+          "definition_part": "",
+          "route": "4",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "実行",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ],
+            "受信": [
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス",
+              "アクセス"
+            ]
+          },
+          "reason": "動詞 '実行' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "実行",
+          "hits": [
+            {
+              "action": "取り出し",
+              "core_verb": "ダウンロード",
+              "length": 6
+            }
+          ],
+          "flagged": true,
+          "short_hits": 0
+        },
+        "synonym_judgment": {
+          "core_verb": "実行",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ],
+            "受信": [
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス",
+              "アクセス"
+            ]
+          },
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        },
+        "candidates_considered": [],
+        "new_action_proposal": {
+          "name": "実行",
+          "definition": "プログラムを動かすこと",
+          "kind": "concrete",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "モバイルコード(クライアントパソコン側で動作するプログラム)を実行"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "発行",
+          "name_ratio": 0.5,
+          "definition_overlap": 0.087,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 0.0,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 7,
+      "clause_id": "ipa_secguide_v4_personnel_6_4_2_cloud",
+      "group": "",
+      "expected": {
+        "surface": "業務関連データの送受信、保存、共有に利用",
+        "normalized": "使用",
+        "is_new": false,
+        "core_verb": "利用",
+        "kind": "concrete",
+        "parent": null
+      },
+      "expected_alternatives": [
+        {
+          "surface": "業務関連データの送受信、保存",
+          "normalized": "保存",
+          "is_new": false,
+          "core_verb": "保存",
+          "kind": "concrete",
+          "parent": null
+        },
+        {
+          "surface": "業務関連データの送受信、保存、共有",
+          "normalized": "共有",
+          "is_new": false,
+          "core_verb": "共有",
+          "kind": "concrete",
+          "parent": "提供"
+        },
+        {
+          "surface": "業務関連データの送受信",
+          "normalized": "送信",
+          "is_new": false,
+          "core_verb": "送受信",
+          "kind": "concrete",
+          "parent": "提供"
+        },
+        {
+          "surface": "業務関連データの送受信",
+          "normalized": "受信",
+          "is_new": false,
+          "core_verb": "送受信",
+          "kind": "concrete",
+          "parent": "取得"
+        }
+      ],
+      "matched_expectation": {
+        "surface": "業務関連データの送受信、保存、共有に利用",
+        "normalized": "使用",
+        "is_new": false,
+        "core_verb": "利用",
+        "kind": "concrete",
+        "parent": null
+      },
+      "actual": {
+        "surface": "業務関連データの送受信、保存、共有に利用",
+        "removed_modality": [],
+        "core_verb": "利用",
+        "normalized": "使用",
+        "kind": "concrete",
+        "is_new": false
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "3a",
+      "synonym_suggestion": null,
+      "synonym_suggestion_reason": "",
+      "synonym_off_list": false,
+      "suggestion_in_scope": false,
+      "suggestion_hit": false,
+      "suggestion_false_alarm": false,
+      "suggestion_rescues_missed": false,
+      "verb_matches": [
+        "使用"
+      ],
+      "extraction_hits": [
+        {
+          "action": "送信",
+          "core_verb": "送受信",
+          "length": 3
+        },
+        {
+          "action": "共有",
+          "core_verb": "共有",
+          "length": 2
+        },
+        {
+          "action": "保存",
+          "core_verb": "保存",
+          "length": 2
+        },
+        {
+          "action": "受信",
+          "core_verb": "送受信",
+          "length": 3
+        }
+      ],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [
+        "action_surface_ambiguous"
+      ],
+      "design_check_gates": [],
+      "routed_to_human": true,
+      "design_check_only": false,
+      "surface_ambiguous": true,
+      "new_action_kind_matches": null,
+      "name_quality": null,
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "action_surface_ambiguous"
+      ],
+      "elapsed_seconds": 0.0,
+      "llm_calls": 1,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "業務関連データの送受信、保存、共有に利用",
+              "surface": "業務関連データの送受信、保存、共有に利用",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "利用"
+            },
+            {
+              "raw": "業務関連データの送受信、保存",
+              "surface": "業務関連データの送受信、保存",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "保存"
+            }
+          ],
+          "surface": "業務関連データの送受信、保存、共有に利用",
+          "core_verb": "利用",
+          "removed_modality": [],
+          "choice": "使用",
+          "reason": "動詞 '利用' が '使用' の過去の動詞と一致",
+          "definition_part": "",
+          "route": "3a",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "利用",
+          "matches": [
+            {
+              "name": "使用",
+              "reason": "過去の語句の動詞 '利用' と一致"
+            }
+          ],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存"
+            ],
+            "受信": [
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス",
+              "アクセス"
+            ],
+            "実行": [
+              "実行"
+            ]
+          },
+          "reason": "動詞 '利用' が '使用' の過去の動詞と一致"
+        },
+        "extraction_check": {
+          "core_verb": "利用",
+          "hits": [
+            {
+              "action": "送信",
+              "core_verb": "送受信",
+              "length": 3
+            },
+            {
+              "action": "共有",
+              "core_verb": "共有",
+              "length": 2
+            },
+            {
+              "action": "保存",
+              "core_verb": "保存",
+              "length": 2
+            },
+            {
+              "action": "受信",
+              "core_verb": "送受信",
+              "length": 3
+            }
+          ],
+          "flagged": true,
+          "short_hits": 2
+        },
+        "synonym_judgment": null,
+        "candidates_considered": [],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 0.0,
+        "llm_calls": 1
+      }
+    },
+    {
+      "order": 8,
+      "clause_id": "ipa_secguide_v4_personnel_6_2_1_install",
+      "group": "",
+      "expected": {
+        "surface": "社内標準外ソフトウェアのインストール",
+        "normalized": "インストール",
+        "is_new": true,
+        "core_verb": "インストール",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "ソフトウェアを機器に組み込んで使える状態にすること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "社内標準外ソフトウェアのインストール",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "expected_alternatives": [],
+      "matched_expectation": {
+        "surface": "社内標準外ソフトウェアのインストール",
+        "normalized": "インストール",
+        "is_new": true,
+        "core_verb": "インストール",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "ソフトウェアを機器に組み込んで使える状態にすること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "社内標準外ソフトウェアのインストール",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "actual": {
+        "surface": "社内標準外ソフトウェアのインストール",
+        "removed_modality": [],
+        "core_verb": "インストール",
+        "normalized": "インストール",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "4",
+      "synonym_suggestion": null,
+      "synonym_suggestion_reason": "(正解)",
+      "synonym_off_list": false,
+      "suggestion_in_scope": false,
+      "suggestion_hit": false,
+      "suggestion_false_alarm": false,
+      "suggestion_rescues_missed": false,
+      "verb_matches": [],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "routed_to_human": true,
+      "design_check_only": true,
+      "surface_ambiguous": false,
+      "new_action_kind_matches": true,
+      "name_quality": {
+        "name": "インストール",
+        "core_verb": "インストール",
+        "collides_with_existing": false,
+        "includes_object": false,
+        "extra": ""
+      },
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "elapsed_seconds": 0.0,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "社内標準外ソフトウェアのインストール",
+              "surface": "社内標準外ソフトウェアのインストール",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "インストール"
+            }
+          ],
+          "surface": "社内標準外ソフトウェアのインストール",
+          "core_verb": "インストール",
+          "removed_modality": [],
+          "choice": "該当なし",
+          "reason": "動詞 'インストール' と一致する過去の動詞が台帳に無い／同義語の提案も無い: (正解)",
+          "definition_part": "",
+          "route": "4",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "インストール",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存",
+              "保存"
+            ],
+            "受信": [
+              "送受信",
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス",
+              "アクセス"
+            ],
+            "実行": [
+              "実行"
+            ]
+          },
+          "reason": "動詞 'インストール' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "インストール",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": {
+          "core_verb": "インストール",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存",
+              "保存"
+            ],
+            "受信": [
+              "送受信",
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス",
+              "アクセス"
+            ],
+            "実行": [
+              "実行"
+            ]
+          },
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        },
+        "candidates_considered": [],
+        "new_action_proposal": {
+          "name": "インストール",
+          "definition": "ソフトウェアを機器に組み込んで使える状態にすること",
+          "kind": "concrete",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "社内標準外ソフトウェアのインストール"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "共有",
+          "name_ratio": 0.0,
+          "definition_overlap": 0.231,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 0.0,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 9,
+      "clause_id": "ipa_secguide_v4_personnel_6_2_2_modify",
+      "group": "",
+      "expected": {
+        "surface": "不正な改造を行う",
+        "normalized": "改造",
+        "is_new": true,
+        "core_verb": "改造",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "機器やソフトウェアに手を加えて作りを変えること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "不正な改造を行う",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "expected_alternatives": [],
+      "matched_expectation": {
+        "surface": "不正な改造を行う",
+        "normalized": "改造",
+        "is_new": true,
+        "core_verb": "改造",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "機器やソフトウェアに手を加えて作りを変えること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "不正な改造を行う",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "actual": {
+        "surface": "不正な改造を行う",
+        "removed_modality": [],
+        "core_verb": "改造",
+        "normalized": "改造",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "4",
+      "synonym_suggestion": null,
+      "synonym_suggestion_reason": "(正解)",
+      "synonym_off_list": false,
+      "suggestion_in_scope": false,
+      "suggestion_hit": false,
+      "suggestion_false_alarm": false,
+      "suggestion_rescues_missed": false,
+      "verb_matches": [],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "routed_to_human": true,
+      "design_check_only": true,
+      "surface_ambiguous": false,
+      "new_action_kind_matches": true,
+      "name_quality": {
+        "name": "改造",
+        "core_verb": "改造",
+        "collides_with_existing": false,
+        "includes_object": false,
+        "extra": ""
+      },
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "elapsed_seconds": 0.0,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "不正な改造を行う",
+              "surface": "不正な改造を行う",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "改造"
+            }
+          ],
+          "surface": "不正な改造を行う",
+          "core_verb": "改造",
+          "removed_modality": [],
+          "choice": "該当なし",
+          "reason": "動詞 '改造' と一致する過去の動詞が台帳に無い／同義語の提案も無い: (正解)",
+          "definition_part": "",
+          "route": "4",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "改造",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存",
+              "保存"
+            ],
+            "受信": [
+              "送受信",
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス",
+              "アクセス"
+            ],
+            "実行": [
+              "実行"
+            ],
+            "インストール": [
+              "インストール"
+            ]
+          },
+          "reason": "動詞 '改造' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "改造",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": {
+          "core_verb": "改造",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存",
+              "保存"
+            ],
+            "受信": [
+              "送受信",
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス",
+              "アクセス"
+            ],
+            "実行": [
+              "実行"
+            ],
+            "インストール": [
+              "インストール"
+            ]
+          },
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        },
+        "candidates_considered": [],
+        "new_action_proposal": {
+          "name": "改造",
+          "definition": "機器やソフトウェアに手を加えて作りを変えること",
+          "kind": "concrete",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "不正な改造を行う"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "インストール",
+          "name_ratio": 0.0,
+          "definition_overlap": 0.243,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 0.0,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 10,
+      "clause_id": "ipa_secguide_v4_personnel_6_4_3_lock",
+      "group": "",
+      "expected": {
+        "surface": "他者（家族を含む）にテレワーク用の情報機器を操作させ",
+        "normalized": "操作させ",
+        "is_new": true,
+        "core_verb": "操作させ",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "他の人に機器を動かさせること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "他者（家族を含む）にテレワーク用の情報機器を操作させ",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "expected_alternatives": [
+        {
+          "surface": "離席時にスクリーンセーバーや画面をロック",
+          "normalized": "離席",
+          "is_new": false,
+          "core_verb": "離席",
+          "kind": "concrete",
+          "parent": null
+        }
+      ],
+      "matched_expectation": {
+        "surface": "他者（家族を含む）にテレワーク用の情報機器を操作させ",
+        "normalized": "操作させ",
+        "is_new": true,
+        "core_verb": "操作させ",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "他の人に機器を動かさせること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "他者（家族を含む）にテレワーク用の情報機器を操作させ",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "actual": {
+        "surface": "他者（家族を含む）にテレワーク用の情報機器を操作させ",
+        "removed_modality": [],
+        "core_verb": "操作させ",
+        "normalized": "操作させ",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "4",
+      "synonym_suggestion": null,
+      "synonym_suggestion_reason": "(正解)",
+      "synonym_off_list": false,
+      "suggestion_in_scope": true,
+      "suggestion_hit": false,
+      "suggestion_false_alarm": false,
+      "suggestion_rescues_missed": false,
+      "verb_matches": [],
+      "extraction_hits": [
+        {
+          "action": "操作",
+          "core_verb": "操作",
+          "length": 2
+        }
+      ],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [
+        "action_possible_duplicate"
+      ],
+      "suspicion_gates": [
+        "action_surface_ambiguous",
+        "action_possible_duplicate"
+      ],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "routed_to_human": true,
+      "design_check_only": false,
+      "surface_ambiguous": true,
+      "new_action_kind_matches": true,
+      "name_quality": {
+        "name": "操作させ",
+        "core_verb": "操作させ",
+        "collides_with_existing": false,
+        "includes_object": false,
+        "extra": ""
+      },
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved",
+        "action_surface_ambiguous",
+        "action_possible_duplicate"
+      ],
+      "elapsed_seconds": 0.0,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "他者（家族を含む）にテレワーク用の情報機器を操作させ",
+              "surface": "他者（家族を含む）にテレワーク用の情報機器を操作させ",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "操作させ"
+            },
+            {
+              "raw": "離席時にスクリーンセーバーや画面をロック",
+              "surface": "離席時にスクリーンセーバーや画面をロック",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "離席"
+            }
+          ],
+          "surface": "他者（家族を含む）にテレワーク用の情報機器を操作させ",
+          "core_verb": "操作させ",
+          "removed_modality": [],
+          "choice": "該当なし",
+          "reason": "動詞 '操作させ' と一致する過去の動詞が台帳に無い／同義語の提案も無い: (正解)",
+          "definition_part": "",
+          "route": "4",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "操作させ",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存",
+              "保存"
+            ],
+            "受信": [
+              "送受信",
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス",
+              "アクセス"
+            ],
+            "実行": [
+              "実行"
+            ],
+            "インストール": [
+              "インストール"
+            ],
+            "改造": [
+              "改造"
+            ]
+          },
+          "reason": "動詞 '操作させ' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "操作させ",
+          "hits": [
+            {
+              "action": "操作",
+              "core_verb": "操作",
+              "length": 2
+            }
+          ],
+          "flagged": true,
+          "short_hits": 1
+        },
+        "synonym_judgment": {
+          "core_verb": "操作させ",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存",
+              "保存"
+            ],
+            "受信": [
+              "送受信",
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス",
+              "アクセス"
+            ],
+            "実行": [
+              "実行"
+            ],
+            "インストール": [
+              "インストール"
+            ],
+            "改造": [
+              "改造"
+            ]
+          },
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        },
+        "candidates_considered": [],
+        "new_action_proposal": {
+          "name": "操作させ",
+          "definition": "他の人に機器を動かさせること",
+          "kind": "concrete",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "他者（家族を含む）にテレワーク用の情報機器を操作させ"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "操作",
+          "name_ratio": 0.667,
+          "definition_overlap": 0.188,
+          "flagged": true,
+          "reason": "名前の類似 0.67 >= 0.6／名前が互いに含まれる('操作させ'／'操作')",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 0.0,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 11,
+      "clause_id": "ipa_secguide_v4_personnel_6_4_3_input",
+      "group": "",
+      "expected": {
+        "surface": "重要情報を入力",
+        "normalized": "入力",
+        "is_new": true,
+        "core_verb": "入力",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "情報を機器に打ち込むこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "重要情報を入力",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "expected_alternatives": [
+        {
+          "surface": "重要情報を入力・表示",
+          "normalized": "表示",
+          "is_new": true,
+          "core_verb": "表示",
+          "kind": "concrete",
+          "parent": null,
+          "definition": {
+            "text": "情報を画面に映すこと",
+            "status": "provisional",
+            "basis": [
+              {
+                "quote": "重要情報を入力・表示",
+                "basis": "verbatim"
+              }
+            ],
+            "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+          }
+        }
+      ],
+      "matched_expectation": {
+        "surface": "重要情報を入力",
+        "normalized": "入力",
+        "is_new": true,
+        "core_verb": "入力",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "情報を機器に打ち込むこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "重要情報を入力",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "actual": {
+        "surface": "重要情報を入力",
+        "removed_modality": [],
+        "core_verb": "入力",
+        "normalized": "入力",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "4",
+      "synonym_suggestion": null,
+      "synonym_suggestion_reason": "(正解)",
+      "synonym_off_list": false,
+      "suggestion_in_scope": false,
+      "suggestion_hit": false,
+      "suggestion_false_alarm": false,
+      "suggestion_rescues_missed": false,
+      "verb_matches": [],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [
+        "action_surface_ambiguous"
+      ],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "routed_to_human": true,
+      "design_check_only": false,
+      "surface_ambiguous": true,
+      "new_action_kind_matches": true,
+      "name_quality": {
+        "name": "入力",
+        "core_verb": "入力",
+        "collides_with_existing": false,
+        "includes_object": false,
+        "extra": ""
+      },
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved",
+        "action_surface_ambiguous"
+      ],
+      "elapsed_seconds": 0.0,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "重要情報を入力",
+              "surface": "重要情報を入力",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "入力"
+            },
+            {
+              "raw": "重要情報を入力・表示",
+              "surface": "重要情報を入力・表示",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "表示"
+            }
+          ],
+          "surface": "重要情報を入力",
+          "core_verb": "入力",
+          "removed_modality": [],
+          "choice": "該当なし",
+          "reason": "動詞 '入力' と一致する過去の動詞が台帳に無い／同義語の提案も無い: (正解)",
+          "definition_part": "",
+          "route": "4",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "入力",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存",
+              "保存"
+            ],
+            "受信": [
+              "送受信",
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ",
+              "離席"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス",
+              "アクセス"
+            ],
+            "実行": [
+              "実行"
+            ],
+            "インストール": [
+              "インストール"
+            ],
+            "改造": [
+              "改造"
+            ],
+            "操作させ": [
+              "操作させ"
+            ]
+          },
+          "reason": "動詞 '入力' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "入力",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": {
+          "core_verb": "入力",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存",
+              "保存"
+            ],
+            "受信": [
+              "送受信",
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ",
+              "離席"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス",
+              "アクセス"
+            ],
+            "実行": [
+              "実行"
+            ],
+            "インストール": [
+              "インストール"
+            ],
+            "改造": [
+              "改造"
+            ],
+            "操作させ": [
+              "操作させ"
+            ]
+          },
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        },
+        "candidates_considered": [],
+        "new_action_proposal": {
+          "name": "入力",
+          "definition": "情報を機器に打ち込むこと",
+          "kind": "concrete",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "重要情報を入力"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "立入り",
+          "name_ratio": 0.4,
+          "definition_overlap": 0.053,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 0.0,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 12,
+      "clause_id": "ipa_secguide_v4_personnel_6_4_4_leave",
+      "group": "",
+      "expected": {
+        "surface": "機器や書類は目の届く範囲に置き放置",
+        "normalized": "放置",
+        "is_new": false,
+        "core_verb": "放置",
+        "kind": "concrete",
+        "parent": null
+      },
+      "expected_alternatives": [],
+      "matched_expectation": {
+        "surface": "機器や書類は目の届く範囲に置き放置",
+        "normalized": "放置",
+        "is_new": false,
+        "core_verb": "放置",
+        "kind": "concrete",
+        "parent": null
+      },
+      "actual": {
+        "surface": "機器や書類は目の届く範囲に置き放置",
+        "removed_modality": [],
+        "core_verb": "放置",
+        "normalized": "放置",
+        "kind": "concrete",
+        "is_new": false
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "3a",
+      "synonym_suggestion": null,
+      "synonym_suggestion_reason": "",
+      "synonym_off_list": false,
+      "suggestion_in_scope": false,
+      "suggestion_hit": false,
+      "suggestion_false_alarm": false,
+      "suggestion_rescues_missed": false,
+      "verb_matches": [
+        "放置"
+      ],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [],
+      "design_check_gates": [],
+      "routed_to_human": false,
+      "design_check_only": false,
+      "surface_ambiguous": false,
+      "new_action_kind_matches": null,
+      "name_quality": null,
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [],
+      "elapsed_seconds": 0.0,
+      "llm_calls": 1,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "機器や書類は目の届く範囲に置き放置",
+              "surface": "機器や書類は目の届く範囲に置き放置",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "放置"
+            }
+          ],
+          "surface": "機器や書類は目の届く範囲に置き放置",
+          "core_verb": "放置",
+          "removed_modality": [],
+          "choice": "放置",
+          "reason": "動詞 '放置' が '放置' の過去の動詞と一致",
+          "definition_part": "",
+          "route": "3a",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "放置",
+          "matches": [
+            {
+              "name": "放置",
+              "reason": "過去の語句の動詞 '放置' と一致"
+            }
+          ],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存",
+              "保存"
+            ],
+            "受信": [
+              "送受信",
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ",
+              "離席"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス",
+              "アクセス"
+            ],
+            "実行": [
+              "実行"
+            ],
+            "インストール": [
+              "インストール"
+            ],
+            "改造": [
+              "改造"
+            ],
+            "操作させ": [
+              "操作させ"
+            ],
+            "入力": [
+              "入力"
+            ],
+            "表示": [
+              "表示"
+            ]
+          },
+          "reason": "動詞 '放置' が '放置' の過去の動詞と一致"
+        },
+        "extraction_check": {
+          "core_verb": "放置",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": null,
+        "candidates_considered": [],
+        "new_action_proposal": null,
+        "duplicate_check": null,
+        "elapsed_seconds": 0.0,
+        "llm_calls": 1
+      }
+    },
+    {
+      "order": 13,
+      "clause_id": "ipa_secguide_v4_personnel_6_4_4_discard",
+      "group": "",
+      "expected": {
+        "surface": "外出先で書類やCD・DVDなどの媒体を廃棄",
+        "normalized": "廃棄",
+        "is_new": true,
+        "core_verb": "廃棄",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "物を捨てること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "外出先で書類やCD・DVDなどの媒体を廃棄",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "expected_alternatives": [],
+      "matched_expectation": {
+        "surface": "外出先で書類やCD・DVDなどの媒体を廃棄",
+        "normalized": "廃棄",
+        "is_new": true,
+        "core_verb": "廃棄",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "物を捨てること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "外出先で書類やCD・DVDなどの媒体を廃棄",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "actual": {
+        "surface": "外出先で書類やCD・DVDなどの媒体を廃棄",
+        "removed_modality": [],
+        "core_verb": "廃棄",
+        "normalized": "廃棄",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "4",
+      "synonym_suggestion": null,
+      "synonym_suggestion_reason": "(正解)",
+      "synonym_off_list": false,
+      "suggestion_in_scope": false,
+      "suggestion_hit": false,
+      "suggestion_false_alarm": false,
+      "suggestion_rescues_missed": false,
+      "verb_matches": [],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "routed_to_human": true,
+      "design_check_only": true,
+      "surface_ambiguous": false,
+      "new_action_kind_matches": true,
+      "name_quality": {
+        "name": "廃棄",
+        "core_verb": "廃棄",
+        "collides_with_existing": false,
+        "includes_object": false,
+        "extra": ""
+      },
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "elapsed_seconds": 0.0,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "外出先で書類やCD・DVDなどの媒体を廃棄",
+              "surface": "外出先で書類やCD・DVDなどの媒体を廃棄",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "廃棄"
+            }
+          ],
+          "surface": "外出先で書類やCD・DVDなどの媒体を廃棄",
+          "core_verb": "廃棄",
+          "removed_modality": [],
+          "choice": "該当なし",
+          "reason": "動詞 '廃棄' と一致する過去の動詞が台帳に無い／同義語の提案も無い: (正解)",
+          "definition_part": "",
+          "route": "4",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "廃棄",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存",
+              "保存"
+            ],
+            "受信": [
+              "送受信",
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ",
+              "離席"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス",
+              "アクセス"
+            ],
+            "実行": [
+              "実行"
+            ],
+            "インストール": [
+              "インストール"
+            ],
+            "改造": [
+              "改造"
+            ],
+            "操作させ": [
+              "操作させ"
+            ],
+            "入力": [
+              "入力"
+            ],
+            "表示": [
+              "表示"
+            ]
+          },
+          "reason": "動詞 '廃棄' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "廃棄",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": {
+          "core_verb": "廃棄",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存",
+              "保存"
+            ],
+            "受信": [
+              "送受信",
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ",
+              "離席"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス",
+              "アクセス"
+            ],
+            "実行": [
+              "実行"
+            ],
+            "インストール": [
+              "インストール"
+            ],
+            "改造": [
+              "改造"
+            ],
+            "操作させ": [
+              "操作させ"
+            ],
+            "入力": [
+              "入力"
+            ],
+            "表示": [
+              "表示"
+            ]
+          },
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        },
+        "candidates_considered": [],
+        "new_action_proposal": {
+          "name": "廃棄",
+          "definition": "物を捨てること",
+          "kind": "concrete",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "外出先で書類やCD・DVDなどの媒体を廃棄"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "立入り",
+          "name_ratio": 0.0,
+          "definition_overlap": 0.154,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 0.0,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 14,
+      "clause_id": "ipa_secguide_v4_2_3_3_operate_hours",
+      "group": "",
+      "expected": {
+        "surface": "機器は原則として勤務時間のみ稼働させ",
+        "normalized": "稼働",
+        "is_new": true,
+        "core_verb": "稼働させ",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "機器を動いている状態にすること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "機器は原則として勤務時間のみ稼働させ",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "expected_alternatives": [],
+      "matched_expectation": {
+        "surface": "機器は原則として勤務時間のみ稼働させ",
+        "normalized": "稼働",
+        "is_new": true,
+        "core_verb": "稼働させ",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "機器を動いている状態にすること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "機器は原則として勤務時間のみ稼働させ",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "actual": {
+        "surface": "機器は原則として勤務時間のみ稼働させ",
+        "removed_modality": [],
+        "core_verb": "稼働させ",
+        "normalized": "稼働",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "4",
+      "synonym_suggestion": null,
+      "synonym_suggestion_reason": "(正解)",
+      "synonym_off_list": false,
+      "suggestion_in_scope": false,
+      "suggestion_hit": false,
+      "suggestion_false_alarm": false,
+      "suggestion_rescues_missed": false,
+      "verb_matches": [],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "routed_to_human": true,
+      "design_check_only": true,
+      "surface_ambiguous": false,
+      "new_action_kind_matches": true,
+      "name_quality": {
+        "name": "稼働",
+        "core_verb": "稼働させ",
+        "collides_with_existing": false,
+        "includes_object": false,
+        "extra": ""
+      },
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "elapsed_seconds": 0.0,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "機器は原則として勤務時間のみ稼働させ",
+              "surface": "機器は原則として勤務時間のみ稼働させ",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "稼働させ"
+            }
+          ],
+          "surface": "機器は原則として勤務時間のみ稼働させ",
+          "core_verb": "稼働させ",
+          "removed_modality": [],
+          "choice": "該当なし",
+          "reason": "動詞 '稼働させ' と一致する過去の動詞が台帳に無い／同義語の提案も無い: (正解)",
+          "definition_part": "",
+          "route": "4",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "稼働させ",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存",
+              "保存"
+            ],
+            "受信": [
+              "送受信",
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ",
+              "離席"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス",
+              "アクセス"
+            ],
+            "実行": [
+              "実行"
+            ],
+            "インストール": [
+              "インストール"
+            ],
+            "改造": [
+              "改造"
+            ],
+            "操作させ": [
+              "操作させ"
+            ],
+            "入力": [
+              "入力"
+            ],
+            "表示": [
+              "表示"
+            ],
+            "廃棄": [
+              "廃棄"
+            ]
+          },
+          "reason": "動詞 '稼働させ' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "稼働させ",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": {
+          "core_verb": "稼働させ",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存",
+              "保存"
+            ],
+            "受信": [
+              "送受信",
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ",
+              "離席"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス",
+              "アクセス"
+            ],
+            "実行": [
+              "実行"
+            ],
+            "インストール": [
+              "インストール"
+            ],
+            "改造": [
+              "改造"
+            ],
+            "操作させ": [
+              "操作させ"
+            ],
+            "入力": [
+              "入力"
+            ],
+            "表示": [
+              "表示"
+            ],
+            "廃棄": [
+              "廃棄"
+            ]
+          },
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        },
+        "candidates_considered": [],
+        "new_action_proposal": {
+          "name": "稼働",
+          "definition": "機器を動いている状態にすること",
+          "kind": "concrete",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "機器は原則として勤務時間のみ稼働させ"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "労働指示",
+          "name_ratio": 0.333,
+          "definition_overlap": 0.077,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 0.0,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 15,
+      "clause_id": "ipa_secguide_v4_2_3_4_connect",
+      "group": "",
+      "expected": {
+        "surface": "社内のパソコンやサーバーへの接続",
+        "normalized": "接続",
+        "is_new": true,
+        "core_verb": "接続",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "機器を他の機器やネットワークにつなぐこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "社内のパソコンやサーバーへの接続",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "expected_alternatives": [],
+      "matched_expectation": {
+        "surface": "社内のパソコンやサーバーへの接続",
+        "normalized": "接続",
+        "is_new": true,
+        "core_verb": "接続",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "機器を他の機器やネットワークにつなぐこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "社内のパソコンやサーバーへの接続",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "actual": {
+        "surface": "社内のパソコンやサーバーへの接続",
+        "removed_modality": [],
+        "core_verb": "接続",
+        "normalized": "接続",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "4",
+      "synonym_suggestion": null,
+      "synonym_suggestion_reason": "(正解)",
+      "synonym_off_list": false,
+      "suggestion_in_scope": false,
+      "suggestion_hit": false,
+      "suggestion_false_alarm": false,
+      "suggestion_rescues_missed": false,
+      "verb_matches": [],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "routed_to_human": true,
+      "design_check_only": true,
+      "surface_ambiguous": false,
+      "new_action_kind_matches": true,
+      "name_quality": {
+        "name": "接続",
+        "core_verb": "接続",
+        "collides_with_existing": false,
+        "includes_object": false,
+        "extra": ""
+      },
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "elapsed_seconds": 0.0,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "社内のパソコンやサーバーへの接続",
+              "surface": "社内のパソコンやサーバーへの接続",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "接続"
+            }
+          ],
+          "surface": "社内のパソコンやサーバーへの接続",
+          "core_verb": "接続",
+          "removed_modality": [],
+          "choice": "該当なし",
+          "reason": "動詞 '接続' と一致する過去の動詞が台帳に無い／同義語の提案も無い: (正解)",
+          "definition_part": "",
+          "route": "4",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "接続",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存",
+              "保存"
+            ],
+            "受信": [
+              "送受信",
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ",
+              "離席"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス",
+              "アクセス"
+            ],
+            "実行": [
+              "実行"
+            ],
+            "インストール": [
+              "インストール"
+            ],
+            "改造": [
+              "改造"
+            ],
+            "操作させ": [
+              "操作させ"
+            ],
+            "入力": [
+              "入力"
+            ],
+            "表示": [
+              "表示"
+            ],
+            "廃棄": [
+              "廃棄"
+            ],
+            "稼働": [
+              "稼働させ"
+            ]
+          },
+          "reason": "動詞 '接続' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "接続",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": {
+          "core_verb": "接続",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存",
+              "保存"
+            ],
+            "受信": [
+              "送受信",
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ",
+              "離席"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス",
+              "アクセス"
+            ],
+            "実行": [
+              "実行"
+            ],
+            "インストール": [
+              "インストール"
+            ],
+            "改造": [
+              "改造"
+            ],
+            "操作させ": [
+              "操作させ"
+            ],
+            "入力": [
+              "入力"
+            ],
+            "表示": [
+              "表示"
+            ],
+            "廃棄": [
+              "廃棄"
+            ],
+            "稼働": [
+              "稼働させ"
+            ]
+          },
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        },
+        "candidates_considered": [],
+        "new_action_proposal": {
+          "name": "接続",
+          "definition": "機器を他の機器やネットワークにつなぐこと",
+          "kind": "concrete",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "社内のパソコンやサーバーへの接続"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "アクセス",
+          "name_ratio": 0.0,
+          "definition_overlap": 0.2,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 0.0,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 16,
+      "clause_id": "mhlw_r7dec_art58_3_2",
+      "group": "",
+      "expected": {
+        "surface": "安全装置を取り外",
+        "normalized": "取り外し",
+        "is_new": true,
+        "core_verb": "取り外",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "付いている物を外すこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "安全装置を取り外",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "expected_alternatives": [
+        {
+          "surface": "その効力を失わせる",
+          "normalized": "無効化",
+          "is_new": true,
+          "core_verb": "失わせる",
+          "kind": "concrete",
+          "parent": null,
+          "definition": {
+            "text": "働きをなくさせること",
+            "status": "provisional",
+            "basis": [
+              {
+                "quote": "その効力を失わせる",
+                "basis": "verbatim"
+              }
+            ],
+            "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+          }
+        }
+      ],
+      "matched_expectation": {
+        "surface": "安全装置を取り外",
+        "normalized": "取り外し",
+        "is_new": true,
+        "core_verb": "取り外",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "付いている物を外すこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "安全装置を取り外",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "actual": {
+        "surface": "安全装置を取り外",
+        "removed_modality": [],
+        "core_verb": "取り外",
+        "normalized": "取り外し",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "4",
+      "synonym_suggestion": null,
+      "synonym_suggestion_reason": "(正解)",
+      "synonym_off_list": false,
+      "suggestion_in_scope": false,
+      "suggestion_hit": false,
+      "suggestion_false_alarm": false,
+      "suggestion_rescues_missed": false,
+      "verb_matches": [],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [
+        "action_possible_duplicate"
+      ],
+      "suspicion_gates": [
+        "action_surface_ambiguous",
+        "action_possible_duplicate"
+      ],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "routed_to_human": true,
+      "design_check_only": false,
+      "surface_ambiguous": true,
+      "new_action_kind_matches": true,
+      "name_quality": {
+        "name": "取り外し",
+        "core_verb": "取り外",
+        "collides_with_existing": false,
+        "includes_object": false,
+        "extra": "し"
+      },
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved",
+        "action_surface_ambiguous",
+        "action_possible_duplicate"
+      ],
+      "elapsed_seconds": 0.0,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "安全装置を取り外",
+              "surface": "安全装置を取り外",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "取り外"
+            },
+            {
+              "raw": "その効力を失わせる",
+              "surface": "その効力を失わせる",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "失わせる"
+            }
+          ],
+          "surface": "安全装置を取り外",
+          "core_verb": "取り外",
+          "removed_modality": [],
+          "choice": "該当なし",
+          "reason": "動詞 '取り外' と一致する過去の動詞が台帳に無い／同義語の提案も無い: (正解)",
+          "definition_part": "",
+          "route": "4",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "取り外",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存",
+              "保存"
+            ],
+            "受信": [
+              "送受信",
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ",
+              "離席"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス",
+              "アクセス"
+            ],
+            "実行": [
+              "実行"
+            ],
+            "インストール": [
+              "インストール"
+            ],
+            "改造": [
+              "改造"
+            ],
+            "操作させ": [
+              "操作させ"
+            ],
+            "入力": [
+              "入力"
+            ],
+            "表示": [
+              "表示"
+            ],
+            "廃棄": [
+              "廃棄"
+            ],
+            "稼働": [
+              "稼働させ"
+            ],
+            "接続": [
+              "接続"
+            ]
+          },
+          "reason": "動詞 '取り外' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "取り外",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": {
+          "core_verb": "取り外",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存",
+              "保存"
+            ],
+            "受信": [
+              "送受信",
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ",
+              "離席"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス",
+              "アクセス"
+            ],
+            "実行": [
+              "実行"
+            ],
+            "インストール": [
+              "インストール"
+            ],
+            "改造": [
+              "改造"
+            ],
+            "操作させ": [
+              "操作させ"
+            ],
+            "入力": [
+              "入力"
+            ],
+            "表示": [
+              "表示"
+            ],
+            "廃棄": [
+              "廃棄"
+            ],
+            "稼働": [
+              "稼働させ"
+            ],
+            "接続": [
+              "接続"
+            ]
+          },
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        },
+        "candidates_considered": [],
+        "new_action_proposal": {
+          "name": "取り外し",
+          "definition": "付いている物を外すこと",
+          "kind": "concrete",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "安全装置を取り外"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "取り出し",
+          "name_ratio": 0.75,
+          "definition_overlap": 0.049,
+          "flagged": true,
+          "reason": "名前の類似 0.75 >= 0.6",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 0.0,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 17,
+      "clause_id": "mhlw_r7dec_art58_3_3",
+      "group": "",
+      "expected": {
+        "surface": "保護具の着用が必要な作業",
+        "normalized": "作業",
+        "is_new": true,
+        "core_verb": "作業",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "業務として具体的な仕事を行うこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "保護具の着用が必要な作業",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "expected_alternatives": [],
+      "matched_expectation": {
+        "surface": "保護具の着用が必要な作業",
+        "normalized": "作業",
+        "is_new": true,
+        "core_verb": "作業",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "業務として具体的な仕事を行うこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "保護具の着用が必要な作業",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "actual": {
+        "surface": "保護具の着用が必要な作業",
+        "removed_modality": [],
+        "core_verb": "作業",
+        "normalized": "作業",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "4",
+      "synonym_suggestion": null,
+      "synonym_suggestion_reason": "(正解)",
+      "synonym_off_list": false,
+      "suggestion_in_scope": false,
+      "suggestion_hit": false,
+      "suggestion_false_alarm": false,
+      "suggestion_rescues_missed": false,
+      "verb_matches": [],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "routed_to_human": true,
+      "design_check_only": true,
+      "surface_ambiguous": false,
+      "new_action_kind_matches": true,
+      "name_quality": {
+        "name": "作業",
+        "core_verb": "作業",
+        "collides_with_existing": false,
+        "includes_object": false,
+        "extra": ""
+      },
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "elapsed_seconds": 0.0,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "保護具の着用が必要な作業",
+              "surface": "保護具の着用が必要な作業",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "作業"
+            }
+          ],
+          "surface": "保護具の着用が必要な作業",
+          "core_verb": "作業",
+          "removed_modality": [],
+          "choice": "該当なし",
+          "reason": "動詞 '作業' と一致する過去の動詞が台帳に無い／同義語の提案も無い: (正解)",
+          "definition_part": "",
+          "route": "4",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "作業",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存",
+              "保存"
+            ],
+            "受信": [
+              "送受信",
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ",
+              "離席"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス",
+              "アクセス"
+            ],
+            "実行": [
+              "実行"
+            ],
+            "インストール": [
+              "インストール"
+            ],
+            "改造": [
+              "改造"
+            ],
+            "操作させ": [
+              "操作させ"
+            ],
+            "入力": [
+              "入力"
+            ],
+            "表示": [
+              "表示"
+            ],
+            "廃棄": [
+              "廃棄"
+            ],
+            "稼働": [
+              "稼働させ"
+            ],
+            "接続": [
+              "接続"
+            ],
+            "取り外し": [
+              "取り外"
+            ],
+            "無効化": [
+              "失わせる"
+            ]
+          },
+          "reason": "動詞 '作業' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "作業",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": {
+          "core_verb": "作業",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存",
+              "保存"
+            ],
+            "受信": [
+              "送受信",
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ",
+              "離席"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス",
+              "アクセス"
+            ],
+            "実行": [
+              "実行"
+            ],
+            "インストール": [
+              "インストール"
+            ],
+            "改造": [
+              "改造"
+            ],
+            "操作させ": [
+              "操作させ"
+            ],
+            "入力": [
+              "入力"
+            ],
+            "表示": [
+              "表示"
+            ],
+            "廃棄": [
+              "廃棄"
+            ],
+            "稼働": [
+              "稼働させ"
+            ],
+            "接続": [
+              "接続"
+            ],
+            "取り外し": [
+              "取り外"
+            ],
+            "無効化": [
+              "失わせる"
+            ]
+          },
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        },
+        "candidates_considered": [],
+        "new_action_proposal": {
+          "name": "作業",
+          "definition": "業務として具体的な仕事を行うこと",
+          "kind": "concrete",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "保護具の着用が必要な作業"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "操作",
+          "name_ratio": 0.5,
+          "definition_overlap": 0.026,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 0.0,
+        "llm_calls": 3
+      }
+    },
+    {
+      "order": 18,
+      "clause_id": "mhlw_r7dec_art58_3_7",
+      "group": "",
+      "expected": {
+        "surface": "通路、避難口又は消火設備のある所に物品を置か",
+        "normalized": "配置",
+        "is_new": true,
+        "core_verb": "置か",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "物をある場所に置くこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "通路、避難口又は消火設備のある所に物品を置か",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "expected_alternatives": [],
+      "matched_expectation": {
+        "surface": "通路、避難口又は消火設備のある所に物品を置か",
+        "normalized": "配置",
+        "is_new": true,
+        "core_verb": "置か",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "物をある場所に置くこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "通路、避難口又は消火設備のある所に物品を置か",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "actual": {
+        "surface": "通路、避難口又は消火設備のある所に物品を置か",
+        "removed_modality": [],
+        "core_verb": "置か",
+        "normalized": "配置",
+        "kind": "concrete",
+        "is_new": true
+      },
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "route": "4",
+      "synonym_suggestion": null,
+      "synonym_suggestion_reason": "(正解)",
+      "synonym_off_list": false,
+      "suggestion_in_scope": false,
+      "suggestion_hit": false,
+      "suggestion_false_alarm": false,
+      "suggestion_rescues_missed": false,
+      "verb_matches": [],
+      "extraction_hits": [],
+      "severe": false,
+      "slipped": false,
+      "false_alarm_gates": [],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "new_action_unapproved"
+      ],
+      "routed_to_human": true,
+      "design_check_only": true,
+      "surface_ambiguous": false,
+      "new_action_kind_matches": true,
+      "name_quality": {
+        "name": "配置",
+        "core_verb": "置か",
+        "collides_with_existing": false,
+        "includes_object": false,
+        "extra": ""
+      },
+      "surface": {
+        "ok": true,
+        "in_clause": true,
+        "no_modality": true,
+        "has_core_verb": true
+      },
+      "gates": [
+        "new_action_unapproved"
+      ],
+      "elapsed_seconds": 0.0,
+      "llm_calls": 3,
+      "trace": {
+        "run": {
+          "temperature": 0.0,
+          "candidates": [
+            {
+              "raw": "通路、避難口又は消火設備のある所に物品を置か",
+              "surface": "通路、避難口又は消火設備のある所に物品を置か",
+              "removed_modality": [],
+              "in_clause": true,
+              "modality_found": [],
+              "core_verb": "置か"
+            }
+          ],
+          "surface": "通路、避難口又は消火設備のある所に物品を置か",
+          "core_verb": "置か",
+          "removed_modality": [],
+          "choice": "該当なし",
+          "reason": "動詞 '置か' と一致する過去の動詞が台帳に無い／同義語の提案も無い: (正解)",
+          "definition_part": "",
+          "route": "4",
+          "considered": []
+        },
+        "verb_routing": {
+          "core_verb": "置か",
+          "matches": [],
+          "compared": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存",
+              "保存"
+            ],
+            "受信": [
+              "送受信",
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ",
+              "離席"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス",
+              "アクセス"
+            ],
+            "実行": [
+              "実行"
+            ],
+            "インストール": [
+              "インストール"
+            ],
+            "改造": [
+              "改造"
+            ],
+            "操作させ": [
+              "操作させ"
+            ],
+            "入力": [
+              "入力"
+            ],
+            "表示": [
+              "表示"
+            ],
+            "廃棄": [
+              "廃棄"
+            ],
+            "稼働": [
+              "稼働させ"
+            ],
+            "接続": [
+              "接続"
+            ],
+            "取り外し": [
+              "取り外"
+            ],
+            "無効化": [
+              "失わせる"
+            ],
+            "作業": [
+              "作業"
+            ]
+          },
+          "reason": "動詞 '置か' と一致する過去の動詞が台帳に無い"
+        },
+        "extraction_check": {
+          "core_verb": "置か",
+          "hits": [],
+          "flagged": false,
+          "short_hits": 0
+        },
+        "synonym_judgment": {
+          "core_verb": "置か",
+          "offered": {
+            "送信": [
+              "転送",
+              "送信",
+              "送受信",
+              "送受信"
+            ],
+            "操作": [
+              "操作",
+              "操作",
+              "操作"
+            ],
+            "使用": [
+              "使用",
+              "利用",
+              "利用",
+              "利用",
+              "使い回し",
+              "利用"
+            ],
+            "提供": [
+              "提供",
+              "漏洩"
+            ],
+            "労働指示": [
+              "従事させ",
+              "就業させ",
+              "従事させ"
+            ],
+            "伝達": [
+              "伝達",
+              "伝え"
+            ],
+            "共有": [
+              "共用",
+              "共有",
+              "共有",
+              "共有"
+            ],
+            "取り出し": [
+              "取り出し",
+              "ダウンロード"
+            ],
+            "就業": [
+              "就業"
+            ],
+            "放置": [
+              "放置",
+              "放置",
+              "放置"
+            ],
+            "立入り": [
+              "立ち入",
+              "立ち入"
+            ],
+            "発行": [
+              "発行",
+              "発行"
+            ],
+            "持出し": [
+              "持出し"
+            ],
+            "持込み": [
+              "持込み"
+            ],
+            "保存": [
+              "保存",
+              "保存"
+            ],
+            "受信": [
+              "送受信",
+              "送受信"
+            ],
+            "撮影": [
+              "撮影"
+            ],
+            "録音": [
+              "録音"
+            ],
+            "離席": [
+              "離れ",
+              "離席"
+            ],
+            "取得": [
+              "取得"
+            ],
+            "同伴": [
+              "連れて行"
+            ],
+            "アクセス": [
+              "アクセス",
+              "アクセス"
+            ],
+            "実行": [
+              "実行"
+            ],
+            "インストール": [
+              "インストール"
+            ],
+            "改造": [
+              "改造"
+            ],
+            "操作させ": [
+              "操作させ"
+            ],
+            "入力": [
+              "入力"
+            ],
+            "表示": [
+              "表示"
+            ],
+            "廃棄": [
+              "廃棄"
+            ],
+            "稼働": [
+              "稼働させ"
+            ],
+            "接続": [
+              "接続"
+            ],
+            "取り外し": [
+              "取り外"
+            ],
+            "無効化": [
+              "失わせる"
+            ],
+            "作業": [
+              "作業"
+            ]
+          },
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        },
+        "candidates_considered": [],
+        "new_action_proposal": {
+          "name": "配置",
+          "definition": "物をある場所に置くこと",
+          "kind": "concrete",
+          "parent_suggestion": null,
+          "basis_quotes": [
+            "通路、避難口又は消火設備のある所に物品を置か"
+          ],
+          "basis_verified": [
+            true
+          ],
+          "name_modality": [],
+          "definition_modality": []
+        },
+        "duplicate_check": {
+          "closest": "放置",
+          "name_ratio": 0.5,
+          "definition_overlap": 0.062,
+          "flagged": false,
+          "reason": "しきい値を超える既存の Action は無い",
+          "thresholds": {
+            "name_ratio": 0.6,
+            "definition_overlap": 0.3,
+            "shared_suffix": 2
+          }
+        },
+        "elapsed_seconds": 0.0,
+        "llm_calls": 3
+      }
+    }
+  ],
+  "ledger_log": [
+    {
+      "order": 1,
+      "action": "語句を追加: 使用 ← 以下のいずれかの要素から2種類以上を選択し、利用"
+    },
+    {
+      "order": 2,
+      "action": "語句を追加: 使用 ← 他者が画面を盗み見可能な環境で利用"
+    },
+    {
+      "order": 3,
+      "action": "語句を追加: 使用 ← 機器やサービス間でのパスワードの使い回し"
+    },
+    {
+      "order": 4,
+      "action": "台帳に追加: アクセス(concrete)"
+    },
+    {
+      "order": 5,
+      "action": "語句を追加: アクセス ← 公序良俗に反するサイトへのアクセス"
+    },
+    {
+      "order": 6,
+      "action": "台帳に追加: 実行(concrete)"
+    },
+    {
+      "order": 7,
+      "action": "語句を追加: 使用 ← 業務関連データの送受信、保存、共有に利用／語句を追加: 保存 ← 業務関連データの送受信、保存／語句を追加: 共有 ← 業務関連データの送受信、保存、共有／語句を追加: 送信 ← 業務関連データの送受信／語句を追加: 受信 ← 業務関連データの送受信"
+    },
+    {
+      "order": 8,
+      "action": "台帳に追加: インストール(concrete)"
+    },
+    {
+      "order": 9,
+      "action": "台帳に追加: 改造(concrete)"
+    },
+    {
+      "order": 10,
+      "action": "台帳に追加: 操作させ(concrete)／語句を追加: 離席 ← 離席時にスクリーンセーバーや画面をロック"
+    },
+    {
+      "order": 11,
+      "action": "台帳に追加: 入力(concrete)／台帳に追加: 表示(concrete)"
+    },
+    {
+      "order": 12,
+      "action": "語句を追加: 放置 ← 機器や書類は目の届く範囲に置き放置"
+    },
+    {
+      "order": 13,
+      "action": "台帳に追加: 廃棄(concrete)"
+    },
+    {
+      "order": 14,
+      "action": "台帳に追加: 稼働(concrete)"
+    },
+    {
+      "order": 15,
+      "action": "台帳に追加: 接続(concrete)"
+    },
+    {
+      "order": 16,
+      "action": "台帳に追加: 取り外し(concrete)／台帳に追加: 無効化(concrete)"
+    },
+    {
+      "order": 17,
+      "action": "台帳に追加: 作業(concrete)"
+    },
+    {
+      "order": 18,
+      "action": "台帳に追加: 配置(concrete)"
+    }
+  ],
+  "ledger_after": [
+    {
+      "name": "送信",
+      "definition": "データや情報を、電子的に宛先へ送ること（転送を含む）",
+      "kind": "concrete",
+      "parent": "提供",
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "従業員個人のアドレスに転送",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+          "core_verb": "転送"
+        },
+        {
+          "text": "従業員個人のアドレスに送信",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+          "core_verb": "送信"
+        },
+        {
+          "text": "極秘又は社外秘の情報資産を送受信",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 5.6 情報資産の社外持ち出し（箇条書き）",
+          "core_verb": "送受信"
+        },
+        {
+          "text": "業務関連データの送受信",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.4.2 クラウド・SNSの利用（箇条書き）",
+          "core_verb": "送受信"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "provisional",
+      "definition_status": "provisional",
+      "approved_by": null,
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00",
+        "note": "名前の出典: registry/dmn/aoi_transmission.dmn 送信可否判定の reason_code「外部送信対象外」と、層1 dt_transmission の entry_points(出典の語は「外部送信」)。v1.11 の D82 で名前を「送信」に改めた(外部送信とデータ送信を1つにまとめる)。定義の文は第33回追補のタスクE1 の表(Kazuhiro 承認 2026-11-20)。定義の文そのものは DMN にも登録簿にも無いので definition_status=provisional(PU4)"
+      }
+    },
+    {
+      "name": "操作",
+      "definition": "情報システムや機器を動かしたり、設定を変えたりすること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "特権/管理者権限で操作を行う",
+          "clause_ref": "IPA情報セキュリティ関連規程 6.7 特権アカウント(第3項)",
+          "core_verb": "操作"
+        },
+        {
+          "text": "特権操作",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.1 アクセス制御方針（箇条書き第5項）",
+          "core_verb": "操作"
+        },
+        {
+          "text": "情報機器・設備の無断操作",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 1.2 セキュリティ領域の設定（レベル2領域の表・制限事項）",
+          "core_verb": "操作"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA情報セキュリティ関連規程 6.7 特権アカウント(第3項)",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "特権/管理者権限で操作を行う",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "情報システム（上位の語。条文の語は「本番環境」ではなく操作の対象を指す）"
+        ]
+      }
+    },
+    {
+      "name": "使用",
+      "definition": "物・設備・サービスを使うこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "会社の施設、物品等を使用",
+          "clause_ref": "厚生労働省モデル就業規則 第11条(遵守事項)第1号",
+          "core_verb": "使用"
+        },
+        {
+          "text": "Wi-Fiサービスの利用",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+          "core_verb": "利用"
+        },
+        {
+          "text": "以下のいずれかの要素から2種類以上を選択し、利用",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.2.2 多要素認証",
+          "core_verb": "利用"
+        },
+        {
+          "text": "他者が画面を盗み見可能な環境で利用",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.5 パスワードの設定（箇条書き・屋外での利用）",
+          "core_verb": "利用"
+        },
+        {
+          "text": "機器やサービス間でのパスワードの使い回し",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.10 利用者アカウント・パスワードの条件（表・一般利用者アカウント列／パスワード運用行）",
+          "core_verb": "使い回し"
+        },
+        {
+          "text": "業務関連データの送受信、保存、共有に利用",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.4.2 クラウド・SNSの利用（箇条書き）",
+          "core_verb": "利用"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省モデル就業規則 第11条(遵守事項)第1号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "会社の施設、物品等を使用",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "使う（条文の語は「使用」）"
+        ]
+      }
+    },
+    {
+      "name": "提供",
+      "definition": "情報を、他の組織や人に渡すこと",
+      "kind": "abstract",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "組織、人に提供",
+          "clause_ref": "IPA情報セキュリティ関連規程 人的対策-2(従業員の責務)",
+          "core_verb": "提供"
+        },
+        {
+          "text": "機密を漏洩",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第11条（遵守事項）第5号",
+          "core_verb": "漏洩"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA情報セキュリティ関連規程 人的対策-2(従業員の責務)",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "組織、人に提供",
+            "basis": "verbatim"
+          },
+          {
+            "quote": "当社が営業秘密として管理する情報",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "渡す(条文の語は「提供」。前段設計書 v0.6 の図3の文)"
+        ]
+      }
+    },
+    {
+      "name": "労働指示",
+      "definition": "使用者が、労働者を働かせること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "労働に従事させ",
+          "clause_ref": "厚生労働省モデル就業規則 第21条(時間外及び休日労働等)第3項",
+          "core_verb": "従事させ"
+        },
+        {
+          "text": "就業させ",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第25条（産前産後の休業）第2項",
+          "core_verb": "就業させ"
+        },
+        {
+          "text": "所定労働時間外労働又は休日労働に従事させ",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第21条（時間外及び休日労働等）第4項",
+          "core_verb": "従事させ"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省モデル就業規則 第21条(時間外及び休日労働等)第3項",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "労働に従事させ",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "使用者・労働者（労働法の一般的な語。条文の語は「従業員」）",
+          "働かせる（条文の語は「労働に従事させ」）"
+        ]
+      }
+    },
+    {
+      "name": "伝達",
+      "definition": "情報を、相手に伝えること",
+      "kind": "concrete",
+      "parent": "提供",
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "口頭で伝達",
+          "clause_ref": "情報管理規程 第14条",
+          "core_verb": "伝達"
+        },
+        {
+          "text": "従業員の個人情報を伝え",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+          "core_verb": "伝え"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "情報管理規程 第14条",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "口頭で伝達",
+            "basis": "verbatim"
+          },
+          {
+            "quote": "検査結果その他の医療情報",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "相手(条文の語は「患者又はその代理人」。前段設計書 v0.6 の図3の文)"
+        ]
+      }
+    },
+    {
+      "name": "共有",
+      "definition": "物や情報を、他の人も使える・見られる状態にすること",
+      "kind": "concrete",
+      "parent": "提供",
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "特権アカウント名を2名以上で共用",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.10 利用者アカウント・パスワードの条件（表・特権アカウント列／アカウント名行）",
+          "core_verb": "共用"
+        },
+        {
+          "text": "同一アカウントの他者との共有",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.2.1 認証に関する基本方針（箇条書き第2項）",
+          "core_verb": "共有"
+        },
+        {
+          "text": "社外秘又は極秘の情報ファイルを社外に共有",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 5.6 情報資産の社外持ち出し（箇条書き）",
+          "core_verb": "共有"
+        },
+        {
+          "text": "業務関連データの送受信、保存、共有",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.4.2 クラウド・SNSの利用（箇条書き）",
+          "core_verb": "共有"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.10 利用者アカウント・パスワードの条件（表・特権アカウント列／アカウント名行）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "1つの特権アカウント名を2名以上で共用しない",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "使える・見られる状態にする(条文の語は「共用」。前段設計書 v0.6 の図3の文)"
+        ]
+      }
+    },
+    {
+      "name": "取り出し",
+      "definition": "サーバーなどにあるデータを、手元の機器に取り込む、または書き出すこと",
+      "kind": "concrete",
+      "parent": "取得",
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "メールの取り出し及びエクスポート",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 7.3 電子メールの利用（箇条書き・クラウド型メールの利用）",
+          "core_verb": "取り出し"
+        },
+        {
+          "text": "私有機器への極秘情報及び社外秘情報のダウンロード",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.1.2 テレワークで利用する機器（末尾の文）",
+          "core_verb": "ダウンロード"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 7.3 電子メールの利用（箇条書き・クラウド型メールの利用）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "メールサーバーからのメールの取り出し及びエクスポート",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "データ（条文の語は「メール」）",
+          "手元の機器に取り込む・書き出す（「エクスポート」の言い換え）"
+        ]
+      }
+    },
+    {
+      "name": "就業",
+      "definition": "労働者が、自ら業務に就くこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "就業",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第11条（遵守事項）第6号",
+          "core_verb": "就業"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省「モデル就業規則」解説版 第11条（遵守事項）第6号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "就業",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "労働者が、自ら（主体を示す語。使用者の側の労働指示と区別するため）"
+        ]
+      }
+    },
+    {
+      "name": "放置",
+      "definition": "情報や物を、管理されない状態で置いたままにすること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "原稿、印刷物を放置",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+          "core_verb": "放置"
+        },
+        {
+          "text": "情報資産の放置",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 1.2 セキュリティ領域の設定（レベル1領域の表・制限事項）",
+          "core_verb": "放置"
+        },
+        {
+          "text": "機器や書類は目の届く範囲に置き放置",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.4.4 外出時の注意（箇条書き）",
+          "core_verb": "放置"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "原稿、印刷物を放置",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "情報や物（条文の語は「原稿、印刷物」）",
+          "管理されない状態で置いたままにする（「放置」の言い換え）"
+        ]
+      }
+    },
+    {
+      "name": "立入り",
+      "definition": "区域や場所に入ること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "区域には立ち入ら",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第6号",
+          "core_verb": "立ち入"
+        },
+        {
+          "text": "喫煙可能な場所には立ち入ら",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第4号",
+          "core_verb": "立ち入"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第6号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "区域には立ち入ら",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "場所（条文の語は「区域」）",
+          "入る（条文の語は「立ち入ら」）"
+        ]
+      }
+    },
+    {
+      "name": "発行",
+      "definition": "利用者が使うものを作って渡すこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "利用者1名につき1つを発行",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.2.1 認証に関する基本方針（箇条書き第1項）",
+          "core_verb": "発行"
+        },
+        {
+          "text": "複数の利用者が共有するアカウントの発行",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.2.1 認証に関する基本方針（箇条書き第2項）",
+          "core_verb": "発行"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.2.1 認証に関する基本方針（箇条書き第1項）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "利用者1名につき1つを発行",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "持出し",
+      "definition": "物を、決められた場所の外へ持って出ること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "無断持出し",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 1.2 セキュリティ領域の設定（レベル2領域の表・制限事項）",
+          "core_verb": "持出し"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 1.2 セキュリティ領域の設定（レベル2領域の表・制限事項）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "無断持出し",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "持込み",
+      "definition": "物を、決められた場所の中へ持って入ること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "情報記憶媒体の無断持込み",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 1.2 セキュリティ領域の設定（レベル3領域の表・制限事項）",
+          "core_verb": "持込み"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 1.2 セキュリティ領域の設定（レベル3領域の表・制限事項）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "情報記憶媒体の無断持込み",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "保存",
+      "definition": "データを、機器や媒体に記録して残すこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "社外秘又は極秘の情報資産の保存",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+          "core_verb": "保存"
+        },
+        {
+          "text": "業務関連データの送受信、保存",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.4.2 クラウド・SNSの利用（箇条書き）",
+          "core_verb": "保存"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "社外秘又は極秘の情報資産の保存",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "受信",
+      "definition": "送られてきた情報を受け取ること",
+      "kind": "concrete",
+      "parent": "取得",
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "極秘又は社外秘の情報資産を送受信",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 5.6 情報資産の社外持ち出し（箇条書き）",
+          "core_verb": "送受信"
+        },
+        {
+          "text": "業務関連データの送受信",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.4.2 クラウド・SNSの利用（箇条書き）",
+          "core_verb": "送受信"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 5.6 情報資産の社外持ち出し（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "極秘又は社外秘の情報資産を送受信",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "撮影",
+      "definition": "映像を機器で記録すること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "室内での撮影、録音",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+          "core_verb": "撮影"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "室内での撮影、録音",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "録音",
+      "definition": "音声を機器で記録すること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "室内での撮影、録音",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+          "core_verb": "録音"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "室内での撮影、録音",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "離席",
+      "definition": "いる場所から離れること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "勤務場所を離れ",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第11条（遵守事項）第3号",
+          "core_verb": "離れ"
+        },
+        {
+          "text": "離席時にスクリーンセーバーや画面をロック",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.4.3 在宅時の注意（箇条書き）",
+          "core_verb": "離席"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省「モデル就業規則」解説版 第11条（遵守事項）第3号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "勤務場所を離れ",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "取得",
+      "definition": "情報を手に入れること",
+      "kind": "abstract",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "自らの業務に関係のない情報を不当に取得",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第16条（個人情報保護）第1項",
+          "core_verb": "取得"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省「モデル就業規則」解説版 第16条（個人情報保護）第1項",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "自らの業務に関係のない情報を不当に取得",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "同伴",
+      "definition": "人を連れて、ある場所へ行くこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "喫煙可能な場所に連れて行か",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第5号",
+          "core_verb": "連れて行"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第5号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "喫煙可能な場所に連れて行か",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "アクセス",
+      "definition": "ネットワーク上の場所に接続して開くこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "他のウェブサイト等に設置されているリンクは、偽サイトへの誘導である可能性があるためアクセス",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 7.1 オンラインサービス（箇条書き・リンクへのアクセス）",
+          "core_verb": "アクセス"
+        },
+        {
+          "text": "公序良俗に反するサイトへのアクセス",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.2 インターネットの利用（ウェブ閲覧）（箇条書き）",
+          "core_verb": "アクセス"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 7.1 オンラインサービス（箇条書き・リンクへのアクセス）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-22",
+        "definition_basis": [
+          {
+            "quote": "他のウェブサイト等に設置されているリンクは、偽サイトへの誘導である可能性があるためアクセス",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "実行",
+      "definition": "プログラムを動かすこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "モバイルコード(クライアントパソコン側で動作するプログラム)を実行",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.2 インターネットの利用（ウェブ閲覧）（箇条書き・モバイルコード）",
+          "core_verb": "実行"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.2 インターネットの利用（ウェブ閲覧）（箇条書き・モバイルコード）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-22",
+        "definition_basis": [
+          {
+            "quote": "モバイルコード(クライアントパソコン側で動作するプログラム)を実行",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "インストール",
+      "definition": "ソフトウェアを機器に組み込んで使える状態にすること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "社内標準外ソフトウェアのインストール",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.2.1 社有機器を利用する場合（箇条書き）",
+          "core_verb": "インストール"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.2.1 社有機器を利用する場合（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-22",
+        "definition_basis": [
+          {
+            "quote": "社内標準外ソフトウェアのインストール",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "改造",
+      "definition": "機器やソフトウェアに手を加えて作りを変えること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "不正な改造を行う",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.2.2 私有機器を利用する場合（箇条書き）",
+          "core_verb": "改造"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.2.2 私有機器を利用する場合（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-22",
+        "definition_basis": [
+          {
+            "quote": "不正な改造を行う",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "操作させ",
+      "definition": "他の人に機器を動かさせること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "他者（家族を含む）にテレワーク用の情報機器を操作させ",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.4.3 在宅時の注意（箇条書き）",
+          "core_verb": "操作させ"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.4.3 在宅時の注意（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-22",
+        "definition_basis": [
+          {
+            "quote": "他者（家族を含む）にテレワーク用の情報機器を操作させ",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "入力",
+      "definition": "情報を機器に打ち込むこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "重要情報を入力",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.4 勤務中のルール（表・公衆Wi-Fi列／注意事項行）",
+          "core_verb": "入力"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.4 勤務中のルール（表・公衆Wi-Fi列／注意事項行）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-22",
+        "definition_basis": [
+          {
+            "quote": "重要情報を入力",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "表示",
+      "definition": "情報を画面に映すこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "重要情報を入力・表示",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.4 勤務中のルール（表・公衆Wi-Fi列／注意事項行）",
+          "core_verb": "表示"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.4 勤務中のルール（表・公衆Wi-Fi列／注意事項行）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-22",
+        "definition_basis": [
+          {
+            "quote": "重要情報を入力・表示",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "廃棄",
+      "definition": "物を捨てること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "外出先で書類やCD・DVDなどの媒体を廃棄",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.4.4 外出時の注意（箇条書き）",
+          "core_verb": "廃棄"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.4.4 外出時の注意（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-22",
+        "definition_basis": [
+          {
+            "quote": "外出先で書類やCD・DVDなどの媒体を廃棄",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "稼働",
+      "definition": "機器を動いている状態にすること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "機器は原則として勤務時間のみ稼働させ",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+          "core_verb": "稼働させ"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-22",
+        "definition_basis": [
+          {
+            "quote": "機器は原則として勤務時間のみ稼働させ",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "接続",
+      "definition": "機器を他の機器やネットワークにつなぐこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "社内のパソコンやサーバーへの接続",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.4 社内での利用（箇条書き）",
+          "core_verb": "接続"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.4 社内での利用（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-22",
+        "definition_basis": [
+          {
+            "quote": "社内のパソコンやサーバーへの接続",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "取り外し",
+      "definition": "付いている物を外すこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "安全装置を取り外",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第2号",
+          "core_verb": "取り外"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第2号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-22",
+        "definition_basis": [
+          {
+            "quote": "安全装置を取り外",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "無効化",
+      "definition": "働きをなくさせること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "その効力を失わせる",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第2号",
+          "core_verb": "失わせる"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第2号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-22",
+        "definition_basis": [
+          {
+            "quote": "その効力を失わせる",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "作業",
+      "definition": "業務として具体的な仕事を行うこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "保護具の着用が必要な作業",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第3号",
+          "core_verb": "作業"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第3号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-22",
+        "definition_basis": [
+          {
+            "quote": "保護具の着用が必要な作業",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "配置",
+      "definition": "物をある場所に置くこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "通路、避難口又は消火設備のある所に物品を置か",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第7号",
+          "core_verb": "置か"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第7号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-22",
+        "definition_basis": [
+          {
+            "quote": "通路、避難口又は消火設備のある所に物品を置か",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    }
+  ]
+}

@@ -55,6 +55,7 @@ from src.stage3_frontstage.run_action_eval import (  # noqa: E402
     classify,
     judge,
     load_ledger,
+    name_quality,
     teach,
 )
 from src.stage3_generate.registry import Registry  # noqa: E402
@@ -1429,3 +1430,95 @@ def test_choosing_a_descendant_of_a_new_abstract_action_is_under_applied():
     verdict = judge(item, result, ledger)
     assert verdict.verdict == "under_applied"
     assert verdict.severe is True
+
+
+# --------------------------------------------------------------------------
+# 第46回 パートB: 新規候補の名前の質(参考指標。5.1節 v0.11・Q4)
+# --------------------------------------------------------------------------
+
+
+def test_a_new_name_that_matches_an_existing_action_is_a_collision():
+    """既存の名前との衝突: その時点の台帳の名前と完全に一致する。"""
+    quality = name_quality("送信", "送信", "個人のアドレスに送信すること", ["送信", "使用"])
+    assert quality["collides_with_existing"] is True
+    assert quality["includes_object"] is False
+
+
+def test_a_new_name_that_is_not_in_the_ledger_is_not_a_collision():
+    quality = name_quality("廃棄", "廃棄", "媒体を廃棄する", ["送信", "使用"])
+    assert quality["collides_with_existing"] is False
+
+
+def test_an_object_glued_in_front_of_the_verb_is_suspected():
+    """対象が入った疑い: 余り「リンク」が条文の中で動詞「アクセス」より前にある。"""
+    quality = name_quality(
+        "リンクアクセス",
+        "アクセス",
+        "電子メールに記載されているリンクは、偽サイトへの誘導である可能性があるためアクセスしない。",
+        ["使用", "放置"],
+    )
+    assert quality["includes_object"] is True
+    assert quality["extra"] == "リンク"
+
+
+def test_two_verbs_in_a_name_are_not_counted_as_an_object():
+    """「録音撮影」は「録音」が動詞「撮影」より後ろなので、対象の抱き込みにしない。"""
+    quality = name_quality("録音撮影", "撮影", "室内での撮影、録音をしない", [])
+    assert quality["includes_object"] is False
+    assert quality["collides_with_existing"] is False
+
+
+def test_a_one_character_leftover_is_not_counted_as_an_object():
+    """余りが1文字なら語とみなさない(NAME_EXTRA_MIN)。"""
+    quality = name_quality("再送信", "送信", "再び送信する", [])
+    assert quality["extra"] == "再"
+    assert quality["includes_object"] is False
+
+
+def test_a_name_equal_to_the_core_verb_cannot_show_an_object():
+    """名前と動詞が同じ長さなら、対象が入った疑いは見えない(規則の限界)。"""
+    quality = name_quality(
+        "取り出し及びエクスポート",
+        "取り出し及びエクスポート",
+        "データの取り出し及びエクスポートをする",
+        [],
+    )
+    assert quality["includes_object"] is False
+    assert quality["extra"] == ""
+
+
+def test_an_existing_action_has_no_name_quality(action_gold, taught_ledger):
+    """既存に寄せた件(手順3a)には名前の質を付けない — 新規候補だけの指標。"""
+    item = action_gold["items"][14]
+    taught_ledger.record_surface("使用", "原稿、印刷物を放置", item["clause_ref"], "放置")
+    result, _ = _normalize(
+        taught_ledger, item["text"],
+        [{"surface": "原稿、印刷物を放置しない", "core_verb": "放置"}], "使用",
+        clause_ref=item["clause_ref"],
+    )
+    verdict = judge(item, result, taught_ledger)
+    assert verdict.is_new is False
+    assert verdict.name_quality is None
+    assert verdict.to_json()["name_quality"] is None
+
+
+def test_a_new_candidate_gets_its_name_quality_from_the_ledger_before_teaching(
+    action_gold, taught_ledger
+):
+    """新規候補の衝突は、その件の正解を足す**前**の台帳で見る。"""
+    item = action_gold["items"][14]  # 物理3(正解は新規の「放置」)
+    result, _ = _normalize(
+        taught_ledger, item["text"],
+        [{"surface": "原稿、印刷物を放置しない", "core_verb": "放置"}], NO_MATCH,
+        proposal={"name": "使用", "definition": "置いたままにする", "kind": "concrete",
+                  "parent": None},
+        clause_ref=item["clause_ref"],
+    )
+    names_before = [e.name for e in taught_ledger.entries]
+    teach(taught_ledger, item)  # 正解「放置」を足す
+    verdict = judge(item, result, taught_ledger, names_before)
+    assert verdict.is_new is True
+    # 「使用」は足す前の台帳にすでにある = 衝突
+    assert verdict.name_quality["collides_with_existing"] is True
+    # 足した後の「放置」で見てしまわないことを、名前そのもので確かめる
+    assert verdict.name_quality["name"] == "使用"

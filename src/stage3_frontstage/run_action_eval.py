@@ -203,6 +203,8 @@ class ItemResult:
     surface_in_clause: bool
     surface_no_modality: bool
     surface_has_core_verb: bool
+    # v0.11(第46回 Q4): 新規候補の名前の質。参考指標で、正しさの判定には使わない
+    name_quality: Optional[dict]
     elapsed_seconds: float
     llm_calls: int
     result: ActionNormalizationResult = field(repr=False, default=None)  # type: ignore[assignment]
@@ -366,6 +368,7 @@ class ItemResult:
             "design_check_only": self.design_check_only,
             "surface_ambiguous": self.surface_ambiguous,
             "new_action_kind_matches": self.new_action_kind_matches,
+            "name_quality": dict(self.name_quality) if self.name_quality else None,
             "surface": {
                 "ok": self.surface_ok,
                 "in_clause": self.surface_in_clause,
@@ -411,8 +414,56 @@ def classify(item: dict, result: ActionNormalizationResult, ledger: ActionLedger
     return "mis_merge"
 
 
-def judge(item: dict, result: ActionNormalizationResult, ledger: ActionLedger) -> ItemResult:
-    """1件の結果を正解と比べる(5.1節)。"""
+# 名前に対象が入った疑いを見るとき、余りの語として扱う最短の長さ(1文字は語とみなさない)
+NAME_EXTRA_MIN = 2
+
+
+def name_quality(
+    name: str, core_verb: str, clause_text: str, existing_names: list[str]
+) -> dict:
+    """新規候補の名前の質を見る**参考指標**(5.1節 v0.11・第46回 Q4)。
+
+    正しさの判定(P32)と合格の条件(P9)には使わない。P32 は中心の動詞だけで比べるので、
+    名前そのものの誤りが数字に出ない。それを記録に残すための指標である。
+
+    | 指標 | 判定の規則 |
+    | --- | --- |
+    | 既存の名前との衝突 | 新規候補の名前が、**その時点の台帳**(この件の正解を足す前)の Action の名前と完全に一致する |
+    | 名前に対象が入った疑い | 名前が中心の動詞より長く、中心の動詞を含み、動詞を取り除いた余り(2文字以上)が、**条文の中で中心の動詞より前**に現れる |
+
+    2つ目は「リンクアクセス」(動詞「アクセス」＋条文に先に出る「リンク」)のような、
+    対象を名前に抱き込んだ件を拾う。「録音撮影」は「録音」が動詞「撮影」より**後ろ**に
+    あるので拾わない(2つの行為を並べた名前で、対象の抱き込みではない)。
+    """
+    collides = name in existing_names
+    extra = ""
+    includes_object = False
+    if core_verb and core_verb in name and len(name) > len(core_verb):
+        extra = name.replace(core_verb, "", 1)
+        if len(extra) >= NAME_EXTRA_MIN and core_verb in clause_text:
+            before = clause_text.split(core_verb)[0]
+            includes_object = extra in before
+    return {
+        "name": name,
+        "core_verb": core_verb,
+        "collides_with_existing": collides,
+        "includes_object": includes_object,
+        "extra": extra,
+    }
+
+
+def judge(
+    item: dict,
+    result: ActionNormalizationResult,
+    ledger: ActionLedger,
+    names_before: Optional[list[str]] = None,
+) -> ItemResult:
+    """1件の結果を正解と比べる(5.1節)。
+
+    `names_before` は、この件の正解を台帳に足す**前**の Action の名前の一覧。
+    新規候補の名前の衝突を見るのに使う(v0.11)。渡さなければ、足した後の台帳から
+    この件の正解の名前を除いたものを使う。
+    """
     options = expectations(item)
     surface_check = check_surface(result.action.surface, item["text"])
     run = result.trace.run
@@ -480,6 +531,22 @@ def judge(item: dict, result: ActionNormalizationResult, ledger: ActionLedger) -
         # P25: 並びのどれかの中心の動詞を含んでいればよい
         surface_has_core_verb=any(
             exp["core_verb"] in result.action.surface for exp in options
+        ),
+        name_quality=(
+            name_quality(
+                result.action.normalized,
+                actual_core_verb(result),
+                item["text"],
+                names_before
+                if names_before is not None
+                else [
+                    e.name
+                    for e in ledger.entries
+                    if e.name != result.action.normalized
+                ],
+            )
+            if result.action.is_new
+            else None
         ),
         elapsed_seconds=result.trace.elapsed_seconds,
         llm_calls=result.trace.llm_calls,
@@ -778,10 +845,12 @@ def run(
             if verbose:
                 print(f"      {taught}", flush=True)
             continue
+        # 名前の衝突は、正解を足す**前**の台帳で見る(v0.11)
+        names_before = [e.name for e in ledger.entries]
         # 正解を台帳に足してから分類する(親子関係を台帳から引くため。4.2節)
         taught = teach(ledger, item)
         ledger_log.append({"order": item["order"], "action": taught})
-        judged = judge(item, result, ledger)
+        judged = judge(item, result, ledger, names_before)
         results.append(judged)
         if verbose:
             mark = "OK" if judged.correct else ("すり抜け" if judged.slipped else "NG")
@@ -932,6 +1001,33 @@ def run(
             for r in results
             if r.synonym_suggestion is not None
         ],
+        # --- v0.11 で足した参考指標(第46回 Q4。正しさの判定は変えない) ---
+        # 新規候補の名前の質。分母は出力が新規だった件数
+        "name_quality_total": sum(1 for r in results if r.name_quality),
+        "name_collides_with_existing": sum(
+            1 for r in results if r.name_quality and r.name_quality["collides_with_existing"]
+        ),
+        "name_includes_object": sum(
+            1 for r in results if r.name_quality and r.name_quality["includes_object"]
+        ),
+        "name_quality_detail": [
+            {
+                "order": r.order,
+                "clause_id": r.clause_id,
+                "name": r.name_quality["name"],
+                "core_verb": r.name_quality["core_verb"],
+                "collides_with_existing": r.name_quality["collides_with_existing"],
+                "includes_object": r.name_quality["includes_object"],
+                "extra": r.name_quality["extra"],
+                "verdict": r.verdict,
+            }
+            for r in results
+            if r.name_quality
+            and (
+                r.name_quality["collides_with_existing"]
+                or r.name_quality["includes_object"]
+            )
+        ],
         # 3c が台帳に無い名前を返した件数
         "synonym_off_list": sum(1 for r in results if r.synonym_off_list),
         "synonym_off_list_detail": [
@@ -1070,6 +1166,22 @@ def print_summary(out: dict) -> None:
             f"  新規候補の段の一致: {s['new_action_kind_matches']}/"
             f"{s['new_action_kind_total']}（P23）"
         )
+    if s.get("name_quality_total"):
+        print(
+            f"  新規候補の名前の質（参考。v0.11）: 既存の名前と衝突 "
+            f"{s['name_collides_with_existing']}件／対象が入った疑い "
+            f"{s['name_includes_object']}件（新規候補 {s['name_quality_total']}件中）"
+        )
+        for row in s["name_quality_detail"]:
+            marks = []
+            if row["collides_with_existing"]:
+                marks.append("既存の名前と衝突")
+            if row["includes_object"]:
+                marks.append(f"対象が入った疑い（余り {row['extra']!r}）")
+            print(
+                f"    [{row['order']:>2}] {row['clause_id']}: {row['name']!r}"
+                f"（動詞 {row['core_verb']!r}）— {'／'.join(marks)}"
+            )
     if s["alternatives_items"]:
         print(
             f"  正解が並びの項目: {s['alternatives_items']}件"

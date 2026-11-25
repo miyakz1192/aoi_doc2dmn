@@ -593,3 +593,91 @@ def test_the_excluded_twelve_keep_the_reason_from_the_appendix(clauses2, holdout
             entry["axis1"],
             entry["axis2"],
         ), clause_id
+
+
+# --------------------------------------------------------------------------
+# 第46回 パートA: 保留用 v2 を開発用 dev3 に移す(P20・Q1)
+# --------------------------------------------------------------------------
+
+DEV3_PATH = GOLD_DIR / "action_gold_dev3_v1.json"
+
+
+@pytest.fixture(scope="module")
+def dev3() -> dict:
+    return json.loads(DEV3_PATH.read_text(encoding="utf-8"))
+
+
+def test_dev3_is_the_holdout_v2_moved_to_development(dev3, holdout2):
+    """パートA1・W3: 中身を写して split=dev にし、元のファイルは残す。
+
+    条文・正解・承認の記録・出発点の台帳は1文字も変えない。変えてよいのは _meta だけ。
+    """
+    assert dev3["_meta"]["split"] == "dev"
+    assert holdout2["_meta"]["split"] == "holdout"  # 元のファイルはそのまま
+    assert dev3["_meta"]["version"] == "dev3_v1"
+    assert dev3["items"] == holdout2["items"]
+    assert dev3["ledger_seed"] == holdout2["ledger_seed"]
+    assert len(dev3["items"]) == 18
+
+
+def test_dev3_only_changes_the_meta_block(dev3, holdout2):
+    """パートA1: _meta で変えたのは、split と記録のための欄だけ。"""
+    allowed = {
+        "purpose",
+        "split",
+        "split_note",
+        "based_on_gold",
+        "version",
+        "holdout_run",
+        "changes",
+        "note",
+    }
+    changed = {
+        key
+        for key in set(dev3["_meta"]) | set(holdout2["_meta"])
+        if dev3["_meta"].get(key) != holdout2["_meta"].get(key)
+    }
+    assert changed <= allowed, changed
+    # 承認の記録(status・item ごとの review)は動かしていない
+    assert dev3["_meta"]["status"] == holdout2["_meta"]["status"] == "approved"
+    assert dev3["_meta"]["ledger_source"] == "seed"
+
+
+def test_dev3_records_the_one_holdout_run(dev3):
+    """パートA2: 第45回に1回だけ流したことを _meta に残す。"""
+    run = dev3["_meta"]["holdout_run"]
+    assert run["frozen_commit"] == "8b8529e"
+    assert run["result_file"] == "docs/eval/action_eval_holdout_v2_20261123_v09.json"
+    assert "15/18" in run["result"]
+    assert "P20" in dev3["_meta"]["note"]
+
+
+def test_dev3_is_not_stopped_by_the_holdout_check(dev3):
+    """パートA4: 承認前に止まる検査は split=holdout のときだけ働く。"""
+    check_holdout_is_approved(dev3)  # 止まらない
+    broken = copy.deepcopy(dev3)
+    broken["items"][0]["review"]["approved_by"] = None
+    check_holdout_is_approved(broken)  # dev なので止まらない
+    # 念のため、同じ壊し方を holdout のままやると止まる
+    still_holdout = copy.deepcopy(dev3)
+    still_holdout["_meta"]["split"] = "holdout"
+    still_holdout["items"][0]["review"]["approved_by"] = None
+    with pytest.raises(HoldoutNotApproved):
+        check_holdout_is_approved(still_holdout)
+
+
+def test_dev3_starts_from_the_two_dev_sets_taught_to_the_end(dev3, dev_v4, dev2):
+    """パートA3: 出発点の台帳は v4(18件) → dev2(14件)を足し終えた状態(21件)。"""
+    ledger = load_ledger(dev_v4, REGISTRY_PATH)
+    for item in dev_v4["items"]:
+        teach(ledger, item)
+    for item in dev2["items"]:
+        teach(ledger, item)
+    assert ledger.to_json() == dev3["ledger_seed"]
+    assert len(dev3["ledger_seed"]) == 21
+
+
+def test_dev3_loads_its_ledger_from_the_seed(dev3):
+    """`_meta.ledger_source` が seed なら、登録簿ではなく ledger_seed から作る。"""
+    ledger = load_ledger(dev3, REGISTRY_PATH)
+    assert len(ledger.entries) == 21

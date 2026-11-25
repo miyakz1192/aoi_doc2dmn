@@ -1,0 +1,1668 @@
+{
+  "_meta": {
+    "purpose": "Action 正規化の**開発用**セット v3（前段設計書 P20・5.5節）。第45回の保留評価で1回使ったので、もう保留用には使えない。結果を見て直してよい。",
+    "split": "dev",
+    "split_note": "開発用(dev)。ほかの開発用は action_gold_v4.json(18件) と action_gold_dev2_v1.json(14件)。保留用として使った元のファイル action_gold_holdout_v2.json は第45回の記録としてそのまま残す(W3)。",
+    "status": "approved",
+    "items": 18,
+    "based_on": "testdata/candidates/candidates_round4.json（候補30件。コミット 88b0f30）",
+    "values": "第40回 HANDOFF 付録B の表1（Kazuhiro 承認 2026-11-22）",
+    "supervised": "教師あり。1件を正規化したら、前段の出力ではなく expected(並びのときはすべて)の Action を台帳に足してから次へ進む(P13・P25)。",
+    "ledger_start": "開発用32件(action_gold_v4 の18件 → action_gold_dev2_v1 の14件)の正解をすべて足し終えた状態(21件)。ledger_seed に固定し、v4・dev2 から作り直して一致することを tests/test_action_gold_holdout.py で確かめる。",
+    "ledger_source": "seed",
+    "alternatives_note": "1文に複数の行為がある条文は expected に代表を書き、残りを expected_alternatives に並べる。どれか1つと一致すれば正しい(P25)。",
+    "approval_note": "run_action_eval は split=holdout で、正解の値が入っていない項目か、review.approved_by が入っていない項目が1件でもあれば止まる(第33回4.3節)。",
+    "labels": "正解ラベルは18件とも ハード制約 × 宣言的（付録B 表1）",
+    "review_process": {
+      "method": "運用メモ 3章。正解の案を2つ独立に作る",
+      "plan_a": "web Claude（Opus）",
+      "plan_b": "web Claude が起動したサブエージェント（Sonnet）。案A を見せない",
+      "agreement": "30件中20件が一致",
+      "random_seed": 20261122,
+      "note": "一致した件からも無作為に2〜3件を精読用に加えた（乱数の種は上）"
+    },
+    "excluded": [
+      {
+        "clause_id": "ipa_secguide_v4_6_1_3",
+        "axis1": "判断ガイド",
+        "axis2": "宣言的",
+        "reason": "「集中」を避ける程度が評価の判断"
+      },
+      {
+        "clause_id": "ipa_secguide_v4_personnel_6_4_1_mail",
+        "axis1": "判断ガイド",
+        "axis2": "宣言的",
+        "reason": "「安易に」が規範の中心"
+      },
+      {
+        "clause_id": "ipa_secguide_v4_phys_5_1_cleardesk",
+        "axis1": "ハード制約",
+        "axis2": "手続き的",
+        "reason": "退社時という出来事をきっかけに行う義務（③b）"
+      },
+      {
+        "clause_id": "mhlw_r7dec_art59_2",
+        "axis1": "ハード制約",
+        "axis2": "手続き的",
+        "reason": "定期に行う会社の義務（③b）"
+      },
+      {
+        "clause_id": "mhlw_r7dec_art11_4",
+        "axis1": "判断ガイド",
+        "axis2": "宣言的",
+        "reason": "「名誉や信用を損なう行為」は包括的で評価の判断"
+      },
+      {
+        "clause_id": "mhlw_r7dec_art16_2",
+        "axis1": "ハード制約",
+        "axis2": "手続き的",
+        "reason": "異動・退職をきっかけに、速やかに行う義務（③b）"
+      },
+      {
+        "clause_id": "mhlw_r7dec_art17_1",
+        "axis1": "ハード制約",
+        "axis2": "手続き的",
+        "reason": "始業・終業のたびに行う義務（③b）"
+      },
+      {
+        "clause_id": "mhlw_r7dec_art3_1",
+        "axis1": "判断ガイド",
+        "axis2": "宣言的",
+        "reason": "規則全体の遵守を定める一般原則"
+      },
+      {
+        "clause_id": "mhlw_r7dec_art8_2",
+        "axis1": "判断ガイド",
+        "axis2": "宣言的",
+        "reason": "「業務上必要がある場合」に「ことがある」という裁量の定め"
+      },
+      {
+        "clause_id": "mhlw_r7dec_art9_2",
+        "axis1": "判断ガイド",
+        "axis2": "手続き的",
+        "reason": "休職事由の消滅という出来事がきっかけ。「困難又は不適当な場合」が評価の判断"
+      },
+      {
+        "clause_id": "mhlw_r7dec_art23_3",
+        "axis1": "判断ガイド",
+        "axis2": "手続き的",
+        "reason": "労働者の請求という出来事がきっかけ。例外（事業の正常な運営を妨げる場合）が規範の中心"
+      },
+      {
+        "clause_id": "mhlw_r7dec_art65_2",
+        "axis1": "ハード制約",
+        "axis2": "手続き的",
+        "reason": "会社の指示という出来事をきっかけに受講する義務"
+      }
+    ],
+    "excluded_note": "候補30件のうち、評価に入れない12件（付録B 表2）。軸1・軸2 のラベルは testdata/clauses/clauses_holdout_v2.json に入れる。",
+    "context_note": "付録B は context を指定していないので、どの項目にも付けていない。",
+    "based_on_gold": "testdata/action_gold/action_gold_holdout_v2.json（第45回の保留評価の記録としてそのまま残す。W3）",
+    "version": "dev3_v1",
+    "holdout_run": {
+      "round": "第45回（2026年11月24日）",
+      "frozen_commit": "8b8529e",
+      "design": "前段 v0.9（P33）",
+      "conditions": "qwen2.5:14b-instruct・k=1・temperature 0.0・教師あり",
+      "result_file": "docs/eval/action_eval_holdout_v2_20261123_v09.json",
+      "log_file": "docs/eval/action_eval_holdout_v2_20261123_v09.log",
+      "result": "すり抜け0件・重大な誤り0件・正しい15/18（取りこぼし1件・新規の取り違え2件）。オラクルの上限は17/18"
+    },
+    "changes": [
+      "第46回 パートA: 保留用を開発用に移した(P20・Q1)。split を dev にしたので、承認前に止まる検査(4.3節)は当たらない",
+      "条文・正解・承認の記録・ledger_seed は holdout_v2 から1文字も変えていない",
+      "変えたのは _meta だけ(purpose・split・split_note・based_on_gold・version・holdout_run・changes・note)"
+    ],
+    "note": "第45回の保留評価で1回使ったので、もう保留用には使えない(P20)。事実の抽出の設計からは、v4(18件)・dev2(14件)とあわせて開発用50件として扱う。"
+  },
+  "ledger_seed": [
+    {
+      "name": "送信",
+      "definition": "データや情報を、電子的に宛先へ送ること（転送を含む）",
+      "kind": "concrete",
+      "parent": "提供",
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "従業員個人のアドレスに転送",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+          "core_verb": "転送"
+        },
+        {
+          "text": "従業員個人のアドレスに送信",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+          "core_verb": "送信"
+        },
+        {
+          "text": "極秘又は社外秘の情報資産を送受信",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 5.6 情報資産の社外持ち出し（箇条書き）",
+          "core_verb": "送受信"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "provisional",
+      "definition_status": "provisional",
+      "approved_by": null,
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00",
+        "note": "名前の出典: registry/dmn/aoi_transmission.dmn 送信可否判定の reason_code「外部送信対象外」と、層1 dt_transmission の entry_points(出典の語は「外部送信」)。v1.11 の D82 で名前を「送信」に改めた(外部送信とデータ送信を1つにまとめる)。定義の文は第33回追補のタスクE1 の表(Kazuhiro 承認 2026-11-20)。定義の文そのものは DMN にも登録簿にも無いので definition_status=provisional(PU4)"
+      }
+    },
+    {
+      "name": "操作",
+      "definition": "情報システムや機器を動かしたり、設定を変えたりすること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "特権/管理者権限で操作を行う",
+          "clause_ref": "IPA情報セキュリティ関連規程 6.7 特権アカウント(第3項)",
+          "core_verb": "操作"
+        },
+        {
+          "text": "特権操作",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.1 アクセス制御方針（箇条書き第5項）",
+          "core_verb": "操作"
+        },
+        {
+          "text": "情報機器・設備の無断操作",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 1.2 セキュリティ領域の設定（レベル2領域の表・制限事項）",
+          "core_verb": "操作"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA情報セキュリティ関連規程 6.7 特権アカウント(第3項)",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "特権/管理者権限で操作を行う",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "情報システム（上位の語。条文の語は「本番環境」ではなく操作の対象を指す）"
+        ]
+      }
+    },
+    {
+      "name": "使用",
+      "definition": "物・設備・サービスを使うこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "会社の施設、物品等を使用",
+          "clause_ref": "厚生労働省モデル就業規則 第11条(遵守事項)第1号",
+          "core_verb": "使用"
+        },
+        {
+          "text": "Wi-Fiサービスの利用",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+          "core_verb": "利用"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省モデル就業規則 第11条(遵守事項)第1号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "会社の施設、物品等を使用",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "使う（条文の語は「使用」）"
+        ]
+      }
+    },
+    {
+      "name": "提供",
+      "definition": "情報を、他の組織や人に渡すこと",
+      "kind": "abstract",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "組織、人に提供",
+          "clause_ref": "IPA情報セキュリティ関連規程 人的対策-2(従業員の責務)",
+          "core_verb": "提供"
+        },
+        {
+          "text": "機密を漏洩",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第11条（遵守事項）第5号",
+          "core_verb": "漏洩"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA情報セキュリティ関連規程 人的対策-2(従業員の責務)",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "組織、人に提供",
+            "basis": "verbatim"
+          },
+          {
+            "quote": "当社が営業秘密として管理する情報",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "渡す(条文の語は「提供」。前段設計書 v0.6 の図3の文)"
+        ]
+      }
+    },
+    {
+      "name": "労働指示",
+      "definition": "使用者が、労働者を働かせること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "労働に従事させ",
+          "clause_ref": "厚生労働省モデル就業規則 第21条(時間外及び休日労働等)第3項",
+          "core_verb": "従事させ"
+        },
+        {
+          "text": "就業させ",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第25条（産前産後の休業）第2項",
+          "core_verb": "就業させ"
+        },
+        {
+          "text": "所定労働時間外労働又は休日労働に従事させ",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第21条（時間外及び休日労働等）第4項",
+          "core_verb": "従事させ"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省モデル就業規則 第21条(時間外及び休日労働等)第3項",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "労働に従事させ",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "使用者・労働者（労働法の一般的な語。条文の語は「従業員」）",
+          "働かせる（条文の語は「労働に従事させ」）"
+        ]
+      }
+    },
+    {
+      "name": "伝達",
+      "definition": "情報を、相手に伝えること",
+      "kind": "concrete",
+      "parent": "提供",
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "口頭で伝達",
+          "clause_ref": "情報管理規程 第14条",
+          "core_verb": "伝達"
+        },
+        {
+          "text": "従業員の個人情報を伝え",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+          "core_verb": "伝え"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "情報管理規程 第14条",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "口頭で伝達",
+            "basis": "verbatim"
+          },
+          {
+            "quote": "検査結果その他の医療情報",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "相手(条文の語は「患者又はその代理人」。前段設計書 v0.6 の図3の文)"
+        ]
+      }
+    },
+    {
+      "name": "共有",
+      "definition": "物や情報を、他の人も使える・見られる状態にすること",
+      "kind": "concrete",
+      "parent": "提供",
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "特権アカウント名を2名以上で共用",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.10 利用者アカウント・パスワードの条件（表・特権アカウント列／アカウント名行）",
+          "core_verb": "共用"
+        },
+        {
+          "text": "同一アカウントの他者との共有",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.2.1 認証に関する基本方針（箇条書き第2項）",
+          "core_verb": "共有"
+        },
+        {
+          "text": "社外秘又は極秘の情報ファイルを社外に共有",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 5.6 情報資産の社外持ち出し（箇条書き）",
+          "core_verb": "共有"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.10 利用者アカウント・パスワードの条件（表・特権アカウント列／アカウント名行）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "1つの特権アカウント名を2名以上で共用しない",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "使える・見られる状態にする(条文の語は「共用」。前段設計書 v0.6 の図3の文)"
+        ]
+      }
+    },
+    {
+      "name": "取り出し",
+      "definition": "サーバーなどにあるデータを、手元の機器に取り込む、または書き出すこと",
+      "kind": "concrete",
+      "parent": "取得",
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "メールの取り出し及びエクスポート",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 7.3 電子メールの利用（箇条書き・クラウド型メールの利用）",
+          "core_verb": "取り出し"
+        },
+        {
+          "text": "私有機器への極秘情報及び社外秘情報のダウンロード",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.1.2 テレワークで利用する機器（末尾の文）",
+          "core_verb": "ダウンロード"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 7.3 電子メールの利用（箇条書き・クラウド型メールの利用）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "メールサーバーからのメールの取り出し及びエクスポート",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "データ（条文の語は「メール」）",
+          "手元の機器に取り込む・書き出す（「エクスポート」の言い換え）"
+        ]
+      }
+    },
+    {
+      "name": "就業",
+      "definition": "労働者が、自ら業務に就くこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "就業",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第11条（遵守事項）第6号",
+          "core_verb": "就業"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省「モデル就業規則」解説版 第11条（遵守事項）第6号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "就業",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "労働者が、自ら（主体を示す語。使用者の側の労働指示と区別するため）"
+        ]
+      }
+    },
+    {
+      "name": "放置",
+      "definition": "情報や物を、管理されない状態で置いたままにすること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "原稿、印刷物を放置",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+          "core_verb": "放置"
+        },
+        {
+          "text": "情報資産の放置",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 1.2 セキュリティ領域の設定（レベル1領域の表・制限事項）",
+          "core_verb": "放置"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "原稿、印刷物を放置",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "情報や物（条文の語は「原稿、印刷物」）",
+          "管理されない状態で置いたままにする（「放置」の言い換え）"
+        ]
+      }
+    },
+    {
+      "name": "立入り",
+      "definition": "区域や場所に入ること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "区域には立ち入ら",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第6号",
+          "core_verb": "立ち入"
+        },
+        {
+          "text": "喫煙可能な場所には立ち入ら",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第4号",
+          "core_verb": "立ち入"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第6号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-08",
+        "definition_basis": [
+          {
+            "quote": "区域には立ち入ら",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": [
+          "場所（条文の語は「区域」）",
+          "入る（条文の語は「立ち入ら」）"
+        ]
+      }
+    },
+    {
+      "name": "発行",
+      "definition": "利用者が使うものを作って渡すこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "利用者1名につき1つを発行",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.2.1 認証に関する基本方針（箇条書き第1項）",
+          "core_verb": "発行"
+        },
+        {
+          "text": "複数の利用者が共有するアカウントの発行",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.2.1 認証に関する基本方針（箇条書き第2項）",
+          "core_verb": "発行"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.2.1 認証に関する基本方針（箇条書き第1項）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "利用者1名につき1つを発行",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "持出し",
+      "definition": "物を、決められた場所の外へ持って出ること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "無断持出し",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 1.2 セキュリティ領域の設定（レベル2領域の表・制限事項）",
+          "core_verb": "持出し"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 1.2 セキュリティ領域の設定（レベル2領域の表・制限事項）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "無断持出し",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "持込み",
+      "definition": "物を、決められた場所の中へ持って入ること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "情報記憶媒体の無断持込み",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 1.2 セキュリティ領域の設定（レベル3領域の表・制限事項）",
+          "core_verb": "持込み"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 1.2 セキュリティ領域の設定（レベル3領域の表・制限事項）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "情報記憶媒体の無断持込み",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "保存",
+      "definition": "データを、機器や媒体に記録して残すこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "社外秘又は極秘の情報資産の保存",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+          "core_verb": "保存"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "社外秘又は極秘の情報資産の保存",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "受信",
+      "definition": "送られてきた情報を受け取ること",
+      "kind": "concrete",
+      "parent": "取得",
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "極秘又は社外秘の情報資産を送受信",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 5.6 情報資産の社外持ち出し（箇条書き）",
+          "core_verb": "送受信"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 5.6 情報資産の社外持ち出し（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "極秘又は社外秘の情報資産を送受信",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "撮影",
+      "definition": "映像を機器で記録すること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "室内での撮影、録音",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+          "core_verb": "撮影"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "室内での撮影、録音",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "録音",
+      "definition": "音声を機器で記録すること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "室内での撮影、録音",
+          "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+          "core_verb": "録音"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "室内での撮影、録音",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "離席",
+      "definition": "いる場所から離れること",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "勤務場所を離れ",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第11条（遵守事項）第3号",
+          "core_verb": "離れ"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省「モデル就業規則」解説版 第11条（遵守事項）第3号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "勤務場所を離れ",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "取得",
+      "definition": "情報を手に入れること",
+      "kind": "abstract",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "自らの業務に関係のない情報を不当に取得",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第16条（個人情報保護）第1項",
+          "core_verb": "取得"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省「モデル就業規則」解説版 第16条（個人情報保護）第1項",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "自らの業務に関係のない情報を不当に取得",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    },
+    {
+      "name": "同伴",
+      "definition": "人を連れて、ある場所へ行くこと",
+      "kind": "concrete",
+      "parent": null,
+      "excludes": [],
+      "surfaces": [
+        {
+          "text": "喫煙可能な場所に連れて行か",
+          "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第5号",
+          "core_verb": "連れて行"
+        }
+      ],
+      "actors": [
+        "あおい"
+      ],
+      "name_status": "approved",
+      "definition_status": "provisional",
+      "approved_by": "Kazuhiro",
+      "provenance": {
+        "origin": "action_gold",
+        "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第5号",
+        "registered_by": "run_action_eval(教師あり。P13)",
+        "registered_at": "2026-11-20",
+        "definition_basis": [
+          {
+            "quote": "喫煙可能な場所に連れて行か",
+            "basis": "verbatim"
+          }
+        ],
+        "definition_general_terms": []
+      }
+    }
+  ],
+  "items": [
+    {
+      "order": 1,
+      "clause_id": "ipa_secguide_v4_6_2_2",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.2.2 多要素認証",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/candidates/candidates_round4.json",
+        "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "article": "1.組織的対策 6.2.2 多要素認証",
+        "locator": "P0142.1"
+      },
+      "text": "多要素認証の使用に当たっては、以下のいずれかの要素から2種類以上を選択し、利用すること。",
+      "expected": {
+        "surface": "以下のいずれかの要素から2種類以上を選択し、利用",
+        "normalized": "使用",
+        "is_new": false,
+        "core_verb": "利用",
+        "kind": "concrete",
+        "parent": null
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-22"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
+      },
+      "note": "「選択」は使うときの手順の一部で、行為にしない。要素の数は列"
+    },
+    {
+      "order": 2,
+      "clause_id": "ipa_secguide_v4_6_5_outdoor",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.5 パスワードの設定（箇条書き・屋外での利用）",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/candidates/candidates_round4.json",
+        "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "article": "1.組織的対策 6.5 パスワードの設定（箇条書き・屋外での利用）",
+        "locator": "P0163.1"
+      },
+      "text": "屋外で利用する場合は、他者が画面を盗み見可能な環境で利用しない。",
+      "expected": {
+        "surface": "他者が画面を盗み見可能な環境で利用",
+        "normalized": "使用",
+        "is_new": false,
+        "core_verb": "利用",
+        "kind": "concrete",
+        "parent": null
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-22"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
+      },
+      "note": "「盗み見可能な環境」は評価の判断を含む条件（D51）"
+    },
+    {
+      "order": 3,
+      "clause_id": "ipa_secguide_v4_6_10_password_reuse",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.10 利用者アカウント・パスワードの条件（表・一般利用者アカウント列／パスワード運用行）",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/candidates/candidates_round4.json",
+        "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "article": "1.組織的対策 6.10 利用者アカウント・パスワードの条件（表・一般利用者アカウント列／パスワード運用行）",
+        "locator": "T6.R4.C2.L9"
+      },
+      "text": "機器やサービス間でのパスワードの使い回しをしない",
+      "expected": {
+        "surface": "機器やサービス間でのパスワードの使い回し",
+        "normalized": "使用",
+        "is_new": false,
+        "core_verb": "使い回し",
+        "kind": "concrete",
+        "parent": null
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-22"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
+      },
+      "note": "使い回しかどうかは列（他の機器やサービスでも使っているか。P26）"
+    },
+    {
+      "order": 4,
+      "clause_id": "ipa_secguide_v4_7_1_link",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 7.1 オンラインサービス（箇条書き・リンクへのアクセス）",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/candidates/candidates_round4.json",
+        "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "article": "1.組織的対策 7.1 オンラインサービス（箇条書き・リンクへのアクセス）",
+        "locator": "P0190.1"
+      },
+      "text": "電子メールに記載されているリンクや、他のウェブサイト等に設置されているリンクは、偽サイトへの誘導である可能性があるためアクセスしない。",
+      "expected": {
+        "surface": "他のウェブサイト等に設置されているリンクは、偽サイトへの誘導である可能性があるためアクセス",
+        "normalized": "アクセス",
+        "is_new": true,
+        "core_verb": "アクセス",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "ネットワーク上の場所に接続して開くこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "他のウェブサイト等に設置されているリンクは、偽サイトへの誘導である可能性があるためアクセス",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-22"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
+      }
+    },
+    {
+      "order": 5,
+      "clause_id": "ipa_secguide_v4_2_2_public_order",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.2 インターネットの利用（ウェブ閲覧）（箇条書き）",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/candidates/candidates_round4.json",
+        "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "article": "4.技術的対策 2.2 インターネットの利用（ウェブ閲覧）（箇条書き）",
+        "locator": "P0677.1"
+      },
+      "text": "公序良俗に反するサイトへのアクセスを禁止する。",
+      "expected": {
+        "surface": "公序良俗に反するサイトへのアクセス",
+        "normalized": "アクセス",
+        "is_new": false,
+        "core_verb": "アクセス",
+        "kind": "concrete",
+        "parent": null
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-22"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
+      },
+      "note": "「公序良俗に反する」は評価の判断を含む条件（D51）。アクセスは項目4で足したもの"
+    },
+    {
+      "order": 6,
+      "clause_id": "ipa_secguide_v4_2_2_mobile_code",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.2 インターネットの利用（ウェブ閲覧）（箇条書き・モバイルコード）",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/candidates/candidates_round4.json",
+        "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "article": "4.技術的対策 2.2 インターネットの利用（ウェブ閲覧）（箇条書き・モバイルコード）",
+        "locator": "P0681.1"
+      },
+      "text": "信頼できるサイトから署名付きのモバイルコードをダウンロードする場合を除き、モバイルコード(クライアントパソコン側で動作するプログラム)を実行しない。",
+      "expected": {
+        "surface": "モバイルコード(クライアントパソコン側で動作するプログラム)を実行",
+        "normalized": "実行",
+        "is_new": true,
+        "core_verb": "実行",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "プログラムを動かすこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "モバイルコード(クライアントパソコン側で動作するプログラム)を実行",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-22"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
+      },
+      "note": "条文の例外に「ダウンロード」（取り出しの過去の動詞）があり、P29 が立つのが設計どおり"
+    },
+    {
+      "order": 7,
+      "clause_id": "ipa_secguide_v4_personnel_6_4_2_cloud",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.4.2 クラウド・SNSの利用（箇条書き）",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/candidates/candidates_round4.json",
+        "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "article": "2.人的対策 6.4.2 クラウド・SNSの利用（箇条書き）",
+        "locator": "P0512.1"
+      },
+      "text": "業務関連データの送受信、保存、共有に利用しない。",
+      "expected": {
+        "surface": "業務関連データの送受信、保存、共有に利用",
+        "normalized": "使用",
+        "is_new": false,
+        "core_verb": "利用",
+        "kind": "concrete",
+        "parent": null
+      },
+      "expected_alternatives": [
+        {
+          "surface": "業務関連データの送受信、保存",
+          "normalized": "保存",
+          "is_new": false,
+          "core_verb": "保存",
+          "kind": "concrete",
+          "parent": null
+        },
+        {
+          "surface": "業務関連データの送受信、保存、共有",
+          "normalized": "共有",
+          "is_new": false,
+          "core_verb": "共有",
+          "kind": "concrete",
+          "parent": "提供"
+        },
+        {
+          "surface": "業務関連データの送受信",
+          "normalized": "送信",
+          "is_new": false,
+          "core_verb": "送受信",
+          "kind": "concrete",
+          "parent": "提供"
+        },
+        {
+          "surface": "業務関連データの送受信",
+          "normalized": "受信",
+          "is_new": false,
+          "core_verb": "送受信",
+          "kind": "concrete",
+          "parent": "取得"
+        }
+      ],
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-22"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
+      },
+      "note": "5つのどれを出しても正しい"
+    },
+    {
+      "order": 8,
+      "clause_id": "ipa_secguide_v4_personnel_6_2_1_install",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.2.1 社有機器を利用する場合（箇条書き）",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/candidates/candidates_round4.json",
+        "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "article": "2.人的対策 6.2.1 社有機器を利用する場合（箇条書き）",
+        "locator": "P0462.1"
+      },
+      "text": "社内標準外ソフトウェアのインストールは禁止する。",
+      "expected": {
+        "surface": "社内標準外ソフトウェアのインストール",
+        "normalized": "インストール",
+        "is_new": true,
+        "core_verb": "インストール",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "ソフトウェアを機器に組み込んで使える状態にすること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "社内標準外ソフトウェアのインストール",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-22"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
+      }
+    },
+    {
+      "order": 9,
+      "clause_id": "ipa_secguide_v4_personnel_6_2_2_modify",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.2.2 私有機器を利用する場合（箇条書き）",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/candidates/candidates_round4.json",
+        "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "article": "2.人的対策 6.2.2 私有機器を利用する場合（箇条書き）",
+        "locator": "P0490.1"
+      },
+      "text": "不正な改造を行うことを禁止する（脱獄・root化）。",
+      "expected": {
+        "surface": "不正な改造を行う",
+        "normalized": "改造",
+        "is_new": true,
+        "core_verb": "改造",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "機器やソフトウェアに手を加えて作りを変えること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "不正な改造を行う",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-22"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
+      }
+    },
+    {
+      "order": 10,
+      "clause_id": "ipa_secguide_v4_personnel_6_4_3_lock",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.4.3 在宅時の注意（箇条書き）",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/candidates/candidates_round4.json",
+        "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "article": "2.人的対策 6.4.3 在宅時の注意（箇条書き）",
+        "locator": "P0518.1"
+      },
+      "text": "離席時にスクリーンセーバーや画面をロックし他者（家族を含む）にテレワーク用の情報機器を操作させない。",
+      "expected": {
+        "surface": "他者（家族を含む）にテレワーク用の情報機器を操作させ",
+        "normalized": "操作させ",
+        "is_new": true,
+        "core_verb": "操作させ",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "他の人に機器を動かさせること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "他者（家族を含む）にテレワーク用の情報機器を操作させ",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "expected_alternatives": [
+        {
+          "surface": "離席時にスクリーンセーバーや画面をロック",
+          "normalized": "離席",
+          "is_new": false,
+          "core_verb": "離席",
+          "kind": "concrete",
+          "parent": null
+        }
+      ],
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-22"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
+      },
+      "note": "使役は別の動詞（P28）。「ロックし」は離席の条件（6.6節）"
+    },
+    {
+      "order": 11,
+      "clause_id": "ipa_secguide_v4_personnel_6_4_3_input",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.4 勤務中のルール（表・公衆Wi-Fi列／注意事項行）",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/candidates/candidates_round4.json",
+        "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "article": "2.人的対策 6.4 勤務中のルール（表・公衆Wi-Fi列／注意事項行）",
+        "locator": "T21.R5.C3.L2"
+      },
+      "text": "ID・パスワードなどの認証情報、会社の重要情報、個人情報などの重要情報を入力・表示しない",
+      "expected": {
+        "surface": "重要情報を入力",
+        "normalized": "入力",
+        "is_new": true,
+        "core_verb": "入力",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "情報を機器に打ち込むこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "重要情報を入力",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "expected_alternatives": [
+        {
+          "surface": "重要情報を入力・表示",
+          "normalized": "表示",
+          "is_new": true,
+          "core_verb": "表示",
+          "kind": "concrete",
+          "parent": null,
+          "definition": {
+            "text": "情報を画面に映すこと",
+            "status": "provisional",
+            "basis": [
+              {
+                "quote": "重要情報を入力・表示",
+                "basis": "verbatim"
+              }
+            ],
+            "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+          }
+        }
+      ],
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-22"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
+      }
+    },
+    {
+      "order": 12,
+      "clause_id": "ipa_secguide_v4_personnel_6_4_4_leave",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.4.4 外出時の注意（箇条書き）",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/candidates/candidates_round4.json",
+        "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "article": "2.人的対策 6.4.4 外出時の注意（箇条書き）",
+        "locator": "P0524.1"
+      },
+      "text": "機器や書類は目の届く範囲に置き放置しない。",
+      "expected": {
+        "surface": "機器や書類は目の届く範囲に置き放置",
+        "normalized": "放置",
+        "is_new": false,
+        "core_verb": "放置",
+        "kind": "concrete",
+        "parent": null
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-22"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
+      }
+    },
+    {
+      "order": 13,
+      "clause_id": "ipa_secguide_v4_personnel_6_4_4_discard",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.4.4 外出時の注意（箇条書き）",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/candidates/candidates_round4.json",
+        "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "article": "2.人的対策 6.4.4 外出時の注意（箇条書き）",
+        "locator": "P0527.1"
+      },
+      "text": "外出先で書類やCD・DVDなどの媒体を廃棄しない。",
+      "expected": {
+        "surface": "外出先で書類やCD・DVDなどの媒体を廃棄",
+        "normalized": "廃棄",
+        "is_new": true,
+        "core_verb": "廃棄",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "物を捨てること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "外出先で書類やCD・DVDなどの媒体を廃棄",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-22"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
+      },
+      "note": "放置とは別の行為"
+    },
+    {
+      "order": 14,
+      "clause_id": "ipa_secguide_v4_2_3_3_operate_hours",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/candidates/candidates_round4.json",
+        "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "article": "4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+        "locator": "P0715.1"
+      },
+      "text": "機器は原則として勤務時間のみ稼働させる。",
+      "expected": {
+        "surface": "機器は原則として勤務時間のみ稼働させ",
+        "normalized": "稼働",
+        "is_new": true,
+        "core_verb": "稼働させ",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "機器を動いている状態にすること",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "機器は原則として勤務時間のみ稼働させ",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-22"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
+      },
+      "note": "「稼働させる」は使役ではないが、中心の動詞は「稼働させ」として記録する。「原則として」は例外を人の判断に回す"
+    },
+    {
+      "order": 15,
+      "clause_id": "ipa_secguide_v4_2_3_4_connect",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.4 社内での利用（箇条書き）",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/candidates/candidates_round4.json",
+        "document": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "article": "4.技術的対策 2.3.4 社内での利用（箇条書き）",
+        "locator": "P0722.1"
+      },
+      "text": "充電を除き、社内のパソコンやサーバーへの接続は禁止する。",
+      "expected": {
+        "surface": "社内のパソコンやサーバーへの接続",
+        "normalized": "接続",
+        "is_new": true,
+        "core_verb": "接続",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "機器を他の機器やネットワークにつなぐこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "社内のパソコンやサーバーへの接続",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-22"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
+      },
+      "note": "子が見込めないので具体"
+    },
+    {
+      "order": 16,
+      "clause_id": "mhlw_r7dec_art58_3_2",
+      "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第2号",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/candidates/candidates_round4.json",
+        "document": "厚生労働省「モデル就業規則」解説版",
+        "article": "第58条（遵守事項）第3項第2号",
+        "locator": "T81.R1.C1.L6"
+      },
+      "text": "安全装置を取り外したり、その効力を失わせるようなことはしないこと。",
+      "expected": {
+        "surface": "安全装置を取り外",
+        "normalized": "取り外し",
+        "is_new": true,
+        "core_verb": "取り外",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "付いている物を外すこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "安全装置を取り外",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "expected_alternatives": [
+        {
+          "surface": "その効力を失わせる",
+          "normalized": "無効化",
+          "is_new": true,
+          "core_verb": "失わせる",
+          "kind": "concrete",
+          "parent": null,
+          "definition": {
+            "text": "働きをなくさせること",
+            "status": "provisional",
+            "basis": [
+              {
+                "quote": "その効力を失わせる",
+                "basis": "verbatim"
+              }
+            ],
+            "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+          }
+        }
+      ],
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-22"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
+      }
+    },
+    {
+      "order": 17,
+      "clause_id": "mhlw_r7dec_art58_3_3",
+      "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第3号",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/candidates/candidates_round4.json",
+        "document": "厚生労働省「モデル就業規則」解説版",
+        "article": "第58条（遵守事項）第3項第3号",
+        "locator": "T81.R1.C1.L7"
+      },
+      "text": "保護具の着用が必要な作業については、必ず着用すること。",
+      "expected": {
+        "surface": "保護具の着用が必要な作業",
+        "normalized": "作業",
+        "is_new": true,
+        "core_verb": "作業",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "業務として具体的な仕事を行うこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "保護具の着用が必要な作業",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-22"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
+      },
+      "note": "「A をする場合は B」型。着用は列（6.6節）。既存の「就業」とは別の行為（就業は業務に就くこと全体、作業は個々の仕事）"
+    },
+    {
+      "order": 18,
+      "clause_id": "mhlw_r7dec_art58_3_7",
+      "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第7号",
+      "source": {
+        "kind": "candidate",
+        "file": "testdata/candidates/candidates_round4.json",
+        "document": "厚生労働省「モデル就業規則」解説版",
+        "article": "第58条（遵守事項）第3項第7号",
+        "locator": "T81.R1.C1.L11"
+      },
+      "text": "常に整理整頓に努め、通路、避難口又は消火設備のある所に物品を置かないこと。",
+      "expected": {
+        "surface": "通路、避難口又は消火設備のある所に物品を置か",
+        "normalized": "配置",
+        "is_new": true,
+        "core_verb": "置か",
+        "kind": "concrete",
+        "parent": null,
+        "definition": {
+          "text": "物をある場所に置くこと",
+          "status": "provisional",
+          "basis": [
+            {
+              "quote": "通路、避難口又は消火設備のある所に物品を置か",
+              "basis": "verbatim"
+            }
+          ],
+          "source": "第40回 HANDOFF 付録B（Kazuhiro 承認 2026-11-22）"
+        }
+      },
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-22"
+      },
+      "oracle_labels": {
+        "axis1": "ハード制約",
+        "axis2": "宣言的"
+      },
+      "note": "「整理整頓に努め」は努力義務。規範の中心は「置かない」"
+    }
+  ]
+}
