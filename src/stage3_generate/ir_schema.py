@@ -132,6 +132,21 @@ v1(コミット 9e66776)との差分は同書 付録A。
   既存の Action を提案した場合に立つ。**設計上の確認**に入れる(寄せていないので
   出力の誤りではない。人が提案を受け入れれば動詞を過去の語句に足す。P30)
 
+## v1.14 で変わった点(前段設計書 v0.12 の10章・P41)
+
+第2要素「事実の抽出」のゲートを足した。IR の型(`FactUsage`・`PassthroughFact`・
+`ComparisonFact`)は変えていない。事実の抽出は IR v2 の型をそのまま埋める(P34)。
+
+- **追加(疑い)**: `fact_value_unverified`(値の根拠の語句が条文にない)・
+  `fact_possible_duplicate`(新規候補の名前・値が既存の fact に近い)・
+  `comparison_fact_proposed`(比較型の fact を候補にした。P38)
+- **追加(設計上の確認)**: `fact_reuse_suggested`(手順3b が既存の fact を提案した。
+  寄せてはいない。P37)
+- **区分の変更**: `new_fact_unapproved` を**設計上の確認**に入れた(P41)。v1.13 までは
+  Action 正規化の評価で立たないゲートだったので `gate_kind()` が "other" を返して
+  いた。事実の抽出では毎件立ちうるゲートで、結果が正しくても人が承認するものなので
+  誤報には数えない(P21・P22 と同じ考え方)
+
 ## 引き継ぐ原則(設計書1.4)
 
 - 4点セットの同時生成、複合 fact 禁止、FIRST と行の順序、来歴の表し方、Action 正規化
@@ -178,16 +193,24 @@ def clear_ir_load_warnings() -> None:
 # - new_action_unapproved: 新しい語彙の承認は必ず人(D14・D53)
 # - action_abstract_selected: 抽象的な Action を選ぶと禁止が子すべてに及ぶので、
 #   正しく選んだ場合でも人が段を確かめる(P22)
+# - new_fact_unapproved: 新しい fact・値の承認は必ず人(D14・D53・P41)
 SUSPICION_GATES: tuple[str, ...] = (
     "action_surface_unverified",
     "action_surface_ambiguous",
     "action_possible_duplicate",
     "action_name_rule",
+    # 第2要素「事実の抽出」の疑い(P41。v1.14)
+    "fact_value_unverified",
+    "fact_possible_duplicate",
+    "comparison_fact_proposed",
 )
 DESIGN_CHECK_GATES: tuple[str, ...] = (
     "new_action_unapproved",
     "action_abstract_selected",
     "action_synonym_suggested",
+    # 第2要素「事実の抽出」の設計上の確認(P41。v1.14)
+    "new_fact_unapproved",
+    "fact_reuse_suggested",
 )
 
 # 廃止したゲート(P30・P7)。立つことはないが、過去の評価の記録(第32回・第37回の
@@ -209,9 +232,14 @@ RETIRED_GATES: dict[str, str] = {
 def gate_kind(name: str) -> str:
     """ゲートの種類を返す(P21)。"suspicion" / "design_check" / "other"。
 
-    "other" は、Action 正規化より前の段(②の分類・fact)のゲートである
-    (confidence_below_threshold・quote_unverified・new_fact_unapproved など)。
-    前段の Action 正規化の評価では立たないので、2種類のどちらにも入れない。
+    "other" は、前段(Action 正規化・事実の抽出)より前の段のゲートである
+    (confidence_below_threshold・quote_unverified・vocab_flagged・
+    new_primitive_required)。前段の評価では立たないので、2種類のどちらにも入れない。
+
+    `new_fact_unapproved` は v1.14 で**設計上の確認**に移した(P41)。事実の抽出では
+    新しい fact を提案するたびに立ち、結果が正しくても人が承認するゲートなので、
+    誤報には数えない。Action 正規化の評価では立たないので、過去の記録の数え直し
+    (`recompute_metrics`)に影響はない。
     """
     if name in SUSPICION_GATES:
         return "suspicion"
@@ -865,6 +893,18 @@ class ReviewGates:
     action_name_rule: bool = False
     # 新規候補の名前・定義が既存の Action に近い(P8。取りこぼしを人が拾う)。
     action_possible_duplicate: bool = False
+    # ここから下の4つは前段の第2要素「事実の抽出」が立てる(前段設計書10.2節 P41)。
+    # 値の根拠の語句が条文にない(手順2)。値は正規化してよいが、根拠は逐語(D44)。
+    fact_value_unverified: bool = False
+    # 新規候補の fact の名前・値が既存の fact に近い、または手順3a の一致が2つ以上
+    # あった(P37・P41)。既存に寄せるべきかを人が見る。
+    fact_possible_duplicate: bool = False
+    # 比較型(exact_match など)の fact を候補にした(P38)。判定の基準が表の外に移る
+    # ので、プリミティブの選び方を人が確かめる。
+    comparison_fact_proposed: bool = False
+    # 手順3b が「既存の〇〇と同じ列かもしれない」と提案した(P37)。寄せてはいない
+    # ので出力の誤りではない。人が受け入れれば値を value_additions として足す。
+    fact_reuse_suggested: bool = False
 
     @property
     def should_review(self) -> bool:
@@ -886,6 +926,10 @@ class ReviewGates:
             "action_abstract_selected",
             "action_name_rule",
             "action_possible_duplicate",
+            "fact_value_unverified",
+            "fact_possible_duplicate",
+            "comparison_fact_proposed",
+            "fact_reuse_suggested",
         ]
         return [n for n in names if getattr(self, n)]
 
@@ -922,6 +966,18 @@ class ReviewGates:
             out.append("新規候補の名前・定義に規範の様相の語がある")
         if self.action_possible_duplicate:
             out.append("新規候補の Action が既存の Action に近い(既存に寄せるべきか)")
+        if self.fact_value_unverified:
+            out.append("fact の値の根拠の語句が条文に逐語で実在しない")
+        if self.fact_possible_duplicate:
+            out.append(
+                "新規候補の fact が既存の fact に近い、または値の一致が2つ以上あった"
+            )
+        if self.comparison_fact_proposed:
+            out.append("比較型の fact を候補にした(判定の基準が表の外に移る)")
+        if self.fact_reuse_suggested:
+            out.append(
+                "既存の fact と同じ列かもしれないという提案がある(寄せてはいない)"
+            )
         return out
 
 

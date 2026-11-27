@@ -1,0 +1,1994 @@
+{
+  "_meta": {
+    "gold_dir": "testdata/ir_gold",
+    "registry": "registry/registry.json",
+    "llm": "oracle(偽物)",
+    "k": 1,
+    "temperature": 0.0,
+    "design": "前段 v0.12（第2要素「事実の抽出」。P34〜P42）",
+    "note": "合格の条件は「ゲートをすり抜けた重大な誤りが0件」(P40・10.4.2節)。sources は評価しない(P39)。fact の名前は文字列で比べない(Q2)"
+  },
+  "summary": {
+    "items": 5,
+    "slipped": 0,
+    "severe_items": 1,
+    "middle_items": 1,
+    "correct": 3,
+    "by_verdict": {
+      "correct": 3,
+      "severe": 1,
+      "middle": 1
+    },
+    "errors_by_kind": {
+      "condition_added": 0,
+      "wrong_reuse": 1,
+      "value_mistaken": 0,
+      "condition_dropped": 0,
+      "reuse_missed": 2,
+      "grouping_differs": 0
+    },
+    "severe_errors": 1,
+    "middle_errors": 2,
+    "gold_values": 19,
+    "output_values": 17,
+    "matched_values": 17,
+    "conditions_total": 19,
+    "conditions_verbatim": 19,
+    "reuse_scope": 2,
+    "reuse_correct": 0,
+    "reuse_missed": 2,
+    "reuse_wrong": 1,
+    "suggestions": 2,
+    "suggestion_hits": 2,
+    "suggestion_false_alarms": 0,
+    "suggestion_rows": [
+      {
+        "order": 5,
+        "gold_id": "aoi_johokanri_art14",
+        "value": "一致",
+        "answer": "phone_match",
+        "gold_facts": [
+          "birth_match",
+          "phone_match"
+        ],
+        "gold_is_new": false
+      },
+      {
+        "order": 5,
+        "gold_id": "aoi_johokanri_art14",
+        "value": "一致",
+        "answer": "phone_match",
+        "gold_facts": [
+          "birth_match",
+          "phone_match"
+        ],
+        "gold_is_new": false
+      }
+    ],
+    "routed_to_human": 5,
+    "routed_with_suspicion": 1,
+    "routed_design_check_only": 4,
+    "automatic": 0,
+    "gates": {
+      "new_fact_unapproved": 4,
+      "fact_possible_duplicate": 1,
+      "fact_reuse_suggested": 1
+    },
+    "false_alarm_items": 0,
+    "false_alarm_gates": {},
+    "primitive_total": 11,
+    "primitive_matches": 11,
+    "excluded_values": 0,
+    "elapsed_seconds_total": 0.0,
+    "elapsed_seconds_per_item": 0.0,
+    "llm_calls_total": 15,
+    "errors": 0
+  },
+  "errors": [],
+  "items": [
+    {
+      "order": 1,
+      "gold_id": "ipa_secguide_v4_6_7_1",
+      "clause_ref": "IPA情報セキュリティ関連規程 6.7 特権アカウント(第3項)",
+      "action": "操作",
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "slipped": false,
+      "gold": [
+        {
+          "variable": "operator_role",
+          "value": "システム開発担当",
+          "is_new": true,
+          "quote": "システム開発を担当する者",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "target_environment",
+          "value": "本番環境",
+          "is_new": true,
+          "quote": "本番環境",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "requested_privilege",
+          "value": "特権",
+          "is_new": true,
+          "quote": "特権/管理者権限",
+          "primitive": "passthrough"
+        }
+      ],
+      "output": [
+        {
+          "variable": "operator_role",
+          "value": "システム開発担当",
+          "is_new": true,
+          "quote": "システム開発を担当する者",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "target_environment",
+          "value": "本番環境",
+          "is_new": true,
+          "quote": "本番環境",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "requested_privilege",
+          "value": "特権",
+          "is_new": true,
+          "quote": "特権/管理者権限",
+          "primitive": "passthrough"
+        }
+      ],
+      "matched": [
+        {
+          "value": "システム開発担当",
+          "fact": "operator_role",
+          "gold_fact": "operator_role",
+          "gold_is_new": true,
+          "out_is_new": true
+        },
+        {
+          "value": "本番環境",
+          "fact": "target_environment",
+          "gold_fact": "target_environment",
+          "gold_is_new": true,
+          "out_is_new": true
+        },
+        {
+          "value": "特権",
+          "fact": "requested_privilege",
+          "gold_fact": "requested_privilege",
+          "gold_is_new": true,
+          "out_is_new": true
+        }
+      ],
+      "errors": [],
+      "excluded_values": [],
+      "gates": [
+        "new_fact_unapproved"
+      ],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "new_fact_unapproved"
+      ],
+      "conditions": [
+        {
+          "quote": "システム開発を担当する者",
+          "value": "システム開発担当",
+          "raw_value": "システム開発担当",
+          "kind": "状況",
+          "in_clause": true,
+          "normalization": []
+        },
+        {
+          "quote": "本番環境",
+          "value": "本番環境",
+          "raw_value": "本番環境",
+          "kind": "状況",
+          "in_clause": true,
+          "normalization": []
+        },
+        {
+          "quote": "特権/管理者権限",
+          "value": "特権",
+          "raw_value": "特権",
+          "kind": "状況",
+          "in_clause": true,
+          "normalization": []
+        }
+      ],
+      "suggestions": [
+        {
+          "value": "システム開発担当",
+          "offered": [
+            "name_match",
+            "birth_match",
+            "phone_match",
+            "has_medical",
+            "has_pii",
+            "identifiable",
+            "contact_consent"
+          ],
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        },
+        {
+          "value": "本番環境",
+          "offered": [
+            "name_match",
+            "birth_match",
+            "phone_match",
+            "has_medical",
+            "has_pii",
+            "identifiable",
+            "contact_consent"
+          ],
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        },
+        {
+          "value": "特権",
+          "offered": [
+            "name_match",
+            "birth_match",
+            "phone_match",
+            "has_medical",
+            "has_pii",
+            "identifiable",
+            "contact_consent"
+          ],
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        }
+      ],
+      "proposals": [
+        {
+          "variable": "operator_role",
+          "primitive": "passthrough",
+          "values": [
+            "システム開発担当"
+          ],
+          "other_value_note": "システム開発担当以外の担当",
+          "comparison_kind": null,
+          "quotes": [
+            "システム開発を担当する者"
+          ],
+          "dropped_values": [],
+          "reused_values": [],
+          "primitive_demoted_from": null,
+          "demote_reason": "",
+          "duplicate": {
+            "variable": "operator_role",
+            "closest": "phone_match",
+            "name_ratio": 0.333,
+            "collides": false,
+            "shared_values": [],
+            "flagged": false,
+            "reason": "",
+            "threshold": 0.6
+          }
+        },
+        {
+          "variable": "target_environment",
+          "primitive": "passthrough",
+          "values": [
+            "本番環境"
+          ],
+          "other_value_note": "本番環境以外の環境",
+          "comparison_kind": null,
+          "quotes": [
+            "本番環境"
+          ],
+          "dropped_values": [],
+          "reused_values": [],
+          "primitive_demoted_from": null,
+          "demote_reason": "",
+          "duplicate": {
+            "variable": "target_environment",
+            "closest": "contact_consent",
+            "name_ratio": 0.545,
+            "collides": false,
+            "shared_values": [],
+            "flagged": false,
+            "reason": "",
+            "threshold": 0.6
+          }
+        },
+        {
+          "variable": "requested_privilege",
+          "primitive": "passthrough",
+          "values": [
+            "特権"
+          ],
+          "other_value_note": "特権以外の権限",
+          "comparison_kind": null,
+          "quotes": [
+            "特権/管理者権限"
+          ],
+          "dropped_values": [],
+          "reused_values": [],
+          "primitive_demoted_from": null,
+          "demote_reason": "",
+          "duplicate": {
+            "variable": "requested_privilege",
+            "closest": "identifiable",
+            "name_ratio": 0.387,
+            "collides": false,
+            "shared_values": [],
+            "flagged": false,
+            "reason": "",
+            "threshold": 0.6
+          }
+        }
+      ],
+      "primitive_checks": [
+        {
+          "gold_fact": "operator_role",
+          "gold_primitive": "passthrough",
+          "out_primitive": "passthrough",
+          "matches": true
+        },
+        {
+          "gold_fact": "target_environment",
+          "gold_primitive": "passthrough",
+          "out_primitive": "passthrough",
+          "matches": true
+        },
+        {
+          "gold_fact": "requested_privilege",
+          "gold_primitive": "passthrough",
+          "out_primitive": "passthrough",
+          "matches": true
+        }
+      ],
+      "elapsed_seconds": 0.0,
+      "llm_calls": 3
+    },
+    {
+      "order": 2,
+      "gold_id": "mhlw_r7dec_art11_1",
+      "clause_ref": "厚生労働省モデル就業規則 第11条(遵守事項)第1号",
+      "action": "使用",
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "slipped": false,
+      "gold": [
+        {
+          "variable": "usage_authorization",
+          "value": "許可なし",
+          "is_new": true,
+          "quote": "許可なく",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "usage_purpose",
+          "value": "職務以外の目的",
+          "is_new": true,
+          "quote": "職務以外の目的",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "usage_target",
+          "value": "会社の施設",
+          "is_new": true,
+          "quote": "会社の施設",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "usage_target",
+          "value": "物品等",
+          "is_new": true,
+          "quote": "物品等",
+          "primitive": "passthrough"
+        }
+      ],
+      "output": [
+        {
+          "variable": "usage_authorization",
+          "value": "許可なし",
+          "is_new": true,
+          "quote": "許可なく",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "usage_purpose",
+          "value": "職務以外の目的",
+          "is_new": true,
+          "quote": "職務以外の目的",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "usage_target",
+          "value": "会社の施設",
+          "is_new": true,
+          "quote": "会社の施設",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "usage_target",
+          "value": "物品等",
+          "is_new": true,
+          "quote": "物品等",
+          "primitive": "passthrough"
+        }
+      ],
+      "matched": [
+        {
+          "value": "許可なし",
+          "fact": "usage_authorization",
+          "gold_fact": "usage_authorization",
+          "gold_is_new": true,
+          "out_is_new": true
+        },
+        {
+          "value": "職務以外の目的",
+          "fact": "usage_purpose",
+          "gold_fact": "usage_purpose",
+          "gold_is_new": true,
+          "out_is_new": true
+        },
+        {
+          "value": "会社の施設",
+          "fact": "usage_target",
+          "gold_fact": "usage_target",
+          "gold_is_new": true,
+          "out_is_new": true
+        },
+        {
+          "value": "物品等",
+          "fact": "usage_target",
+          "gold_fact": "usage_target",
+          "gold_is_new": true,
+          "out_is_new": true
+        }
+      ],
+      "errors": [],
+      "excluded_values": [],
+      "gates": [
+        "new_fact_unapproved"
+      ],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "new_fact_unapproved"
+      ],
+      "conditions": [
+        {
+          "quote": "許可なく",
+          "value": "許可なし",
+          "raw_value": "許可なし",
+          "kind": "状況",
+          "in_clause": true,
+          "normalization": []
+        },
+        {
+          "quote": "職務以外の目的",
+          "value": "職務以外の目的",
+          "raw_value": "職務以外の目的",
+          "kind": "状況",
+          "in_clause": true,
+          "normalization": []
+        },
+        {
+          "quote": "会社の施設",
+          "value": "会社の施設",
+          "raw_value": "会社の施設",
+          "kind": "状況",
+          "in_clause": true,
+          "normalization": []
+        },
+        {
+          "quote": "物品等",
+          "value": "物品等",
+          "raw_value": "物品等",
+          "kind": "状況",
+          "in_clause": true,
+          "normalization": []
+        }
+      ],
+      "suggestions": [
+        {
+          "value": "許可なし",
+          "offered": [
+            "name_match",
+            "birth_match",
+            "phone_match",
+            "has_medical",
+            "has_pii",
+            "identifiable",
+            "contact_consent",
+            "operator_role",
+            "target_environment",
+            "requested_privilege"
+          ],
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        },
+        {
+          "value": "職務以外の目的",
+          "offered": [
+            "name_match",
+            "birth_match",
+            "phone_match",
+            "has_medical",
+            "has_pii",
+            "identifiable",
+            "contact_consent",
+            "operator_role",
+            "target_environment",
+            "requested_privilege"
+          ],
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        },
+        {
+          "value": "会社の施設",
+          "offered": [
+            "name_match",
+            "birth_match",
+            "phone_match",
+            "has_medical",
+            "has_pii",
+            "identifiable",
+            "contact_consent",
+            "operator_role",
+            "target_environment",
+            "requested_privilege"
+          ],
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        },
+        {
+          "value": "物品等",
+          "offered": [
+            "name_match",
+            "birth_match",
+            "phone_match",
+            "has_medical",
+            "has_pii",
+            "identifiable",
+            "contact_consent",
+            "operator_role",
+            "target_environment",
+            "requested_privilege"
+          ],
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        }
+      ],
+      "proposals": [
+        {
+          "variable": "usage_authorization",
+          "primitive": "passthrough",
+          "values": [
+            "許可なし"
+          ],
+          "other_value_note": "許可を得ている",
+          "comparison_kind": null,
+          "quotes": [
+            "許可なく"
+          ],
+          "dropped_values": [],
+          "reused_values": [],
+          "primitive_demoted_from": null,
+          "demote_reason": "",
+          "duplicate": {
+            "variable": "usage_authorization",
+            "closest": "target_environment",
+            "name_ratio": 0.378,
+            "collides": false,
+            "shared_values": [],
+            "flagged": false,
+            "reason": "",
+            "threshold": 0.6
+          }
+        },
+        {
+          "variable": "usage_purpose",
+          "primitive": "passthrough",
+          "values": [
+            "職務以外の目的"
+          ],
+          "other_value_note": "職務の目的",
+          "comparison_kind": null,
+          "quotes": [
+            "職務以外の目的"
+          ],
+          "dropped_values": [],
+          "reused_values": [],
+          "primitive_demoted_from": null,
+          "demote_reason": "",
+          "duplicate": {
+            "variable": "usage_purpose",
+            "closest": "target_environment",
+            "name_ratio": 0.452,
+            "collides": false,
+            "shared_values": [],
+            "flagged": false,
+            "reason": "",
+            "threshold": 0.6
+          }
+        },
+        {
+          "variable": "usage_target",
+          "primitive": "passthrough",
+          "values": [
+            "会社の施設",
+            "物品等"
+          ],
+          "other_value_note": "会社の施設・物品等に当たらないもの。「等」に当たるものを禁止側に入れるかは、当てはめる側の判断になる(レビュー B-2)",
+          "comparison_kind": null,
+          "quotes": [
+            "会社の施設",
+            "物品等"
+          ],
+          "dropped_values": [],
+          "reused_values": [],
+          "primitive_demoted_from": null,
+          "demote_reason": "",
+          "duplicate": {
+            "variable": "usage_target",
+            "closest": "target_environment",
+            "name_ratio": 0.4,
+            "collides": false,
+            "shared_values": [],
+            "flagged": false,
+            "reason": "",
+            "threshold": 0.6
+          }
+        }
+      ],
+      "primitive_checks": [
+        {
+          "gold_fact": "usage_authorization",
+          "gold_primitive": "passthrough",
+          "out_primitive": "passthrough",
+          "matches": true
+        },
+        {
+          "gold_fact": "usage_purpose",
+          "gold_primitive": "passthrough",
+          "out_primitive": "passthrough",
+          "matches": true
+        },
+        {
+          "gold_fact": "usage_target",
+          "gold_primitive": "passthrough",
+          "out_primitive": "passthrough",
+          "matches": true
+        }
+      ],
+      "elapsed_seconds": 0.0,
+      "llm_calls": 3
+    },
+    {
+      "order": 3,
+      "gold_id": "ipa_secguide_v4_personnel_2",
+      "clause_ref": "IPA情報セキュリティ関連規程 人的対策-2(従業員の責務)",
+      "action": "提供",
+      "verdict": "severe",
+      "verdict_label": "重大な誤りあり",
+      "slipped": false,
+      "gold": [
+        {
+          "variable": "provided_information",
+          "value": "営業秘密として管理する情報",
+          "is_new": true,
+          "quote": "当社が営業秘密として管理する情報",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "provided_information",
+          "value": "複製物",
+          "is_new": true,
+          "quote": "その複製物",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "recipient_authorization",
+          "value": "許可なし",
+          "is_new": true,
+          "quote": "許可されていない",
+          "primitive": "passthrough"
+        }
+      ],
+      "output": [
+        {
+          "variable": "usage_authorization",
+          "value": "許可なし",
+          "is_new": false,
+          "quote": "許可されていない",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "provided_information",
+          "value": "営業秘密として管理する情報",
+          "is_new": true,
+          "quote": "当社が営業秘密として管理する情報",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "provided_information",
+          "value": "複製物",
+          "is_new": true,
+          "quote": "その複製物",
+          "primitive": "passthrough"
+        }
+      ],
+      "matched": [
+        {
+          "value": "許可なし",
+          "fact": "usage_authorization",
+          "gold_fact": "recipient_authorization",
+          "gold_is_new": true,
+          "out_is_new": false
+        },
+        {
+          "value": "営業秘密として管理する情報",
+          "fact": "provided_information",
+          "gold_fact": "provided_information",
+          "gold_is_new": true,
+          "out_is_new": true
+        },
+        {
+          "value": "複製物",
+          "fact": "provided_information",
+          "gold_fact": "provided_information",
+          "gold_is_new": true,
+          "out_is_new": true
+        }
+      ],
+      "errors": [
+        {
+          "kind": "wrong_reuse",
+          "label": "誤った再利用",
+          "fact": "usage_authorization",
+          "value": "許可なし",
+          "gold_fact": "recipient_authorization",
+          "note": "正解は新しい列だが、既存の fact に値を入れた"
+        }
+      ],
+      "excluded_values": [],
+      "gates": [
+        "new_fact_unapproved",
+        "fact_possible_duplicate"
+      ],
+      "suspicion_gates": [
+        "fact_possible_duplicate"
+      ],
+      "design_check_gates": [
+        "new_fact_unapproved"
+      ],
+      "conditions": [
+        {
+          "quote": "当社が営業秘密として管理する情報",
+          "value": "営業秘密として管理する情報",
+          "raw_value": "営業秘密として管理する情報",
+          "kind": "状況",
+          "in_clause": true,
+          "normalization": []
+        },
+        {
+          "quote": "その複製物",
+          "value": "複製物",
+          "raw_value": "複製物",
+          "kind": "状況",
+          "in_clause": true,
+          "normalization": []
+        },
+        {
+          "quote": "許可されていない",
+          "value": "許可なし",
+          "raw_value": "許可なし",
+          "kind": "状況",
+          "in_clause": true,
+          "normalization": []
+        }
+      ],
+      "suggestions": [
+        {
+          "value": "営業秘密として管理する情報",
+          "offered": [
+            "name_match",
+            "birth_match",
+            "phone_match",
+            "has_medical",
+            "has_pii",
+            "identifiable",
+            "contact_consent",
+            "operator_role",
+            "target_environment",
+            "requested_privilege",
+            "usage_authorization",
+            "usage_purpose",
+            "usage_target"
+          ],
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        },
+        {
+          "value": "複製物",
+          "offered": [
+            "name_match",
+            "birth_match",
+            "phone_match",
+            "has_medical",
+            "has_pii",
+            "identifiable",
+            "contact_consent",
+            "operator_role",
+            "target_environment",
+            "requested_privilege",
+            "usage_authorization",
+            "usage_purpose",
+            "usage_target"
+          ],
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        }
+      ],
+      "proposals": [
+        {
+          "variable": "provided_information",
+          "primitive": "passthrough",
+          "values": [
+            "営業秘密として管理する情報",
+            "複製物"
+          ],
+          "other_value_note": "営業秘密として管理する情報・その複製物に当たらないもの",
+          "comparison_kind": null,
+          "quotes": [
+            "当社が営業秘密として管理する情報",
+            "その複製物"
+          ],
+          "dropped_values": [],
+          "reused_values": [],
+          "primitive_demoted_from": null,
+          "demote_reason": "",
+          "duplicate": {
+            "variable": "provided_information",
+            "closest": "usage_authorization",
+            "name_ratio": 0.462,
+            "collides": false,
+            "shared_values": [],
+            "flagged": false,
+            "reason": "",
+            "threshold": 0.6
+          }
+        },
+        {
+          "variable": "recipient_authorization",
+          "primitive": "passthrough",
+          "values": [],
+          "other_value_note": "許可されている",
+          "comparison_kind": null,
+          "quotes": [],
+          "dropped_values": [],
+          "reused_values": [
+            "許可なし"
+          ],
+          "primitive_demoted_from": null,
+          "demote_reason": "",
+          "duplicate": {
+            "variable": "recipient_authorization",
+            "closest": "usage_authorization",
+            "name_ratio": 0.714,
+            "collides": false,
+            "shared_values": [],
+            "flagged": true,
+            "reason": "名前の類似 0.71 >= 0.6(既存の 'usage_authorization')",
+            "threshold": 0.6
+          }
+        }
+      ],
+      "primitive_checks": [
+        {
+          "gold_fact": "provided_information",
+          "gold_primitive": "passthrough",
+          "out_primitive": "passthrough",
+          "matches": true
+        },
+        {
+          "gold_fact": "recipient_authorization",
+          "gold_primitive": "passthrough",
+          "out_primitive": "passthrough",
+          "matches": true
+        }
+      ],
+      "elapsed_seconds": 0.0,
+      "llm_calls": 3
+    },
+    {
+      "order": 4,
+      "gold_id": "mhlw_r7dec_art21_3",
+      "clause_ref": "厚生労働省モデル就業規則 第21条(時間外及び休日労働等)第3項",
+      "action": "労働指示",
+      "verdict": "correct",
+      "verdict_label": "正しい",
+      "slipped": false,
+      "gold": [
+        {
+          "variable": "worker_category",
+          "value": "妊娠中の女性",
+          "is_new": true,
+          "quote": "妊娠中の女性",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "worker_category",
+          "value": "産後1年を経過しない女性労働者",
+          "is_new": true,
+          "quote": "産後１年を経過しない女性労働者",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "worker_category",
+          "value": "18歳未満の者",
+          "is_new": true,
+          "quote": "１８歳未満の者",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "exemption_request",
+          "value": "請求した者",
+          "is_new": true,
+          "quote": "請求した者",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "work_type",
+          "value": "時間外労働",
+          "is_new": true,
+          "quote": "時間外労働",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "work_type",
+          "value": "休日労働",
+          "is_new": true,
+          "quote": "休日若しくは深夜（午後１０時から午前５時まで）労働",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "work_type",
+          "value": "深夜労働",
+          "is_new": true,
+          "quote": "休日若しくは深夜（午後１０時から午前５時まで）労働",
+          "primitive": "passthrough"
+        }
+      ],
+      "output": [
+        {
+          "variable": "worker_category",
+          "value": "妊娠中の女性",
+          "is_new": true,
+          "quote": "妊娠中の女性",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "worker_category",
+          "value": "産後1年を経過しない女性労働者",
+          "is_new": true,
+          "quote": "産後１年を経過しない女性労働者",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "worker_category",
+          "value": "18歳未満の者",
+          "is_new": true,
+          "quote": "１８歳未満の者",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "exemption_request",
+          "value": "請求した者",
+          "is_new": true,
+          "quote": "請求した者",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "work_type",
+          "value": "時間外労働",
+          "is_new": true,
+          "quote": "時間外労働",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "work_type",
+          "value": "休日労働",
+          "is_new": true,
+          "quote": "休日若しくは深夜（午後１０時から午前５時まで）労働",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "work_type",
+          "value": "深夜労働",
+          "is_new": true,
+          "quote": "休日若しくは深夜（午後１０時から午前５時まで）労働",
+          "primitive": "passthrough"
+        }
+      ],
+      "matched": [
+        {
+          "value": "妊娠中の女性",
+          "fact": "worker_category",
+          "gold_fact": "worker_category",
+          "gold_is_new": true,
+          "out_is_new": true
+        },
+        {
+          "value": "産後1年を経過しない女性労働者",
+          "fact": "worker_category",
+          "gold_fact": "worker_category",
+          "gold_is_new": true,
+          "out_is_new": true
+        },
+        {
+          "value": "18歳未満の者",
+          "fact": "worker_category",
+          "gold_fact": "worker_category",
+          "gold_is_new": true,
+          "out_is_new": true
+        },
+        {
+          "value": "請求した者",
+          "fact": "exemption_request",
+          "gold_fact": "exemption_request",
+          "gold_is_new": true,
+          "out_is_new": true
+        },
+        {
+          "value": "時間外労働",
+          "fact": "work_type",
+          "gold_fact": "work_type",
+          "gold_is_new": true,
+          "out_is_new": true
+        },
+        {
+          "value": "休日労働",
+          "fact": "work_type",
+          "gold_fact": "work_type",
+          "gold_is_new": true,
+          "out_is_new": true
+        },
+        {
+          "value": "深夜労働",
+          "fact": "work_type",
+          "gold_fact": "work_type",
+          "gold_is_new": true,
+          "out_is_new": true
+        }
+      ],
+      "errors": [],
+      "excluded_values": [],
+      "gates": [
+        "new_fact_unapproved"
+      ],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "new_fact_unapproved"
+      ],
+      "conditions": [
+        {
+          "quote": "妊娠中の女性",
+          "value": "妊娠中の女性",
+          "raw_value": "妊娠中の女性",
+          "kind": "状況",
+          "in_clause": true,
+          "normalization": []
+        },
+        {
+          "quote": "産後１年を経過しない女性労働者",
+          "value": "産後1年を経過しない女性労働者",
+          "raw_value": "産後1年を経過しない女性労働者",
+          "kind": "状況",
+          "in_clause": true,
+          "normalization": []
+        },
+        {
+          "quote": "１８歳未満の者",
+          "value": "18歳未満の者",
+          "raw_value": "18歳未満の者",
+          "kind": "状況",
+          "in_clause": true,
+          "normalization": []
+        },
+        {
+          "quote": "請求した者",
+          "value": "請求した者",
+          "raw_value": "請求した者",
+          "kind": "状況",
+          "in_clause": true,
+          "normalization": []
+        },
+        {
+          "quote": "時間外労働",
+          "value": "時間外労働",
+          "raw_value": "時間外労働",
+          "kind": "状況",
+          "in_clause": true,
+          "normalization": []
+        },
+        {
+          "quote": "休日若しくは深夜（午後１０時から午前５時まで）労働",
+          "value": "休日労働",
+          "raw_value": "休日労働",
+          "kind": "状況",
+          "in_clause": true,
+          "normalization": []
+        },
+        {
+          "quote": "休日若しくは深夜（午後１０時から午前５時まで）労働",
+          "value": "深夜労働",
+          "raw_value": "深夜労働",
+          "kind": "状況",
+          "in_clause": true,
+          "normalization": []
+        }
+      ],
+      "suggestions": [
+        {
+          "value": "妊娠中の女性",
+          "offered": [
+            "name_match",
+            "birth_match",
+            "phone_match",
+            "has_medical",
+            "has_pii",
+            "identifiable",
+            "contact_consent",
+            "operator_role",
+            "target_environment",
+            "requested_privilege",
+            "usage_authorization",
+            "usage_purpose",
+            "usage_target",
+            "provided_information",
+            "recipient_authorization"
+          ],
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        },
+        {
+          "value": "産後1年を経過しない女性労働者",
+          "offered": [
+            "name_match",
+            "birth_match",
+            "phone_match",
+            "has_medical",
+            "has_pii",
+            "identifiable",
+            "contact_consent",
+            "operator_role",
+            "target_environment",
+            "requested_privilege",
+            "usage_authorization",
+            "usage_purpose",
+            "usage_target",
+            "provided_information",
+            "recipient_authorization"
+          ],
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        },
+        {
+          "value": "18歳未満の者",
+          "offered": [
+            "name_match",
+            "birth_match",
+            "phone_match",
+            "has_medical",
+            "has_pii",
+            "identifiable",
+            "contact_consent",
+            "operator_role",
+            "target_environment",
+            "requested_privilege",
+            "usage_authorization",
+            "usage_purpose",
+            "usage_target",
+            "provided_information",
+            "recipient_authorization"
+          ],
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        },
+        {
+          "value": "請求した者",
+          "offered": [
+            "name_match",
+            "birth_match",
+            "phone_match",
+            "has_medical",
+            "has_pii",
+            "identifiable",
+            "contact_consent",
+            "operator_role",
+            "target_environment",
+            "requested_privilege",
+            "usage_authorization",
+            "usage_purpose",
+            "usage_target",
+            "provided_information",
+            "recipient_authorization"
+          ],
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        },
+        {
+          "value": "時間外労働",
+          "offered": [
+            "name_match",
+            "birth_match",
+            "phone_match",
+            "has_medical",
+            "has_pii",
+            "identifiable",
+            "contact_consent",
+            "operator_role",
+            "target_environment",
+            "requested_privilege",
+            "usage_authorization",
+            "usage_purpose",
+            "usage_target",
+            "provided_information",
+            "recipient_authorization"
+          ],
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        },
+        {
+          "value": "休日労働",
+          "offered": [
+            "name_match",
+            "birth_match",
+            "phone_match",
+            "has_medical",
+            "has_pii",
+            "identifiable",
+            "contact_consent",
+            "operator_role",
+            "target_environment",
+            "requested_privilege",
+            "usage_authorization",
+            "usage_purpose",
+            "usage_target",
+            "provided_information",
+            "recipient_authorization"
+          ],
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        },
+        {
+          "value": "深夜労働",
+          "offered": [
+            "name_match",
+            "birth_match",
+            "phone_match",
+            "has_medical",
+            "has_pii",
+            "identifiable",
+            "contact_consent",
+            "operator_role",
+            "target_environment",
+            "requested_privilege",
+            "usage_authorization",
+            "usage_purpose",
+            "usage_target",
+            "provided_information",
+            "recipient_authorization"
+          ],
+          "answer": null,
+          "reason": "(正解)",
+          "raw_answer": "該当なし",
+          "off_list": false
+        }
+      ],
+      "proposals": [
+        {
+          "variable": "worker_category",
+          "primitive": "passthrough",
+          "values": [
+            "妊娠中の女性",
+            "産後1年を経過しない女性労働者",
+            "18歳未満の者"
+          ],
+          "other_value_note": "妊産婦・18歳未満の者のどれにも当たらない労働者",
+          "comparison_kind": null,
+          "quotes": [
+            "妊娠中の女性",
+            "産後１年を経過しない女性労働者",
+            "１８歳未満の者"
+          ],
+          "dropped_values": [],
+          "reused_values": [],
+          "primitive_demoted_from": null,
+          "demote_reason": "",
+          "duplicate": {
+            "variable": "worker_category",
+            "closest": "phone_match",
+            "name_ratio": 0.385,
+            "collides": false,
+            "shared_values": [],
+            "flagged": false,
+            "reason": "",
+            "threshold": 0.6
+          }
+        },
+        {
+          "variable": "exemption_request",
+          "primitive": "passthrough",
+          "values": [
+            "請求した者"
+          ],
+          "other_value_note": "請求していない",
+          "comparison_kind": null,
+          "quotes": [
+            "請求した者"
+          ],
+          "dropped_values": [],
+          "reused_values": [],
+          "primitive_demoted_from": null,
+          "demote_reason": "",
+          "duplicate": {
+            "variable": "exemption_request",
+            "closest": "operator_role",
+            "name_ratio": 0.4,
+            "collides": false,
+            "shared_values": [],
+            "flagged": false,
+            "reason": "",
+            "threshold": 0.6
+          }
+        },
+        {
+          "variable": "work_type",
+          "primitive": "passthrough",
+          "values": [
+            "時間外労働",
+            "休日労働",
+            "深夜労働"
+          ],
+          "other_value_note": "時間外・休日・深夜のどれでもない労働",
+          "comparison_kind": null,
+          "quotes": [
+            "時間外労働",
+            "休日若しくは深夜（午後１０時から午前５時まで）労働",
+            "休日若しくは深夜（午後１０時から午前５時まで）労働"
+          ],
+          "dropped_values": [],
+          "reused_values": [],
+          "primitive_demoted_from": null,
+          "demote_reason": "",
+          "duplicate": {
+            "variable": "work_type",
+            "closest": "operator_role",
+            "name_ratio": 0.364,
+            "collides": false,
+            "shared_values": [],
+            "flagged": false,
+            "reason": "",
+            "threshold": 0.6
+          }
+        }
+      ],
+      "primitive_checks": [
+        {
+          "gold_fact": "worker_category",
+          "gold_primitive": "passthrough",
+          "out_primitive": "passthrough",
+          "matches": true
+        },
+        {
+          "gold_fact": "exemption_request",
+          "gold_primitive": "passthrough",
+          "out_primitive": "passthrough",
+          "matches": true
+        },
+        {
+          "gold_fact": "work_type",
+          "gold_primitive": "passthrough",
+          "out_primitive": "passthrough",
+          "matches": true
+        }
+      ],
+      "elapsed_seconds": 0.0,
+      "llm_calls": 3
+    },
+    {
+      "order": 5,
+      "gold_id": "aoi_johokanri_art14",
+      "clause_ref": "情報管理規程 第14条",
+      "action": "伝達",
+      "verdict": "middle",
+      "verdict_label": "中の誤りのみ",
+      "slipped": false,
+      "gold": [
+        {
+          "variable": "birth_match",
+          "value": "一致",
+          "is_new": false,
+          "quote": "当該患者の生年月日",
+          "primitive": "passthrough"
+        },
+        {
+          "variable": "phone_match",
+          "value": "一致",
+          "is_new": false,
+          "quote": "連絡先",
+          "primitive": "passthrough"
+        }
+      ],
+      "output": [],
+      "matched": [],
+      "errors": [
+        {
+          "kind": "reuse_missed",
+          "label": "取りこぼし",
+          "fact": null,
+          "value": "一致",
+          "gold_fact": "birth_match",
+          "note": "値は抜き出したが、正解の既存の fact を使わなかった"
+        },
+        {
+          "kind": "reuse_missed",
+          "label": "取りこぼし",
+          "fact": null,
+          "value": "一致",
+          "gold_fact": "phone_match",
+          "note": "値は抜き出したが、正解の既存の fact を使わなかった"
+        }
+      ],
+      "excluded_values": [],
+      "gates": [
+        "fact_reuse_suggested"
+      ],
+      "suspicion_gates": [],
+      "design_check_gates": [
+        "fact_reuse_suggested"
+      ],
+      "conditions": [
+        {
+          "quote": "当該患者の生年月日",
+          "value": "一致",
+          "raw_value": "一致",
+          "kind": "状況",
+          "in_clause": true,
+          "normalization": []
+        },
+        {
+          "quote": "連絡先",
+          "value": "一致",
+          "raw_value": "一致",
+          "kind": "状況",
+          "in_clause": true,
+          "normalization": []
+        }
+      ],
+      "suggestions": [
+        {
+          "value": "一致",
+          "offered": [
+            "name_match",
+            "birth_match",
+            "phone_match",
+            "has_medical",
+            "has_pii",
+            "identifiable",
+            "contact_consent",
+            "operator_role",
+            "target_environment",
+            "requested_privilege",
+            "usage_authorization",
+            "usage_purpose",
+            "usage_target",
+            "provided_information",
+            "recipient_authorization",
+            "worker_category",
+            "exemption_request",
+            "work_type"
+          ],
+          "answer": "phone_match",
+          "reason": "(正解)",
+          "raw_answer": "phone_match",
+          "off_list": false
+        },
+        {
+          "value": "一致",
+          "offered": [
+            "name_match",
+            "birth_match",
+            "phone_match",
+            "has_medical",
+            "has_pii",
+            "identifiable",
+            "contact_consent",
+            "operator_role",
+            "target_environment",
+            "requested_privilege",
+            "usage_authorization",
+            "usage_purpose",
+            "usage_target",
+            "provided_information",
+            "recipient_authorization",
+            "worker_category",
+            "exemption_request",
+            "work_type"
+          ],
+          "answer": "phone_match",
+          "reason": "(正解)",
+          "raw_answer": "phone_match",
+          "off_list": false
+        }
+      ],
+      "proposals": [],
+      "primitive_checks": [],
+      "elapsed_seconds": 0.0,
+      "llm_calls": 3
+    }
+  ],
+  "ledger_log": [
+    {
+      "order": 1,
+      "taught": [
+        "operator_role（システム開発担当、その他）を層3に足した",
+        "target_environment（本番環境、その他）を層3に足した",
+        "requested_privilege（特権、その他）を層3に足した"
+      ]
+    },
+    {
+      "order": 2,
+      "taught": [
+        "usage_authorization（許可なし、その他）を層3に足した",
+        "usage_purpose（職務以外の目的、その他）を層3に足した",
+        "usage_target（会社の施設、物品等、その他）を層3に足した"
+      ]
+    },
+    {
+      "order": 3,
+      "taught": [
+        "provided_information（営業秘密として管理する情報、複製物、その他）を層3に足した",
+        "recipient_authorization（許可なし、その他）を層3に足した"
+      ]
+    },
+    {
+      "order": 4,
+      "taught": [
+        "worker_category（妊娠中の女性、産後1年を経過しない女性労働者、18歳未満の者、その他）を層3に足した",
+        "exemption_request（請求した者、その他）を層3に足した",
+        "work_type（時間外労働、休日労働、深夜労働、その他）を層3に足した"
+      ]
+    },
+    {
+      "order": 5,
+      "taught": [
+        "新しい fact・値は無い(既存の fact を使う条文)"
+      ]
+    }
+  ],
+  "ledger_after": [
+    {
+      "variable": "name_match",
+      "primitive": "fuzzy_match_name",
+      "possible_values": [
+        "一致",
+        "不一致",
+        "未提供"
+      ],
+      "sources": {},
+      "comparison_kind": null,
+      "approved_by": "bootstrap",
+      "other_value_note": null,
+      "defined_by": "あおいの既存DMN(条文由来ではない)",
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00",
+        "note": "sources は元の DMN XML に情報が無いため未設定。一致プリミティブの実装時に、出典付きで付与する必要がある"
+      }
+    },
+    {
+      "variable": "birth_match",
+      "primitive": "date_match",
+      "possible_values": [
+        "一致",
+        "不一致",
+        "未提供"
+      ],
+      "sources": {},
+      "comparison_kind": null,
+      "approved_by": "bootstrap",
+      "other_value_note": null,
+      "defined_by": "あおいの既存DMN(条文由来ではない)",
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00",
+        "note": "sources は元の DMN XML に情報が無いため未設定。一致プリミティブの実装時に、出典付きで付与する必要がある"
+      }
+    },
+    {
+      "variable": "phone_match",
+      "primitive": "exact_match",
+      "possible_values": [
+        "一致",
+        "不一致",
+        "未提供"
+      ],
+      "sources": {},
+      "comparison_kind": null,
+      "approved_by": "bootstrap",
+      "other_value_note": null,
+      "defined_by": "あおいの既存DMN(条文由来ではない)",
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00",
+        "note": "sources は元の DMN XML に情報が無いため未設定。一致プリミティブの実装時に、出典付きで付与する必要がある"
+      }
+    },
+    {
+      "variable": "has_medical",
+      "primitive": "ontology_class_match",
+      "possible_values": [
+        "含む",
+        "含まない"
+      ],
+      "sources": {},
+      "comparison_kind": null,
+      "approved_by": "bootstrap",
+      "other_value_note": null,
+      "defined_by": "あおいの既存DMN(条文由来ではない)",
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00",
+        "note": "sources は元の DMN XML に情報が無いため未設定。一致プリミティブの実装時に、出典付きで付与する必要がある"
+      }
+    },
+    {
+      "variable": "has_pii",
+      "primitive": "ontology_class_match",
+      "possible_values": [
+        "含む",
+        "含まない"
+      ],
+      "sources": {},
+      "comparison_kind": null,
+      "approved_by": "bootstrap",
+      "other_value_note": null,
+      "defined_by": "あおいの既存DMN(条文由来ではない)",
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00",
+        "note": "sources は元の DMN XML に情報が無いため未設定。一致プリミティブの実装時に、出典付きで付与する必要がある"
+      }
+    },
+    {
+      "variable": "identifiable",
+      "primitive": "identifiability_classifier",
+      "possible_values": [
+        "可能",
+        "不可能_院内",
+        "不可能_公開"
+      ],
+      "sources": {},
+      "comparison_kind": null,
+      "approved_by": "bootstrap",
+      "other_value_note": null,
+      "defined_by": "あおいの既存DMN(条文由来ではない)",
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00",
+        "note": "sources は元の DMN XML に情報が無いため未設定。一致プリミティブの実装時に、出典付きで付与する必要がある"
+      }
+    },
+    {
+      "variable": "contact_consent",
+      "primitive": "passthrough",
+      "possible_values": [
+        "不同意",
+        "同意",
+        "その他"
+      ],
+      "sources": {},
+      "comparison_kind": null,
+      "approved_by": "bootstrap",
+      "other_value_note": "(初期登録)DMN の表に現れない状態",
+      "defined_by": "あおいの既存DMN(条文由来ではない)",
+      "provenance": {
+        "origin": "bootstrap",
+        "clause_ref": "あおいの既存DMN(条文由来ではない)",
+        "registered_by": "bootstrap",
+        "registered_at": "2026-10-23T00:00:00+00:00",
+        "note": "sources は元の DMN XML に情報が無いため未設定。一致プリミティブの実装時に、出典付きで付与する必要がある／other_value_note は元の DMN XML に情報が無いため固定の文。「その他」が指す状態は、語彙の承認(U8)のときに出典付きで埋める必要がある"
+      }
+    },
+    {
+      "variable": "operator_role",
+      "primitive": "passthrough",
+      "possible_values": [
+        "システム開発担当",
+        "その他"
+      ],
+      "sources": {
+        "value": {
+          "from": "action_request",
+          "path": "operator.role"
+        }
+      },
+      "comparison_kind": null,
+      "approved_by": null,
+      "other_value_note": "システム開発担当以外の担当",
+      "defined_by": "IPA情報セキュリティ関連規程 6.7 特権アカウント(第3項)",
+      "provenance": {
+        "origin": "regulation_clause",
+        "clause_ref": "IPA情報セキュリティ関連規程 6.7 特権アカウント(第3項)"
+      }
+    },
+    {
+      "variable": "target_environment",
+      "primitive": "passthrough",
+      "possible_values": [
+        "本番環境",
+        "その他"
+      ],
+      "sources": {
+        "value": {
+          "from": "action_request",
+          "path": "target.environment"
+        }
+      },
+      "comparison_kind": null,
+      "approved_by": null,
+      "other_value_note": "本番環境以外の環境",
+      "defined_by": "IPA情報セキュリティ関連規程 6.7 特権アカウント(第3項)",
+      "provenance": {
+        "origin": "regulation_clause",
+        "clause_ref": "IPA情報セキュリティ関連規程 6.7 特権アカウント(第3項)"
+      }
+    },
+    {
+      "variable": "requested_privilege",
+      "primitive": "passthrough",
+      "possible_values": [
+        "特権",
+        "その他"
+      ],
+      "sources": {
+        "value": {
+          "from": "action_request",
+          "path": "requested_privilege"
+        }
+      },
+      "comparison_kind": null,
+      "approved_by": null,
+      "other_value_note": "特権以外の権限",
+      "defined_by": "IPA情報セキュリティ関連規程 6.7 特権アカウント(第3項)",
+      "provenance": {
+        "origin": "regulation_clause",
+        "clause_ref": "IPA情報セキュリティ関連規程 6.7 特権アカウント(第3項)"
+      }
+    },
+    {
+      "variable": "usage_authorization",
+      "primitive": "passthrough",
+      "possible_values": [
+        "許可なし",
+        "その他"
+      ],
+      "sources": {
+        "value": {
+          "from": "action_request",
+          "path": "usage.authorization"
+        }
+      },
+      "comparison_kind": null,
+      "approved_by": null,
+      "other_value_note": "許可を得ている",
+      "defined_by": "厚生労働省モデル就業規則 第11条(遵守事項)第1号",
+      "provenance": {
+        "origin": "regulation_clause",
+        "clause_ref": "厚生労働省モデル就業規則 第11条(遵守事項)第1号"
+      }
+    },
+    {
+      "variable": "usage_purpose",
+      "primitive": "passthrough",
+      "possible_values": [
+        "職務以外の目的",
+        "その他"
+      ],
+      "sources": {
+        "value": {
+          "from": "action_request",
+          "path": "usage.purpose"
+        }
+      },
+      "comparison_kind": null,
+      "approved_by": null,
+      "other_value_note": "職務の目的",
+      "defined_by": "厚生労働省モデル就業規則 第11条(遵守事項)第1号",
+      "provenance": {
+        "origin": "regulation_clause",
+        "clause_ref": "厚生労働省モデル就業規則 第11条(遵守事項)第1号"
+      }
+    },
+    {
+      "variable": "usage_target",
+      "primitive": "passthrough",
+      "possible_values": [
+        "会社の施設",
+        "物品等",
+        "その他"
+      ],
+      "sources": {
+        "value": {
+          "from": "action_request",
+          "path": "usage.target"
+        }
+      },
+      "comparison_kind": null,
+      "approved_by": null,
+      "other_value_note": "会社の施設・物品等に当たらないもの。「等」に当たるものを禁止側に入れるかは、当てはめる側の判断になる(レビュー B-2)",
+      "defined_by": "厚生労働省モデル就業規則 第11条(遵守事項)第1号",
+      "provenance": {
+        "origin": "regulation_clause",
+        "clause_ref": "厚生労働省モデル就業規則 第11条(遵守事項)第1号"
+      }
+    },
+    {
+      "variable": "provided_information",
+      "primitive": "passthrough",
+      "possible_values": [
+        "営業秘密として管理する情報",
+        "複製物",
+        "その他"
+      ],
+      "sources": {
+        "value": {
+          "from": "action_request",
+          "path": "provided_information.category"
+        }
+      },
+      "comparison_kind": null,
+      "approved_by": null,
+      "other_value_note": "営業秘密として管理する情報・その複製物に当たらないもの",
+      "defined_by": "IPA情報セキュリティ関連規程 人的対策-2(従業員の責務)",
+      "provenance": {
+        "origin": "regulation_clause",
+        "clause_ref": "IPA情報セキュリティ関連規程 人的対策-2(従業員の責務)"
+      }
+    },
+    {
+      "variable": "recipient_authorization",
+      "primitive": "passthrough",
+      "possible_values": [
+        "許可なし",
+        "その他"
+      ],
+      "sources": {
+        "value": {
+          "from": "action_request",
+          "path": "recipient.authorization"
+        }
+      },
+      "comparison_kind": null,
+      "approved_by": null,
+      "other_value_note": "許可されている",
+      "defined_by": "IPA情報セキュリティ関連規程 人的対策-2(従業員の責務)",
+      "provenance": {
+        "origin": "regulation_clause",
+        "clause_ref": "IPA情報セキュリティ関連規程 人的対策-2(従業員の責務)"
+      }
+    },
+    {
+      "variable": "worker_category",
+      "primitive": "passthrough",
+      "possible_values": [
+        "妊娠中の女性",
+        "産後1年を経過しない女性労働者",
+        "18歳未満の者",
+        "その他"
+      ],
+      "sources": {
+        "value": {
+          "from": "action_request",
+          "path": "worker.category"
+        }
+      },
+      "comparison_kind": null,
+      "approved_by": null,
+      "other_value_note": "妊産婦・18歳未満の者のどれにも当たらない労働者",
+      "defined_by": "厚生労働省モデル就業規則 第21条(時間外及び休日労働等)第3項",
+      "provenance": {
+        "origin": "regulation_clause",
+        "clause_ref": "厚生労働省モデル就業規則 第21条(時間外及び休日労働等)第3項"
+      }
+    },
+    {
+      "variable": "exemption_request",
+      "primitive": "passthrough",
+      "possible_values": [
+        "請求した者",
+        "その他"
+      ],
+      "sources": {
+        "value": {
+          "from": "action_request",
+          "path": "worker.exemption_request"
+        }
+      },
+      "comparison_kind": null,
+      "approved_by": null,
+      "other_value_note": "請求していない",
+      "defined_by": "厚生労働省モデル就業規則 第21条(時間外及び休日労働等)第3項",
+      "provenance": {
+        "origin": "regulation_clause",
+        "clause_ref": "厚生労働省モデル就業規則 第21条(時間外及び休日労働等)第3項"
+      }
+    },
+    {
+      "variable": "work_type",
+      "primitive": "passthrough",
+      "possible_values": [
+        "時間外労働",
+        "休日労働",
+        "深夜労働",
+        "その他"
+      ],
+      "sources": {
+        "value": {
+          "from": "action_request",
+          "path": "work.type"
+        }
+      },
+      "comparison_kind": null,
+      "approved_by": null,
+      "other_value_note": "時間外・休日・深夜のどれでもない労働",
+      "defined_by": "厚生労働省モデル就業規則 第21条(時間外及び休日労働等)第3項",
+      "provenance": {
+        "origin": "regulation_clause",
+        "clause_ref": "厚生労働省モデル就業規則 第21条(時間外及び休日労働等)第3項"
+      }
+    }
+  ]
+}

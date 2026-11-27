@@ -18,7 +18,7 @@ aoi_doc2dmn/
 │   ├── stage2_classify/  # ②軸1・軸2分類器
 │   │   ├── local_llm.py     # LocalLlmAxis1Classifier / LocalLlmAxis2Classifier(Ollama)
 │   │   └── vocab_flags.py   # 既知の語彙的盲点への安全網フラグ
-│   ├── stage3_frontstage/ # ③a 前段(条文→IR)。第1要素: Action 正規化
+│   ├── stage3_frontstage/ # ③a 前段(条文→IR)。第1要素: Action 正規化／第2要素: 事実の抽出
 │   │   ├── action_ledger.py     # Action 台帳(登録簿の action_ledger)と近さの判定
 │   │   ├── modality.py          # 様相の語の一覧と検出(D71・P4)、括弧の除去(P24)
 │   │   ├── action_normalizer.py # 逐語の抜き出し→閉じた選択→検査→ゲート(k=1)
@@ -149,9 +149,16 @@ aoi_doc2dmn/
   すべてと継承する判定を評価し、D77の順序で合成する（`scenario_eval.evaluate_request`、
   行は`Registry.routes_for_request`が層1から作る）
 - ③aの**前段**（条文 → IR）は`docs/design/aoi_doc2dmn_frontstage_design.md`（前段設計書
-  v0.7）で設計し、4つの要素（Action正規化 → 事実の抽出 → 行の構成 → レベル判定）に分けて
-  1つずつ自動化する（P1）。**第1要素のAction正規化を`src/stage3_frontstage/`に実装済み**。
-  残り3要素は未実装で、`golden_path.py`がゴールデンパス1件のIRを手で組み立てている
+  v0.12）で設計し、4つの要素（Action正規化 → 事実の抽出 → 行の構成 → レベル判定）に分けて
+  1つずつ自動化する（P1）。**第1要素のAction正規化（v0.11で区切り）と、第2要素の事実の抽出
+  （v0.12・第48回で実装開始）を`src/stage3_frontstage/`に実装済み**。
+  残り2要素（行の構成・レベル判定）は未実装で、`golden_path.py`がゴールデンパス1件のIRを
+  手で組み立てている
+- 第2要素の**事実の抽出**は、条文から決定表の列（fact）とその値を取り出し、IRの`facts`欄を
+  埋める（P34〜P42）。既存のfactを使うかは**値が層3の`possible_values`と完全一致するか**で
+  プログラムが決め（P37）、LLMの「どの列か」の判定は**提案として残すだけで寄せない**
+  （`fact_reuse_suggested`）。第1要素で、LLMに台帳を読ませて「一番近い既存」を選ばせると
+  寄せてはいけない場面でも必ず何かを選んだ教訓（10.1.1節）を、最初から当てている
 - Action正規化は、Action台帳（`registry.json`の`action_ledger`。エージェントの職務記述書に
   当たる。P2・P3）の中から1つ選ぶか「該当なし」を選ぶ**閉じた選択**にする（P5）。
   台帳は2段（具体的な行為／抽象的な行為）で、条文は動詞の抽象度に合った段に寄せる（P14）
@@ -544,13 +551,52 @@ D82で読み替えてv3の正解で分類し直す（結果は`docs/eval/action_
 （人に回ったのは15/18件・自動で通ったのは3件、疑いのゲートの適合率5/9、新規候補の段の
 一致5/7、P24を当てると`action_surface_unverified`が1件→0件）。
 
+### 事実の抽出（第2要素）の評価 — 正解IR 5件での動作の確認（第48回）
+
+第2要素を実装し（P34〜P42）、承認済みの正解IR 5件で動かした（第48回パートA〜C。
+`qwen2.5:14b-instruct`・k=1・temperature 0.0・教師あり）。層3の出発点は初期登録の登録簿
+（7件）で、1件流すたびに**正解のfactを層3に足してから**次へ進む（P42）。
+
+```bash
+# Ollama で実際に流す（1件あたり LLM 呼び出し1〜3回）
+.venv/bin/python3 -m src.stage3_frontstage.run_fact_eval
+
+# LLM を正解を返す偽物に差し替えて、評価の筋だけを確かめる（Ollama 不要）
+.venv/bin/python3 -m src.stage3_frontstage.run_fact_eval --use-oracle
+```
+
+結果は`docs/eval/fact_eval_irgold_20261125_v012.json`（オラクルは`..._oracle_v012.json`）。
+
+| 指標 | オラクル（上限） | 実測（qwen2.5:14b-instruct） |
+|---|---|---|
+| すり抜け（重大な誤りでゲート無し。P40） | 0件 | 0件 |
+| 正しい | 3/5 | 1/5 |
+| 重大な誤り（付け足し・誤った再利用・値の取り違え） | 1件 | 6件 |
+| 中の誤り（落とし・取りこぼし・分け方の違い） | 2件 | 8件 |
+| 条件の語句の逐語率 | 19/19（条件19件） | 15/15（条件15件） |
+| 人に回る割合 | 5/5 | 5/5 |
+
+**オラクルでも 5/5 には届かない（上限は 3/5）。**理由は2つで、どちらもP37（値の完全一致で
+寄せ、LLMの判定では寄せない）の帰結である。
+
+1. `ipa_secguide_v4_personnel_2`の「許可なし」は、第11条で層3に入った`usage_authorization`の
+   値と**完全に一致する**ので、手順3aが必ずそこへ寄せる。正解は別の列
+   （`recipient_authorization`）なので**重大な誤り（誤った再利用）**になる
+2. `aoi_johokanri_art14`の「一致」は比較型のfactの値で、`name_match`・`birth_match`・
+   `phone_match`の3つが同じ値を持つ。P37は一致の相手をpassthroughのfactに限っているので
+   再利用できず**取りこぼし（中）**になる。手順3bは正解の列を当てるが、提案では寄せない
+
+どちらをどう直すかは第49回の要判断1・2 として報告した。**実測では、重大な誤りが
+`new_fact_unapproved`（設計上の確認・ほぼ毎件立つ）だけで止まった件があり、疑いのゲートで
+数え直すと2件がすり抜けになる**（要判断3）。
+
 ### テスト
 
 ```bash
 .venv/bin/python3 -m pytest tests/ -v
 ```
 
-Ollamaは不要。9つのファイルに分かれている。
+Ollamaは不要。13のファイルに分かれている。
 
 - `test_cross_validation.py`：クロス検証C1〜C12の失敗テスト（わざと違反させたIRで
   `SchemaWiringError`になること）
@@ -576,6 +622,16 @@ Ollamaは不要。9つのファイルに分かれている。
   開発用18件（v3）を足し終えた状態と一致すること、正解の値が無い・承認されていない項目が
   あるかぎり評価が止まること、複数の行為を含む条文の判定（P25。合成の項目で確かめる）
 - `test_recompute_metrics.py`：済んだ評価の生データからv0.5の指標を計算し直す処理（B5）
+- `test_fact_extractor.py`：前段の事実の抽出（手順1〜5。P34〜P42）。**LLMは固定の応答を返す
+  偽物に差し替える**（値の正規化の範囲・根拠の語句の照合・手順3aの寄せ（一致1つ・2つ以上・
+  「その他」は相手にしない）・**手順3bの提案では寄せないこと**・比較型の歯止め・条文に無い
+  値の落とし・sourcesの形・5つのゲート）
+- `test_fact_eval.py`：事実の抽出の評価（10.4節）。正解の値の求め方（D25の向き）、誤りの
+  6分類（P40）、FU2で評価から外すこと、1件ごとに正解のfactを層3へ足すこと（P42）、
+  オラクルの上限が3/5であることとその理由
+- `test_candidates_round4.py`・`test_candidates_round5.py`：保留用の候補（正解を付けない
+  もの）の形と、**原典の.docxから読み直した逐語の照合**。round5は話題の固まり・条件の4種類・
+  2文書の配分・外した理由の記録も見る
 
 元のDMNと第14条の条文本文は`tests/fixtures/`にコミットしてあるため（D42）、
 `reference/`が無い環境でも全件が動く（skipは0件）。

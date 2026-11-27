@@ -1,0 +1,407 @@
+{
+  "_meta": {
+    "purpose": "HANDOFF_20261125_round48_to_claudecode.md パートD(10.5節・P20)に基づく、事実の抽出(第2要素)の保留用の候補。前段は流していない。正解の案・②の分類器の結果は入れていない(保留用として使えなくなるため)",
+    "task": "round48_partD",
+    "status": "pending_human_review",
+    "not_run": [
+      "前段(Action 正規化・事実の抽出)をこの候補に流していない",
+      "正解の案(facts・Action・ラベル)を付けていない",
+      "②の分類器(軸1・軸2)にかけていない。かける場合は別ファイルに分ける"
+    ],
+    "selection_note": "候補 round3(37件)・round4(30件)、および既に正解を作った条文(clauses_v1・clauses_frontstage_v1・clauses_holdout_v1・clauses_holdout_v2)と、本文・位置・ID のどれも重ならないものだけを選んだ。ハード制約 × 宣言的になりそうなものを中心に、同じ話題の条文が2〜3件ずつ続くようにした(fact の再利用を測るため。P42)",
+    "document_split_note": "IPA 12件・厚労 8件。厚労「モデル就業規則」の規程例は、第3〜65条のうちハード制約 × 宣言的で自己完結した条文を round3・round4・保留用でほぼ使い切っており、残りは解説の本文、評価の判断を含む条文(第12〜15条のハラスメント・第53条の解雇事由)、空欄(「　　日以上」)を含む条文、前項を参照する条文が中心だったため、IPA 側を多くした",
+    "condition_kinds": {
+      "対象": [
+        "ipa_secguide_v4_7_1_storage_save",
+        "ipa_secguide_v4_6_2_2_software_use",
+        "ipa_secguide_v4_6_2_2_app_use",
+        "ipa_secguide_v4_2_2_password_browser",
+        "ipa_secguide_v4_2_1_4_4_lan_connect",
+        "ipa_secguide_v4_2_3_4_carry_in",
+        "ipa_secguide_v4_3_2_2_software_install",
+        "ipa_secguide_v4_3_2_3_network_install",
+        "ipa_secguide_v4_3_4_cloud_install",
+        "mhlw_r7dec_art6",
+        "mhlw_r7dec_art52_2",
+        "mhlw_r7dec_art43_1",
+        "mhlw_r7dec_art45_1"
+      ],
+      "主体の属性": [
+        "ipa_secguide_v4_7_1_service_use",
+        "mhlw_r7dec_art25_1",
+        "mhlw_r7dec_art26_1",
+        "mhlw_r7dec_art27_1",
+        "mhlw_r7dec_art47_1"
+      ],
+      "状況": [
+        "ipa_secguide_v4_7_1_service_use",
+        "ipa_secguide_v4_6_2_2_software_use",
+        "ipa_secguide_v4_6_2_2_app_use",
+        "ipa_secguide_v4_2_2_password_browser_exception",
+        "ipa_secguide_v4_2_3_4_carry_in",
+        "ipa_secguide_v4_3_2_2_software_install",
+        "ipa_secguide_v4_3_2_3_network_install",
+        "ipa_secguide_v4_3_4_cloud_install",
+        "mhlw_r7dec_art25_1",
+        "mhlw_r7dec_art26_1",
+        "mhlw_r7dec_art6",
+        "mhlw_r7dec_art52_2",
+        "mhlw_r7dec_art47_1"
+      ],
+      "状態": [
+        "ipa_secguide_v4_7_1_service_use",
+        "ipa_secguide_v4_7_1_storage_save",
+        "ipa_secguide_v4_7_1_policy_unpublished",
+        "ipa_secguide_v4_6_2_2_software_use",
+        "ipa_secguide_v4_6_2_2_app_use",
+        "ipa_secguide_v4_2_2_password_browser_exception",
+        "ipa_secguide_v4_2_3_4_carry_in",
+        "ipa_secguide_v4_3_2_2_software_install",
+        "ipa_secguide_v4_3_2_3_network_install",
+        "ipa_secguide_v4_3_4_cloud_install",
+        "mhlw_r7dec_art25_1",
+        "mhlw_r7dec_art26_1",
+        "mhlw_r7dec_art27_1",
+        "mhlw_r7dec_art52_2"
+      ]
+    },
+    "excluded_note": [
+      "評価の判断を含む条件だけの条文は外した(D51)。例: 第12〜15条(ハラスメント。「業務上必要かつ相当な範囲を超えた」「就業環境を害する」)、4.技術的対策 2.2 の「公序良俗に反するサイト」「不審なサイト」",
+      "原典に「/」で並んだ選択肢が残る条文は外した(D72)。例: 「社内LANへの接続は禁止する/する場合はシステム管理者の許可を得る。」(P0721.1)・「社内LANへのリモート接続は禁止する/する場合は…」(P0698.1)",
+      "空欄(「　　週間以内」「　　日以上」)を含む条文は外した。値が決まらないので fact の値にできない",
+      "「前項」「前条」だけで条件が決まる条文は外した(条文本文だけでは条件が読めない)",
+      "厚労 第51条(定年)は、満60歳・満65歳・満70歳の複数案が原典に並んでいるので外した(D72 と同じ理由)"
+    ],
+    "id_note": "候補の ID は改名しない(D72)。IPA の ID は節番号、厚労の ID は条・項から付けた",
+    "labeling_note": "**軸1・軸2の正解ラベルも facts の正解も付けていない。**正解の作成は web Claude が行う(運用メモ 3章: 2案を独立に作り、差分を Kazuhiro さんが精読する)",
+    "topics": [
+      {
+        "topic": "オンラインサービスの利用と情報の保存",
+        "count": 3,
+        "reason": "同じ節の3件。許可の有無(状態)の fact を共有する見込みで、「又は」の並列と片側しかない状態の両方が入る"
+      },
+      {
+        "topic": "私有機器での社内標準外のソフト・アプリの利用",
+        "count": 2,
+        "reason": "同じ形で対象だけが違う2件。既存の fact に値が増える(value_additions)か、別の列になるかを試せる"
+      },
+      {
+        "topic": "パスワードのブラウザ保存",
+        "count": 2,
+        "reason": "禁止とその例外(許可)の2件。許可規定で条件の向きが逆になる型(FU3)を測れる"
+      },
+      {
+        "topic": "社外機器の接続と社内持ち込み",
+        "count": 2,
+        "reason": "対象が「〜以外の機器」という否定の形の値になる2件。許可の有無も入る"
+      },
+      {
+        "topic": "IT基盤への新規導入の許可",
+        "count": 3,
+        "reason": "同じ許可者(システム管理者)で対象だけが違う3件。既存の fact の再利用(P37)が最も起きやすい固まり"
+      },
+      {
+        "topic": "母性保護と育児の請求",
+        "count": 3,
+        "reason": "正解 IR の第21条第3項と主体の属性・請求の有無を共有する3件。「請求」と「申出」が同じ列かどうかも試せる"
+      },
+      {
+        "topic": "書類の交付",
+        "count": 2,
+        "reason": "交付の対象と状況が違う2件"
+      },
+      {
+        "topic": "賃金の支払と控除",
+        "count": 2,
+        "reason": "賃金の支払の条件が違う2件。手段(通貨で・直接・全額)が条件か結論かを試せる"
+      },
+      {
+        "topic": "賃金の欠勤等の扱い",
+        "count": 1,
+        "reason": "「及び」で並ぶ4つの値が1つの列に入るかを試せる1件(賃金の話題の続き)"
+      }
+    ]
+  },
+  "candidates": [
+    {
+      "candidate_id": "ipa_secguide_v4_7_1_service_use",
+      "topic": "オンラインサービスの利用と情報の保存",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "1.組織的対策 7.1 オンラインサービス（箇条書き）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0186.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round48_partD",
+      "text_raw": "従業員は、インターネットで提供されているサービスを業務で利用する場合は、システム管理者の許可を得る。",
+      "note": "行為は「サービスを利用」。条件は対象(インターネットで提供されているサービス)・状況(業務で)・主体(従業員)で、結論が「システム管理者の許可を得る」。同じ節の2件と許可の有無の fact を共有する見込み"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_7_1_storage_save",
+      "topic": "オンラインサービスの利用と情報の保存",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "1.組織的対策 7.1 オンラインサービス（箇条書き・オンラインストレージ）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0192.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round48_partD",
+      "text_raw": "社外秘又は極秘の情報資産を保存する場合は、システム管理者の許可を得る。",
+      "note": "行為は「情報資産を保存」。条件は対象(社外秘又は極秘の情報資産)で、「又は」で並ぶ2つの値が1つの列に入るか(D44 の並列の展開)を試せる"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_7_1_policy_unpublished",
+      "topic": "オンラインサービスの利用と情報の保存",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "1.組織的対策 7.1 オンラインサービス（箇条書き）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0194.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round48_partD",
+      "text_raw": "セキュリティポリシーを公表していないサービスの利用は禁止する。",
+      "note": "行為は「サービスの利用」。条件は状態(セキュリティポリシーを公表していない)だけで、条文が片側の状態しか挙げない型(予約語「その他」が要る。D45)"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_6_2_2_software_use",
+      "topic": "私有機器での社内標準外のソフト・アプリの利用",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "2.人的対策 6.2.2 私有機器を利用する場合（箇条書き・パソコン）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0478.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round48_partD",
+      "text_raw": "業務で社内標準外ソフトウェアを利用する必要がある場合は、システム管理者に許可を得る。",
+      "note": "行為は「ソフトウェアを利用」。条件は対象(社内標準外ソフトウェア)・状況(業務で)。次の1件と対象だけが違う"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_6_2_2_app_use",
+      "topic": "私有機器での社内標準外のソフト・アプリの利用",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "2.人的対策 6.2.2 私有機器を利用する場合（箇条書き・スマホ・タブレット）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0489.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round48_partD",
+      "text_raw": "業務で社内標準外のアプリを利用する場合は、システム管理者に許可を得る。",
+      "note": "行為は「アプリを利用」。前の1件と同じ形で対象が「社内標準外のアプリ」。同じ列(対象)に値が増えるか、別の列になるかを試せる"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_2_2_password_browser",
+      "topic": "パスワードのブラウザ保存",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "4.技術的対策 2.2 インターネットの利用（ウェブ閲覧）（箇条書き）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0679.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round48_partD",
+      "text_raw": "パスワードをブラウザに保存しない。",
+      "note": "行為は「パスワードをブラウザに保存」。条件は対象(パスワード)・状況(ブラウザ)だけの短い禁止規定。次の1件がその例外になる"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_2_2_password_browser_exception",
+      "topic": "パスワードのブラウザ保存",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "4.技術的対策 2.2 インターネットの利用（ウェブ閲覧）（箇条書き）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0679.2",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round48_partD",
+      "text_raw": "業務で特定のウェブサービスを利用する場合で、パスワードをブラウザに保存する必要があるときはシステム管理者の許可を得る。",
+      "note": "前の1件の例外(許可規定)。条件は状況(業務で特定のウェブサービスを利用する場合)・状態(保存する必要がある)・許可の有無。禁止と許可で条件の向きが逆になる型(FU3)"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_2_1_4_4_lan_connect",
+      "topic": "社外機器の接続と社内持ち込み",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "4.技術的対策 2.1.4.4 社外機器のLAN接続",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0670.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round48_partD",
+      "text_raw": "当社が管理するパソコン及びサーバー以外の機器を社内LANに接続することを禁止する。",
+      "note": "行為は「機器を社内LANに接続」。条件は対象(当社が管理するパソコン及びサーバー以外の機器)で、「以外」という否定の形の値になる"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_2_3_4_carry_in",
+      "topic": "社外機器の接続と社内持ち込み",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "4.技術的対策 2.3.4 社内での利用（箇条書き）",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0719.1",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round48_partD",
+      "text_raw": "利用期間中にIT機器や電子媒体を社内に持ち込む場合は、システム管理者の許可を得る。",
+      "note": "行為は「IT機器や電子媒体を社内に持ち込む」。条件は対象(IT機器・電子媒体)・状況(利用期間中)・許可の有無"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_3_2_2_software_install",
+      "topic": "IT基盤への新規導入の許可",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "4.技術的対策 3.2.2 サーバー機器に導入するソフトウェア",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0746.2",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round48_partD",
+      "text_raw": "新規にソフトウェアを導入する場合は、システム管理者の許可を得て導入する。",
+      "note": "行為は「ソフトウェアを導入」。条件は対象(ソフトウェア)・状況(新規に)・許可の有無。次の2件と同じ形で対象だけが違う"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_3_2_3_network_install",
+      "topic": "IT基盤への新規導入の許可",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "4.技術的対策 3.2.3 ネットワーク機器の情報セキュリティ要件",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0757.2",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round48_partD",
+      "text_raw": "新規にネットワーク機器を導入する場合は、情報セキュリティ要件を満たす製品を選択し、システム管理者の許可を得て導入する。",
+      "note": "行為は「ネットワーク機器を導入」。1文に「製品を選択し」と「許可を得て導入する」の2つが入る"
+    },
+    {
+      "candidate_id": "ipa_secguide_v4_3_4_cloud_install",
+      "topic": "IT基盤への新規導入の許可",
+      "source": {
+        "name": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル）",
+        "section": "4.技術的対策 3.4 クラウドサービスの導入",
+        "url": "https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0_app_5.docx",
+        "locator": "P0780.2",
+        "extraction_note": "原典から逐語で写した。箇条書きの番号・項番号の表記のみ落とした(既存の clauses_v1.json と同じ扱い)"
+      },
+      "task": "round48_partD",
+      "text_raw": "新規クラウドサービス等の外部情報サービスを導入する場合は、システム管理者の許可を得て導入する。",
+      "note": "行為は「外部情報サービスを導入」。前の2件と同じ許可の有無の fact を共有する見込みで、対象の値が増えるかを試せる"
+    },
+    {
+      "candidate_id": "mhlw_r7dec_art25_1",
+      "topic": "母性保護と育児の請求",
+      "source": {
+        "name": "厚生労働省「モデル就業規則」解説版",
+        "section": "第25条（産前産後の休業）第1項",
+        "url": "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/zenbun/index.html",
+        "locator": "T40.R1.C1.L2",
+        "extraction_note": "原典の表のセルから逐語で写した。条番号・項番号の表記のみ落とした"
+      },
+      "task": "round48_partD",
+      "text_raw": "６週間（多胎妊娠の場合は１４週間）以内に出産予定の女性労働者から請求があったときは、休業させる。",
+      "note": "行為は「休業させ」(使役)。条件は主体の属性(出産予定の女性労働者)・状況(6週間、多胎妊娠の場合は14週間以内)・状態(請求があった)。正解 IR の第21条第3項と worker_category・exemption_request を共有する見込み"
+    },
+    {
+      "candidate_id": "mhlw_r7dec_art26_1",
+      "topic": "母性保護と育児の請求",
+      "source": {
+        "name": "厚生労働省「モデル就業規則」解説版",
+        "section": "第26条（母性健康管理の措置）第1項",
+        "url": "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/zenbun/index.html",
+        "locator": "T41.R1.C1.L2",
+        "extraction_note": "原典の表のセルから逐語で写した。条番号・項番号の表記のみ落とした"
+      },
+      "task": "round48_partD",
+      "text_raw": "妊娠中又は出産後１年を経過しない女性労働者から、所定労働時間内に、母子保健法に基づく保健指導又は健康診査を受けるために申出があったときは、次の範囲で時間内通院を認める。",
+      "note": "行為は「時間内通院を認める」。条件は主体の属性(妊娠中又は出産後1年を経過しない女性労働者)・状況(所定労働時間内・保健指導又は健康診査を受けるため)・状態(申出があった)。「請求」と「申出」が同じ列になるかを試せる"
+    },
+    {
+      "candidate_id": "mhlw_r7dec_art27_1",
+      "topic": "母性保護と育児の請求",
+      "source": {
+        "name": "厚生労働省「モデル就業規則」解説版",
+        "section": "第27条（育児時間及び生理休暇）第1項",
+        "url": "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/zenbun/index.html",
+        "locator": "T42.R1.C1.L2",
+        "extraction_note": "原典の表のセルから逐語で写した。条番号・項番号の表記のみ落とした"
+      },
+      "task": "round48_partD",
+      "text_raw": "１歳に満たない子を養育する女性労働者から請求があったときは、休憩時間のほか１日について２回、１回について３０分の育児時間を与える。",
+      "note": "行為は「育児時間を与える」。条件は主体の属性(1歳に満たない子を養育する女性労働者)・状態(請求があった)。前の2件と主体の属性の値が違う"
+    },
+    {
+      "candidate_id": "mhlw_r7dec_art6",
+      "topic": "書類の交付",
+      "source": {
+        "name": "厚生労働省「モデル就業規則」解説版",
+        "section": "第6条（労働条件の明示）",
+        "url": "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/zenbun/index.html",
+        "locator": "T9.R1.C1.L2",
+        "extraction_note": "原典の表のセルから逐語で写した。条番号・項番号の表記のみ落とした"
+      },
+      "task": "round48_partD",
+      "text_raw": "会社は、労働者を採用するとき、採用時の賃金、就業場所、従事する業務、労働時間、休日、その他の労働条件を記した労働条件通知書及びこの規則を交付して労働条件を明示するものとする。",
+      "note": "行為は「交付して明示する」。条件は状況(労働者を採用するとき)・対象(労働条件通知書及びこの規則)。1文に複数の行為が入る"
+    },
+    {
+      "candidate_id": "mhlw_r7dec_art52_2",
+      "topic": "書類の交付",
+      "source": {
+        "name": "厚生労働省「モデル就業規則」解説版",
+        "section": "第52条（退職）第2項",
+        "url": "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/zenbun/index.html",
+        "locator": "T73.R1.C1.L7",
+        "extraction_note": "原典の表のセルから逐語で写した。条番号・項番号の表記のみ落とした"
+      },
+      "task": "round48_partD",
+      "text_raw": "労働者が退職し、又は解雇された場合、その請求に基づき、使用期間、業務の種類、地位、賃金又は退職の事由を記載した証明書を遅滞なく交付する。",
+      "note": "行為は「証明書を交付」。条件は状況(退職し、又は解雇された場合)・状態(請求に基づき)・対象(証明書)。前の1件と交付の対象が違う"
+    },
+    {
+      "candidate_id": "mhlw_r7dec_art43_1",
+      "topic": "賃金の支払と控除",
+      "source": {
+        "name": "厚生労働省「モデル就業規則」解説版",
+        "section": "第43条（休暇等の賃金）第1項",
+        "url": "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/zenbun/index.html",
+        "locator": "T61.R1.C1.L2",
+        "extraction_note": "原典の表のセルから逐語で写した。条番号・項番号の表記のみ落とした"
+      },
+      "task": "round48_partD",
+      "text_raw": "年次有給休暇の期間は、所定労働時間労働したときに支払われる通常の賃金を支払う。",
+      "note": "行為は「通常の賃金を支払う」。条件は対象(年次有給休暇の期間)。正解 IR には無い型で、期間が条件になる"
+    },
+    {
+      "candidate_id": "mhlw_r7dec_art45_1",
+      "topic": "賃金の欠勤等の扱い",
+      "source": {
+        "name": "厚生労働省「モデル就業規則」解説版",
+        "section": "第45条（欠勤等の扱い）第1項",
+        "url": "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/zenbun/index.html",
+        "locator": "T63.R1.C1.L2",
+        "extraction_note": "原典の表のセルから逐語で写した。条番号・項番号の表記のみ落とした"
+      },
+      "task": "round48_partD",
+      "text_raw": "欠勤、遅刻、早退及び私用外出については、基本給から当該日数又は時間分の賃金を控除する。",
+      "note": "行為は「賃金を控除」。条件は対象(欠勤、遅刻、早退及び私用外出)で、「及び」で並ぶ4つの値が1つの列に入るか(D44 の並列の展開)を試せる"
+    },
+    {
+      "candidate_id": "mhlw_r7dec_art47_1",
+      "topic": "賃金の支払と控除",
+      "source": {
+        "name": "厚生労働省「モデル就業規則」解説版",
+        "section": "第47条（賃金の支払と控除）第1項",
+        "url": "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/zenbun/index.html",
+        "locator": "T65.R1.C1.L2",
+        "extraction_note": "原典の表のセルから逐語で写した。条番号・項番号の表記のみ落とした"
+      },
+      "task": "round48_partD",
+      "text_raw": "賃金は、労働者に対し、通貨で直接その全額を支払う。",
+      "note": "行為は「賃金を支払う」。条件は状況(通貨で・直接・その全額)で、手段が条件になるか結論になるかを試せる"
+    }
+  ]
+}
