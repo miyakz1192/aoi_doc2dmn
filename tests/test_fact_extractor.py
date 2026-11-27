@@ -1,4 +1,4 @@
-"""事実の抽出(第2要素)の単体テスト。前段設計書10章 v0.12(P34〜P42)。
+"""事実の抽出(第2要素)の単体テスト。前段設計書10章 v0.13(P34〜P42)。
 
 | 確かめること | 根拠 |
 | --- | --- |
@@ -10,6 +10,8 @@
 | 比較型は条文に比べる語があるときだけ | P38・D3・D23 |
 | sources は機械的に作る | P39・手順5 |
 | ゲートは5つ、疑いと設計上の確認に分かれる | P41 |
+| 寄せる相手は**同じ行為の決定表が使う** fact に限る | **P37 改訂【v0.13】** |
+| 手順3b の答えは含む関係でも当てる | Q5(第50回) |
 """
 from __future__ import annotations
 
@@ -27,6 +29,7 @@ from src.stage3_frontstage.fact_extractor import (  # noqa: E402
     ScriptedJsonLlm,
     build_sources,
     clause_has_comparison_word,
+    match_answer,
     normalize_value,
     quote_in_clause,
 )
@@ -34,6 +37,7 @@ from src.stage3_frontstage.fact_ledger import (  # noqa: E402
     NO_MATCH,
     FactEntry,
     FactLedger,
+    FactWiring,
 )
 from src.stage3_generate.ir_schema import (  # noqa: E402
     DESIGN_CHECK_GATES,
@@ -636,3 +640,289 @@ def test_the_golden_path_clause_reproduces_the_approved_gold_facts(bootstrap_led
     assert result.facts.referenced_facts == []
     assert result.trace.llm_calls == 3
     assert result.gates.gate_names() == ["new_fact_unapproved"]
+
+
+# --------------------------------------------------------------------------
+# P37 改訂【v0.13】: 寄せる相手は同じ行為の決定表が使う fact に限る(第50回パートA)
+# --------------------------------------------------------------------------
+
+
+def wired_ledger(
+    entries: list[FactEntry], tables: list[dict], rows: list[dict] | None = None
+) -> FactLedger:
+    """層3と配線(層1・層2)を持った台帳(P37 改訂の寄せ先を試す用)。"""
+    return FactLedger(
+        entries=entries,
+        wiring=FactWiring(tables=tables, rows=rows or [], action_ledger=[]),
+    )
+
+
+USE_TABLE = {
+    "decision_table_id": "dt_facility_property_use",
+    "decision_id": "decision_facility_property_use",
+    "entry_points": [{"actor": "あおい", "action": "使用"}],
+    "input_columns": ["usage_authorization", "usage_purpose", "usage_target"],
+    "depends_on_decisions": [],
+}
+
+
+def test_a_generic_value_does_not_attach_to_another_actions_fact():
+    """第11条(使用)の「許可なし」は、提供の条文では `usage_authorization` に寄らない。
+
+    第49回の実機とオラクルで、どちらも**重大な誤り(誤った再利用)**になった件である。
+    値だけでは「使用の許可」と「提供先の許可」を区別できないので、寄せ先を
+    **同じ行為の決定表が使っている fact** に限る(P37 改訂)。
+    """
+    ledger = wired_ledger(
+        [passthrough("usage_authorization", ["許可なし"])], [USE_TABLE]
+    )
+    match = ledger.match_value("許可なし", action="提供")
+    assert match.chosen is None
+    assert [o["fact"] for o in match.out_of_scope] == ["usage_authorization"]
+    assert [o["actions"] for o in match.out_of_scope] == [["使用"]]
+    assert ledger.action_scope("提供") == []
+
+
+def test_the_same_action_still_attaches_on_an_exact_value_match():
+    """同じ行為(使用)の条文なら、これまでどおり値の完全一致で寄せる(P37)。"""
+    ledger = wired_ledger(
+        [passthrough("usage_authorization", ["許可なし"])], [USE_TABLE]
+    )
+    match = ledger.match_value("許可なし", action="使用")
+    assert match.chosen == "usage_authorization"
+    assert match.out_of_scope == []
+    assert ledger.action_scope("使用") == [
+        "usage_authorization",
+        "usage_purpose",
+        "usage_target",
+    ]
+
+
+def test_a_match_in_another_action_goes_to_the_step_3b_suggestion():
+    """寄せなかった一致は手順3b に回り、新規候補になる(P37 改訂・パートA3)。"""
+    ledger = wired_ledger(
+        [passthrough("usage_authorization", ["許可なし"])], [USE_TABLE]
+    )
+    llm = ScriptedJsonLlm(
+        [
+            {
+                "conditions": [
+                    {"quote": "許可されていない", "value": "許可なし", "kind": "状態"}
+                ],
+                "rationale": "",
+            },
+            {
+                "assignments": [
+                    {
+                        "value": "許可なし",
+                        "fact": "usage_authorization",
+                        "reason": "近い",
+                    }
+                ]
+            },
+            {
+                "facts": [
+                    {
+                        "variable": "recipient_authorization",
+                        "primitive": "passthrough",
+                        "values": ["許可なし"],
+                        "other_value_note": "許可のある提供先",
+                    }
+                ]
+            },
+        ]
+    )
+    result = FactExtractor(llm).extract(
+        "許可されていない組織、人に提供してはならない。",
+        "ref",
+        ledger,
+        action_name="提供",
+    )
+    # 寄せていない(referenced_facts は空)
+    assert result.facts.referenced_facts == []
+    assert [f.variable for f in result.facts.new_facts] == ["recipient_authorization"]
+    # 手順3b に回り、提案として記録されている
+    assert result.trace.suggestions[0].answer == "usage_authorization"
+    assert "fact_reuse_suggested" in result.gates.gate_names()
+    # 値が一致したことは記録に残り、疑いのゲートで人に見せる
+    assert result.trace.out_of_scope_hits == [
+        {
+            "value": "許可なし",
+            "facts": ["usage_authorization"],
+            "actions": ["使用"],
+            "ancestor_only": False,
+        }
+    ]
+    assert "fact_possible_duplicate" in result.gates.gate_names()
+
+
+def test_the_scope_includes_the_intermediate_decisions_of_the_same_action():
+    """中間判定(entry_points が空)の fact も、その行為の寄せ先に入る(D16)。"""
+    tables = [
+        {
+            "decision_table_id": "dt_transmission",
+            "decision_id": "decision_transmission",
+            "entry_points": [{"actor": "あおい", "action": "送信"}],
+            "input_columns": ["情報分類判定.sensitivity", "contact_consent"],
+            "depends_on_decisions": ["decision_classification"],
+        },
+        {
+            "decision_table_id": "dt_classification",
+            "decision_id": "decision_classification",
+            "entry_points": [],
+            "input_columns": ["has_medical", "has_pii"],
+            "depends_on_decisions": [],
+        },
+    ]
+    ledger = wired_ledger([passthrough("has_pii", ["含む"])], tables)
+    assert ledger.action_scope("送信") == [
+        "contact_consent",
+        "has_medical",
+        "has_pii",
+    ]
+    # ドット参照(別の判定の出力)は fact ではないので入らない
+    assert "情報分類判定.sensitivity" not in (ledger.action_scope("送信") or [])
+    assert ledger.match_value("含む", action="送信").chosen == "has_pii"
+
+
+def test_an_abstract_action_is_not_a_reuse_target_but_is_counted():
+    """抽象の行為(提供)の fact は寄せる相手にしない。祖先かどうかは記録する(パートA2)。"""
+    tables = [
+        {
+            "decision_table_id": "dt_provision",
+            "decision_id": "decision_provision",
+            "entry_points": [{"actor": "あおい", "action": "提供"}],
+            "input_columns": ["recipient_authorization"],
+            "depends_on_decisions": [],
+        }
+    ]
+    wiring = FactWiring(
+        tables=tables,
+        rows=[],
+        action_ledger=[
+            {"name": "提供", "kind": "abstract", "parent": None},
+            {"name": "開示", "kind": "concrete", "parent": "提供"},
+        ],
+    )
+    ledger = FactLedger(
+        entries=[passthrough("recipient_authorization", ["許可なし"])], wiring=wiring
+    )
+    match = ledger.match_value("許可なし", action="開示")
+    assert match.chosen is None
+    assert match.ancestor_only is True
+    assert wiring.ancestor_facts("開示") == ["recipient_authorization"]
+
+
+def test_the_rows_of_layer2_also_name_the_facts_of_an_action():
+    """層2の行の条件も、その行為の寄せ先になる(パートA1)。"""
+    tables = [
+        {
+            "decision_table_id": "dt_x",
+            "decision_id": "decision_x",
+            "entry_points": [{"actor": "あおい", "action": "操作"}],
+            "input_columns": [],
+            "depends_on_decisions": [],
+        }
+    ]
+    rows = [{"decision_table_id": "dt_x", "conditions": {"operator_role": "開発"}}]
+    ledger = wired_ledger([passthrough("operator_role", ["開発"])], tables, rows)
+    assert ledger.action_scope("操作") == ["operator_role"]
+    assert ledger.match_value("開発", action="操作").chosen == "operator_role"
+
+
+def test_without_wiring_the_ledger_keeps_the_v012_behaviour():
+    """配線が無い台帳(素の単体テスト)は、これまでどおり層3の全体を相手にする。"""
+    ledger = FactLedger(entries=[passthrough("usage_authorization", ["許可なし"])])
+    assert ledger.action_scope("提供") is None
+    assert ledger.match_value("許可なし", action="提供").chosen == "usage_authorization"
+
+
+# --------------------------------------------------------------------------
+# Q5: 手順3b の答えの照合(第50回パートC)
+# --------------------------------------------------------------------------
+
+
+def test_the_answer_is_matched_to_the_value_by_containment():
+    """LLM が見出しを言い直しても、含む関係で当たれば提案として扱う(Q5)。"""
+    entry, how = match_answer(
+        "許可なし", {"許可なしの状態": {"fact": "usage_authorization"}}
+    )
+    assert how == "contains"
+    assert entry["fact"] == "usage_authorization"
+
+
+def test_an_answer_that_matches_two_values_is_dropped():
+    """2つ以上に当たる見出しは、どれか決められないので提案なしにする(Q5)。"""
+    entry, how = match_answer(
+        "一致", {"一致": {"fact": "a"}, "不一致": {"fact": "b"}}
+    )
+    # 完全一致が先に当たる
+    assert how == "exact" and entry["fact"] == "a"
+    entry, how = match_answer("確認", {"確認なし": {"fact": "a"}, "確認済": {"fact": "b"}})
+    assert how == "ambiguous" and entry == {}
+
+
+def test_the_suggestion_records_how_the_answer_was_matched():
+    """照合の仕方を Trace に残す(読めない指標にしないため。Q5)。"""
+    ledger = FactLedger(entries=[passthrough("operator_role", ["システム開発担当"])])
+    llm = ScriptedJsonLlm(
+        [
+            {
+                "conditions": [
+                    {"quote": "本番環境", "value": "本番環境", "kind": "状況"}
+                ],
+                "rationale": "",
+            },
+            # 見出しを「本番環境での作業」と言い直してきた
+            {
+                "assignments": [
+                    {
+                        "value": "本番環境での作業",
+                        "fact": "operator_role",
+                        "reason": "近い",
+                    }
+                ]
+            },
+            {"facts": []},
+        ]
+    )
+    result = FactExtractor(llm).extract(
+        GOLDEN_TEXT, "ref", ledger, action_name="操作"
+    )
+    suggestion = result.trace.suggestions[0]
+    assert suggestion.answer == "operator_role"
+    assert suggestion.matched_by == "contains"
+    assert "含む関係" in suggestion.reason
+
+
+def test_an_answer_that_says_no_match_in_the_heading_is_matched_by_position():
+    """観測された型(K71): LLM が見出しにも「該当なし」と書く。
+
+    第50回の実測では、手順3b に渡した値15件のうち10件がこの形だった（第49回の報告で
+    「LLM が値を言い直す」と書いたのは誤りで、実際は見出しにも「該当なし」と書いて
+    いた）。答えの数が渡した値の数と同じで、`fact` が「該当なし」のときだけ並び順で
+    当てる。**実在の列名のときは当てない**ので、この当て方が提案を作ることはない。
+    """
+    answers = [
+        {"value": NO_MATCH, "fact": NO_MATCH, "reason": "本番環境は無い"},
+        {"value": NO_MATCH, "fact": NO_MATCH, "reason": "特権権限は無い"},
+    ]
+    by_value = {NO_MATCH: answers[0]}
+    entry, how = match_answer(
+        "本番環境", by_value, position=0, answers=answers, total=2
+    )
+    assert how == "no_match_answer"
+    assert entry["reason"] == "本番環境は無い"
+    # 答えが「該当なし」なので、提案にはならない
+    assert entry["fact"] == NO_MATCH
+
+
+def test_a_positional_answer_with_a_real_column_is_not_matched():
+    """並び順で当てるのは `fact` が「該当なし」のときだけ(K71 の歯止め)。"""
+    answers = [
+        {"value": "許可の有無", "fact": "usage_authorization", "reason": "近い"},
+        {"value": NO_MATCH, "fact": NO_MATCH, "reason": "無い"},
+    ]
+    by_value = {"許可の有無": answers[0], NO_MATCH: answers[1]}
+    entry, how = match_answer("職務以外の目的", by_value, position=0, answers=answers, total=2)
+    assert how == "none" and entry == {}

@@ -9,7 +9,7 @@ Action 正規化が済んだ条文から、決定表の**列(fact)とその値**
 | --- | --- | --- | --- |
 | 1 | LLM | 条件の語句を逐語で抜き出し、4種類(P35)のどれかを付ける。行為の対象は必ず含める | `_extract_conditions` |
 | 2 | プログラム | 語句が条文にあるかを確かめる(括弧は P24)。値を正規化する(FU1) | `check_condition` |
-| 3a | プログラム | 正規化した値が層3の passthrough の fact の値と完全一致するか(P37) | `FactLedger.match_value` |
+| 3a | プログラム | 正規化した値が、**同じ行為の決定表が使う** passthrough の fact の値と完全一致するか(P37 改訂) | `FactLedger.match_value` |
 | 3b | LLM | 一致が無い値について、どの fact と同じ列かを提案させる。**寄せない**(P37) | `_suggest_reuse` |
 | 4 | LLM | 新規候補(variable・possible_values・other_value_note・primitive)の案(P38) | `_propose_facts` |
 | 5 | プログラム | sources を機械的に作る(P39)。referenced_facts を D25 の基準で求める | `build_sources` |
@@ -192,6 +192,8 @@ class ReuseSuggestion:
     reason: str = ""
     raw_answer: str = ""
     off_list: bool = False
+    # 答えの見出しを渡した値に当てた方法(exact／contains／ambiguous／none。Q5)
+    matched_by: str = "none"
 
     def to_json(self) -> dict:
         return {
@@ -201,6 +203,7 @@ class ReuseSuggestion:
             "reason": self.reason,
             "raw_answer": self.raw_answer,
             "off_list": self.off_list,
+            "matched_by": self.matched_by,
         }
 
 
@@ -263,6 +266,10 @@ class FactExtractionTrace:
     suggestions: list[ReuseSuggestion] = field(default_factory=list)
     proposals: list[NewFactProposal] = field(default_factory=list)
     comparison_value_hits: list[dict] = field(default_factory=list)
+    # 値は一致したが別の行為の fact だったもの(寄せずに手順3b へ。P37 改訂)
+    out_of_scope_hits: list[dict] = field(default_factory=list)
+    # 手順3a で寄せてよい fact の範囲(その行為の決定表が使っている fact)
+    reuse_scope: list[str] = field(default_factory=list)
     sources_note: str = ""
     elapsed_seconds: float = 0.0
     llm_calls: int = 0
@@ -276,6 +283,8 @@ class FactExtractionTrace:
             "suggestions": [s.to_json() for s in self.suggestions],
             "proposals": [p.to_json() for p in self.proposals],
             "comparison_value_hits": [dict(h) for h in self.comparison_value_hits],
+            "out_of_scope_hits": [dict(h) for h in self.out_of_scope_hits],
+            "reuse_scope": list(self.reuse_scope),
             "sources_note": self.sources_note,
             "elapsed_seconds": round(self.elapsed_seconds, 1),
             "llm_calls": self.llm_calls,
@@ -480,6 +489,46 @@ def clause_has_comparison_word(clause_text: str) -> list[str]:
 # --------------------------------------------------------------------------
 
 
+def match_answer(
+    value: str,
+    by_value: dict[str, dict],
+    *,
+    position: Optional[int] = None,
+    answers: Optional[list[dict]] = None,
+    total: Optional[int] = None,
+) -> tuple[dict, str]:
+    """手順3b の答えの見出しを、渡した値に当てる(Q5。第50回パートC)。
+
+    LLM は答えの `value` に、渡した値をそのまま書かないことがある。見出しと渡した値の
+    **どちらかがもう一方を含む**なら、その値の提案として扱う(`contains`)。2つ以上に
+    当たるときはどれか決められないので提案なしとする(`ambiguous`)。
+
+    さらに、観測された型として、**見出しにも「該当なし」と書く**答え方がある
+    (第50回の実測では、渡した値15件のうち10件がこれだった)。この形は、答えの数が
+    渡した値の数と同じで、かつ当てようとしている答えの `fact` が「該当なし」のときだけ、
+    並び順で当てる(`no_match_answer`)。**`fact` が実在の列名のときは並び順で当てない**
+    ので、この当て方が提案を作ることはない(記録が読めるようになるだけである)。
+    """
+    if value in by_value:
+        return by_value[value], "exact"
+    hits = [k for k in by_value if k and (k in value or value in k)]
+    if len(hits) == 1:
+        return by_value[hits[0]], "contains"
+    if len(hits) > 1:
+        return {}, "ambiguous"
+    if (
+        answers is not None
+        and position is not None
+        and total is not None
+        and len(answers) == total
+        and position < len(answers)
+    ):
+        entry = answers[position]
+        if str(entry.get("fact", "")).strip() == NO_MATCH:
+            return entry, "no_match_answer"
+    return {}, "none"
+
+
 class FactExtractor:
     """事実の抽出の本体。LLM は差し替えられる(単体テスト用)。"""
 
@@ -550,16 +599,38 @@ class FactExtractor:
         if not isinstance(answers, list):
             answers = []
         by_value: dict[str, dict] = {}
-        for entry in answers:
-            if isinstance(entry, dict) and entry.get("value"):
+        ordered = [e for e in answers if isinstance(e, dict)]
+        for entry in ordered:
+            if entry.get("value"):
                 by_value[str(entry["value"]).strip()] = entry
         out: list[ReuseSuggestion] = []
-        for value in values:
-            entry = by_value.get(value, {})
+        for position, value in enumerate(values):
+            entry, matched_by = match_answer(
+                value,
+                by_value,
+                position=position,
+                answers=ordered,
+                total=len(values),
+            )
             raw = str(entry.get("fact", "")).strip()
             answer = raw if raw in offered else None
             reason = str(entry.get("reason", ""))
             off_list = bool(raw) and answer is None and raw != NO_MATCH
+            if matched_by == "contains":
+                reason = (
+                    f"[LLM が見出しを {list(by_value)!r} と言い直したので、"
+                    "含む関係で渡した値に当てた(Q5)] " + reason
+                )
+            elif matched_by == "no_match_answer":
+                reason = (
+                    "[LLM が見出しにも「該当なし」と書いたので、並び順で当てた"
+                    "（答えは「該当なし」なので提案は作らない。K71）] " + reason
+                )
+            elif matched_by == "ambiguous":
+                reason = (
+                    "[LLM の答えの見出しが2つ以上の値に当たるので提案なしとして"
+                    "扱った(Q5)] " + reason
+                )
             if off_list:
                 # 層3に無い名前は「提案なし」として扱う(閉じた選択。P5 と同じ)
                 reason = (
@@ -574,6 +645,7 @@ class FactExtractor:
                     reason=reason,
                     raw_answer=raw,
                     off_list=off_list,
+                    matched_by=matched_by,
                 )
             )
         return out
@@ -703,8 +775,9 @@ class FactExtractor:
             clause_text, clause_ref, action_name, action_surface, context
         )
 
-        # 手順3a(プログラム): 値の完全一致(P37)
-        matches = [ledger.match_value(c.value) for c in conditions]
+        # 手順3a(プログラム): 値の完全一致。寄せる相手は同じ行為の fact に限る
+        # (P37 改訂【v0.13】)
+        matches = [ledger.match_value(c.value, action=action_name) for c in conditions]
         # 一致したかは条件ごとに見る(同じ値の条件が2件あっても取り違えない)
         unmatched = [c for c, m in zip(conditions, matches) if m.chosen is None]
 
@@ -714,6 +787,20 @@ class FactExtractor:
             for c in conditions
             for hits in [ledger.comparison_value_matches(c.value)]
             if hits
+        ]
+
+        # 値は一致したが別の行為の fact だったもの(寄せずに手順3b に回す。P37 改訂)
+        out_of_scope_hits = [
+            {
+                "value": m.value,
+                "facts": [o["fact"] for o in m.out_of_scope],
+                "actions": sorted(
+                    {a for o in m.out_of_scope for a in (o.get("actions") or [])}
+                ),
+                "ancestor_only": m.ancestor_only,
+            }
+            for m in matches
+            if m.out_of_scope
         ]
 
         # 手順3b(LLM): 提案だけ。寄せない(P37)
@@ -796,6 +883,8 @@ class FactExtractor:
             suggestions=suggestions,
             proposals=proposals,
             comparison_value_hits=comparison_hits,
+            out_of_scope_hits=out_of_scope_hits,
+            reuse_scope=list(ledger.action_scope(action_name) or []),
             sources_note=SOURCES_NOTE,
             elapsed_seconds=time.monotonic() - started,
             llm_calls=self.calls,

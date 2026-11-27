@@ -1,0 +1,56 @@
+[1/5] ipa_secguide_v4_6_7_1 (層3 7件) ...
+      [OK] 正しい（重大0／中0） 値3件 ゲート=['new_fact_unapproved'] 0秒／3回
+      operator_role（システム開発担当、その他）を層3に足した
+      target_environment（本番環境、その他）を層3に足した
+      requested_privilege（特権、その他）を層3に足した
+      dt_privileged_operation（行為「操作」の判定）を層1に足した
+[2/5] mhlw_r7dec_art11_1 (層3 10件) ...
+      [OK] 正しい（重大0／中0） 値4件 ゲート=['new_fact_unapproved'] 0秒／3回
+      usage_authorization（許可なし、その他）を層3に足した
+      usage_purpose（職務以外の目的、その他）を層3に足した
+      usage_target（会社の施設、物品等、その他）を層3に足した
+      dt_facility_property_use（行為「使用」の判定）を層1に足した
+[3/5] ipa_secguide_v4_personnel_2 (層3 13件) ...
+      [OK] 正しい（重大0／中0） 値3件 ゲート=['new_fact_unapproved', 'fact_possible_duplicate'] 0秒／3回
+      provided_information（営業秘密として管理する情報、複製物、その他）を層3に足した
+      recipient_authorization（許可なし、その他）を層3に足した
+      dt_trade_secret_provision（行為「提供」の判定）を層1に足した
+[4/5] mhlw_r7dec_art21_3 (層3 15件) ...
+      [OK] 正しい（重大0／中0） 値7件 ゲート=['new_fact_unapproved'] 0秒／3回
+      worker_category（妊娠中の女性、産後1年を経過しない女性労働者、18歳未満の者、その他）を層3に足した
+      exemption_request（請求した者、その他）を層3に足した
+      work_type（時間外労働、休日労働、深夜労働、その他）を層3に足した
+      dt_overtime_assignment（行為「労働指示」の判定）を層1に足した
+[5/5] aoi_johokanri_art14 (層3 18件) ...
+      [NG] 中の誤りのみ（重大0／中2） 値0件 ゲート=['fact_reuse_suggested'] 0秒／3回
+        - 取りこぼし: 値 '一致'（出力の列 None／正解の列 birth_match）
+        - 取りこぼし: 値 '一致'（出力の列 None／正解の列 phone_match）
+      dt_verbal_disclosure（行為「伝達」の判定）を層1に足した
+
+== 集計 ==
+  件数: 5
+  すり抜け(重大な誤りでゲート無し): 0件 → 合格（P40）
+  [参考] 重大な誤りで疑いのゲート無し: 0件 []
+  正しい: 4/5（重大な誤りを含む件 0／中の誤りを含む件 1／中の誤りだけの件 1）
+  誤りの内訳（値の単位）:
+    条件の付け足し（重大）: 0件
+    誤った再利用（重大）: 0件
+    値の取り違え（重大）: 0件
+    条件の落とし（中）: 0件
+    取りこぼし（中）: 2件
+    fact の分け方の違い（中）: 0件
+    表記の違い（中）: 0件
+  値の突き合わせ: 正解 19件／出力 17件／対応 17件
+  条件の語句の逐語率: 19/19
+  既存の fact の再利用: 正しい 0/2（取りこぼし 2／誤った再利用 0）
+  手順3b の提案: 2件／渡した値 19件（当たり 2／誤報 0。列の単位）
+  手順3b の答えの照合: {'exact': 19, 'contains': 0, 'ambiguous': 0, 'none': 0, 'unrecorded': 0}
+  別の行為の fact と値が一致(寄せずに提案へ。P37 改訂): 1件（うち祖先の行為だけ 0件）
+  人に回る割合: 5/5（疑いあり 1／設計上の確認だけ 4／自動 0）
+  ゲート: {'new_fact_unapproved': 4, 'fact_possible_duplicate': 1, 'fact_reuse_suggested': 1}
+  疑いのゲートの誤報: 1件 {'fact_possible_duplicate': 1}
+  新規候補の primitive の一致: 11/11
+  評価から外した値(FU2): 0件
+  所要: 0.0秒（1件あたり 0.0秒／LLM 15回）
+
+結果: /tmp/claude-1000/-home-miyakz-aoi-doc2dmn/99421067-b426-436f-b3e7-989e2e2e90c3/scratchpad/oracle13/result_oracle.json

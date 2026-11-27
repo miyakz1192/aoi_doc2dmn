@@ -35,6 +35,7 @@ from src.stage3_generate.ir_schema import (
     FactDef,
     derived_possible_values,
 )
+from src.stage3_generate.registry import action_ancestors
 
 # 「該当なし」の選択(P5 と同じ扱い)。手順3b の答えの選択肢に入れる。
 NO_MATCH = "該当なし"
@@ -151,12 +152,148 @@ class FactDuplicateCheck:
 
 
 @dataclass
+class FactWiring:
+    """層1・層2の配線から「その行為の決定表が使っている fact」を求める(P37 改訂)。
+
+    P37 改訂【v0.13】は、手順3a で寄せる相手を **同じ行為(Action)の既存の決定表が
+    入力列に使っている passthrough の fact** に限る。汎用の値(「許可なし」「一致」)は
+    複数の列に出てくるので、値だけでは列が決まらず、正解どおりに入れても重大な誤りに
+    なった(第49回)。寄せ先を絞る根拠は、**LLM に聞かず登録簿の配線から求める**。
+
+    どの表がその行為のものかは、層1の `entry_points`(D16)で決まる。中間判定は
+    `entry_points` が空なので、呼び口の表が `depends_on_decisions` でたどる先として
+    集める(本人確認判定・情報分類判定は「送信」の判定の一部である)。
+
+    抽象的な Action(提供など)の表が使う fact は、子の Action の条文では**寄せる相手に
+    含めない**(第50回 HANDOFF パートA2)。含めないことで出た取りこぼしは
+    `ancestor_facts()` で数える。
+    """
+
+    tables: list[dict] = field(default_factory=list)
+    rows: list[dict] = field(default_factory=list)
+    action_ledger: list[dict] = field(default_factory=list)
+
+    @classmethod
+    def from_registry(cls, registry) -> "FactWiring":
+        return cls(
+            tables=[dict(t) for t in registry.decision_tables],
+            rows=[dict(r) for r in registry.rule_rows],
+            action_ledger=[dict(a) for a in registry.action_ledger],
+        )
+
+    # ---- 更新(教師あり。P42) ----
+
+    def add_table(self, table: dict) -> None:
+        self.tables.append(dict(table))
+
+    def add_row(self, row: dict) -> None:
+        self.rows.append(dict(row))
+
+    # ---- 検索 ----
+
+    def table_ids_of_action(self, action: str) -> list[str]:
+        """その行為の決定表(呼び口の表と、それがたどる中間判定)の id。"""
+        if not action:
+            return []
+        by_decision = {
+            t.get("decision_id"): t for t in self.tables if t.get("decision_id")
+        }
+        ids: list[str] = []
+        frontier: list[dict] = []
+        for table in self.tables:
+            for point in table.get("entry_points") or []:
+                if point.get("action") == action:
+                    frontier.append(table)
+                    break
+        while frontier:
+            table = frontier.pop(0)
+            tid = table.get("decision_table_id")
+            if tid in ids:
+                continue
+            if tid:
+                ids.append(tid)
+            for decision_id in table.get("depends_on_decisions") or []:
+                nxt = by_decision.get(decision_id)
+                if nxt is not None:
+                    frontier.append(nxt)
+        return ids
+
+    def facts_of_tables(self, table_ids: list[str]) -> list[str]:
+        """その決定表が入力に使っている fact の名前(層1の列と層2の行の両方)。
+
+        「情報分類判定.sensitivity」のようなドット参照は別の判定の出力なので除く。
+        """
+        out: list[str] = []
+        for tid in table_ids:
+            for table in self.tables:
+                if table.get("decision_table_id") != tid:
+                    continue
+                for name in table.get("input_columns") or []:
+                    if "." in name or name in out:
+                        continue
+                    out.append(name)
+        for row in self.rows:
+            if row.get("decision_table_id") not in table_ids:
+                continue
+            for name in (row.get("conditions") or {}):
+                if "." in name or name in out:
+                    continue
+                out.append(name)
+        return out
+
+    def facts_of_action(self, action: str) -> list[str]:
+        """その行為の決定表が使っている fact(手順3a で寄せてよい相手)。"""
+        return self.facts_of_tables(self.table_ids_of_action(action))
+
+    def actions_of_fact(self, variable: str) -> list[str]:
+        """その fact を入力に使っている決定表の呼び口の行為(宣言順)。"""
+        owners: list[str] = []
+        for table in self.tables:
+            ids = [table.get("decision_table_id")]
+            names = self.facts_of_tables([i for i in ids if i])
+            if variable not in names:
+                continue
+            for point in table.get("entry_points") or []:
+                action = point.get("action")
+                if action and action not in owners:
+                    owners.append(action)
+        # 中間判定(entry_points が空)の fact は、その表をたどる呼び口の行為のもの
+        if not owners:
+            for table in self.tables:
+                for point in table.get("entry_points") or []:
+                    action = point.get("action")
+                    if not action or action in owners:
+                        continue
+                    if variable in self.facts_of_action(action):
+                        owners.append(action)
+        return owners
+
+    def ancestor_facts(self, action: str) -> list[str]:
+        """祖先(抽象的な Action)の決定表が使っている fact(寄せる相手には含めない)。"""
+        out: list[str] = []
+        for ancestor in action_ancestors(self.action_ledger, action):
+            for name in self.facts_of_action(ancestor):
+                if name not in out:
+                    out.append(name)
+        return out
+
+
+@dataclass
 class ValueMatch:
-    """手順3a の記録: 1つの値が層3の passthrough の fact と一致したか(P37)。"""
+    """手順3a の記録: 1つの値が層3の passthrough の fact と一致したか(P37 改訂)。
+
+    `matches` は**同じ行為の決定表が使っている** passthrough の fact の一致である。
+    値は一致したが別の行為の fact だったものは `out_of_scope` に入り、寄せずに
+    手順3b の提案に回る(P37 改訂【v0.13】)。
+    """
 
     value: str
     matches: list[str] = field(default_factory=list)
     reason: str = ""
+    # 値は一致したが、この行為の決定表が使っていない fact(寄せない)
+    out_of_scope: list[dict] = field(default_factory=list)
+    # 寄せる相手の範囲(その行為の決定表が使っている passthrough の fact)
+    scope: Optional[list[str]] = None
 
     @property
     def chosen(self) -> Optional[str]:
@@ -168,6 +305,13 @@ class ValueMatch:
         """一致が2つ以上(1つ目に寄せたうえで人に回す)。"""
         return len(self.matches) > 1
 
+    @property
+    def ancestor_only(self) -> bool:
+        """寄せなかった一致が、すべて祖先(抽象的な Action)の fact だったか。"""
+        return bool(self.out_of_scope) and all(
+            o.get("ancestor") for o in self.out_of_scope
+        )
+
     def to_json(self) -> dict:
         return {
             "value": self.value,
@@ -175,14 +319,22 @@ class ValueMatch:
             "chosen": self.chosen,
             "ambiguous": self.ambiguous,
             "reason": self.reason,
+            "out_of_scope": [dict(o) for o in self.out_of_scope],
+            "scope": None if self.scope is None else list(self.scope),
         }
 
 
 @dataclass
 class FactLedger:
-    """層3(fact 台帳)。宣言順(登録順)を保つ。"""
+    """層3(fact 台帳)。宣言順(登録順)を保つ。
+
+    `wiring` があるとき、手順3a は**その行為の決定表が使っている fact** だけを
+    寄せる相手にする(P37 改訂【v0.13】)。`wiring` が無いときは層3の passthrough の
+    fact すべてが相手である(v0.12 の P37。単体テストの素の台帳)。
+    """
 
     entries: list[FactEntry] = field(default_factory=list)
+    wiring: Optional[FactWiring] = None
 
     # ---- 入出力 ----
 
@@ -190,11 +342,21 @@ class FactLedger:
     def from_json(cls, payload: list[dict]) -> "FactLedger":
         return cls(entries=[FactEntry.from_json(e) for e in payload])
 
+    @classmethod
+    def from_registry(cls, registry) -> "FactLedger":
+        """登録簿から層3と配線をまとめて読む(P37 改訂の寄せ先を使う形)。"""
+        return cls(
+            entries=[FactEntry.from_json(e) for e in registry.fact_registry],
+            wiring=FactWiring.from_registry(registry),
+        )
+
     def to_json(self) -> list[dict]:
         return [e.to_json() for e in self.entries]
 
     def copy(self) -> "FactLedger":
-        return FactLedger.from_json(self.to_json())
+        out = FactLedger.from_json(self.to_json())
+        out.wiring = self.wiring
+        return out
 
     # ---- 検索 ----
 
@@ -215,17 +377,51 @@ class FactLedger:
 
     # ---- 手順3a: 値の完全一致(P37) ----
 
-    def match_value(self, value: str) -> ValueMatch:
+    def action_scope(self, action: Optional[str]) -> Optional[list[str]]:
+        """手順3a で寄せてよい fact の範囲(P37 改訂)。
+
+        配線が無い、または行為の名前が渡されないときは `None`(範囲を絞らない)。
+        """
+        if self.wiring is None or not action:
+            return None
+        return self.wiring.facts_of_action(action)
+
+    def match_value(self, value: str, *, action: Optional[str] = None) -> ValueMatch:
         """正規化した値が、層3の **passthrough** の fact の値と完全一致するか(P37)。
+
+        P37 改訂【v0.13】: 寄せる相手は、**その行為(`action`)の既存の決定表が入力に
+        使っている** passthrough の fact に限る。値は一致したが別の行為の fact だった
+        ものは `out_of_scope` に記録し、寄せずに手順3b の提案に回す。
 
         一致が1つならその fact を使う(referenced_facts)。2つ以上なら宣言順の1つ目に
         寄せたうえで人に回す(`fact_possible_duplicate`)。一致が無ければ手順3b へ。
         """
         if not value:
             return ValueMatch(value=value, matches=[], reason="値が空(抜き出しに失敗)")
-        matches = [
+        hits = [
             e.variable for e in self.passthrough_entries() if value in e.clause_values()
         ]
+        scope = self.action_scope(action)
+        if scope is None:
+            matches, out_of_scope = hits, []
+        else:
+            matches = [h for h in hits if h in scope]
+            ancestors = (
+                self.wiring.ancestor_facts(action or "")
+                if self.wiring is not None
+                else []
+            )
+            out_of_scope = [
+                {
+                    "fact": h,
+                    "actions": (
+                        self.wiring.actions_of_fact(h) if self.wiring is not None else []
+                    ),
+                    "ancestor": h in ancestors,
+                }
+                for h in hits
+                if h not in scope
+            ]
         if len(matches) == 1:
             reason = f"値 {value!r} が {matches[0]!r} の値と完全一致"
         elif len(matches) > 1:
@@ -235,7 +431,22 @@ class FactLedger:
             )
         else:
             reason = f"値 {value!r} と完全一致する値が層3の passthrough の fact に無い"
-        return ValueMatch(value=value, matches=matches, reason=reason)
+        if out_of_scope:
+            shown = "、".join(
+                f"{o['fact']}（行為: {'・'.join(o['actions']) or '不明'}）"
+                for o in out_of_scope
+            )
+            reason += (
+                f"／値は一致したが別の行為の fact なので寄せない({shown})。"
+                "手順3b の提案に回す(P37 改訂)"
+            )
+        return ValueMatch(
+            value=value,
+            matches=matches,
+            reason=reason,
+            out_of_scope=out_of_scope,
+            scope=scope,
+        )
 
     def comparison_value_matches(self, value: str) -> list[str]:
         """その値を持つ**比較型**の fact(P37 の一致の相手ではない。記録と疑い用)。"""

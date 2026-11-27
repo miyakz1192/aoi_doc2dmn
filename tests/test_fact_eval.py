@@ -8,9 +8,13 @@
 | 教師ありで正解の fact を層3に足す(「その他」を含む) | P42・D45 |
 | 評価の判断を含む値は評価から外し、件数だけ数える | FU2 |
 | オラクルで通したときの上限と、その理由 | パートB の確認 |
+| 表記の違い(中)の分け方 | **P40 改訂【v0.13】** |
+| 重大な誤りで疑いのゲートが無い件(参考指標) | Q2(第50回) |
+| 済んだ結果を LLM なしで数え直す | 第50回パートB3 |
 """
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -31,6 +35,7 @@ from src.stage3_frontstage.run_fact_eval import (  # noqa: E402
     gold_values,
     judge,
     load_items,
+    reclassify,
     run,
     teach,
 )
@@ -157,18 +162,58 @@ def test_a_value_the_clause_does_not_have_is_a_severe_addition(items):
 
 
 def test_a_different_value_for_the_same_condition_is_a_severe_mistake(items):
+    """根拠の語句が正解と重ならない値の違いは、これまでどおり重大(P40)。"""
     golden = next(i["gold"] for i in items if i["gold"]["gold_id"] == "ipa_secguide_v4_6_7_1")
     result = fake_result(
         values=[
             ("operator_role", "システム開発担当"),
             ("target_environment", "本番環境"),
-            # 「特権」ではなく「管理者権限」にした(同じ条件で値が違う)
-            ("requested_privilege", "管理者権限"),
+            # 「特権」ではなく「特別権限」にした(正解の根拠の語句に無い書き方)
+            ("requested_privilege", "特別権限"),
         ]
     )
     judged = judge(1, golden, result)
     assert [e["kind"] for e in judged.errors] == ["value_mistaken"]
     assert judged.errors[0]["gold_value"] == "特権"
+    assert "value_mistaken" in SEVERE_KINDS
+
+
+def test_the_same_basis_quote_with_another_wording_is_only_a_notation_difference(items):
+    """P40 改訂【v0.13】: 根拠の語句が同じで同じ列なら「表記の違い(中)」。
+
+    正解 IR は「特権/管理者権限」という並列の前半を値に採り、「『管理者権限』を別の
+    値として足すかは要レビュー」と注記している。つまり、どちらの書き方にするかは人が
+    承認するときに決まることなので、重大な「値の取り違え」にしない。
+    """
+    golden = next(i["gold"] for i in items if i["gold"]["gold_id"] == "ipa_secguide_v4_6_7_1")
+    result = fake_result(
+        values=[
+            ("operator_role", "システム開発担当"),
+            ("target_environment", "本番環境"),
+            ("requested_privilege", "管理者権限"),
+        ]
+    )
+    judged = judge(1, golden, result)
+    assert [e["kind"] for e in judged.errors] == ["notation_differs"]
+    assert judged.errors[0]["gold_value"] == "特権"
+    assert "notation_differs" in MIDDLE_KINDS
+    assert judged.verdict == "middle"
+
+
+def test_a_notation_difference_needs_the_column_to_be_one_to_one(items):
+    """表記の違いの条件3: その列が別の正解の列にも結びついていたら重大のまま。"""
+    golden = next(i["gold"] for i in items if i["gold"]["gold_id"] == "ipa_secguide_v4_6_7_1")
+    result = fake_result(
+        values=[
+            # 1つの列に、別の正解の列の値(本番環境)と、書き方の違う値を混ぜた
+            ("target_environment", "本番環境"),
+            ("target_environment", "管理者権限"),
+        ]
+    )
+    judged = judge(1, golden, result)
+    kinds = [e["kind"] for e in judged.errors]
+    assert "value_mistaken" in kinds
+    assert "notation_differs" not in kinds
 
 
 def test_putting_a_value_into_another_existing_fact_is_a_severe_wrong_reuse(items):
@@ -277,28 +322,33 @@ def test_the_oracle_run_has_no_slipped_severe_error(oracle_run):
     )
 
 
-def test_the_oracle_cannot_reach_five_of_five_and_why(oracle_run):
-    """**手順どおりでは正解 IR 5件のうち2件に届かない**(第49回 報告 要判断1・2)。
+def test_the_oracle_reaches_four_of_five_after_the_p37_revision(oracle_run):
+    """**手順どおりで正解 IR 5件のうち4件に届く**(P37 改訂【v0.13】の効き方)。
 
-    どちらも P37(値の完全一致で寄せ、LLM の判定では寄せない)の帰結である。
+    第49回(v0.12)は 3/5 だった。届かなかった2件のうち1件が、寄せ先を同じ行為の
+    fact に限ることで直った。
 
-    1. `ipa_secguide_v4_personnel_2` の「許可なし」は、第11条で層3に入った
-       `usage_authorization` の値と**完全に一致する**ので、手順3a が必ずそこへ寄せる。
-       正解は別の列(`recipient_authorization`)なので、**重大な誤り(誤った再利用)**
-       になる。ゲート(`fact_possible_duplicate`)は立つのですり抜けではない
-    2. `aoi_johokanri_art14` の「一致」は比較型の fact の値で、
-       `name_match`・`birth_match`・`phone_match` の3つが同じ値を持つ。P37 は一致の
-       相手を passthrough の fact に限っているので再利用できず、**取りこぼし(中)**
-       になる。手順3b は正解を提案するが、提案では寄せない(P37)
+    1. `ipa_secguide_v4_personnel_2` の「許可なし」は、第11条(行為「使用」)で層3に
+       入った `usage_authorization` の値と完全に一致するが、この条文の行為は「提供」
+       なので**寄せない**。値が一致したことは記録に残り、新規候補の値が既存の fact と
+       同じなので `fact_possible_duplicate`(疑い)で人に見せる
+    2. `aoi_johokanri_art14` の「一致」は比較型の fact の値で、比較型は手順3a の相手に
+       しない(Q1)。**取りこぼし(中)** が2件残る。手順3b は正解の列を当てているので、
+       提案の受け入れ(PU14)が入れば救える
     """
     summary = oracle_run["summary"]
-    assert summary["correct"] == 3
+    assert summary["correct"] == 4
+    assert summary["slipped"] == 0
+    assert summary["slipped_strict"] == 0
     by_item = {i["gold_id"]: i for i in oracle_run["items"]}
     personnel = by_item["ipa_secguide_v4_personnel_2"]
-    assert [e["kind"] for e in personnel["errors"]] == ["wrong_reuse"]
-    assert personnel["errors"][0]["fact"] == "usage_authorization"
-    assert personnel["errors"][0]["gold_fact"] == "recipient_authorization"
+    assert personnel["errors"] == []
     assert "fact_possible_duplicate" in personnel["gates"]
+    # 値は一致したが別の行為の fact なので寄せていない(P37 改訂)
+    assert [h["facts"] for h in personnel["out_of_scope_hits"]] == [
+        ["usage_authorization"]
+    ]
+    assert summary["out_of_scope_matches"] == 1
     art14 = by_item["aoi_johokanri_art14"]
     assert [e["kind"] for e in art14["errors"]] == ["reuse_missed", "reuse_missed"]
     assert art14["gates"] == ["fact_reuse_suggested"]
@@ -322,3 +372,103 @@ def test_the_oracle_run_teaches_the_layer3_in_order(oracle_run):
         "contact_consent",
     ]
     assert "recipient_authorization" in names
+
+
+# --------------------------------------------------------------------------
+# 参考指標と数え直し(第50回パートB)
+# --------------------------------------------------------------------------
+
+
+def test_a_severe_error_with_only_a_design_check_gate_is_counted_strictly(items):
+    """参考指標(Q2): 重大な誤りで**疑いの**ゲートが1つも立たない件を数える。
+
+    `new_fact_unapproved`(設計上の確認)は新しい fact を提案すればほぼ毎件立つので、
+    それだけで止まっている件は「人が気づける」とは言いにくい。合格の条件は P40 の
+    まま(`slipped`)で、この指標は併記する。
+    """
+    golden = next(i["gold"] for i in items if i["gold"]["gold_id"] == "ipa_secguide_v4_6_7_1")
+    result = fake_result(
+        values=[("time_window", "深夜")],
+        gates=ReviewGates(new_fact_unapproved=True),
+    )
+    judged = judge(1, golden, result)
+    assert judged.verdict == "severe"
+    # P40 の合格の条件ではすり抜けではない(ゲートは1本立っている)
+    assert judged.slipped is False
+    # 参考指標では数える(疑いのゲートが1つも無い)
+    assert judged.slipped_strict is True
+
+
+def test_a_severe_error_with_a_suspicion_gate_is_not_counted_strictly(items):
+    golden = next(i["gold"] for i in items if i["gold"]["gold_id"] == "ipa_secguide_v4_6_7_1")
+    result = fake_result(
+        values=[("time_window", "深夜")],
+        gates=ReviewGates(fact_value_unverified=True),
+    )
+    judged = judge(1, golden, result)
+    assert judged.slipped is False
+    assert judged.slipped_strict is False
+
+
+def test_reclassifying_the_round49_result_moves_four_values_to_notation(items):
+    """パートB3: 第49回の結果を LLM なしで数え直す。
+
+    重大な「値の取り違え」4件(#3 の「営業秘密」と #4 の3件)は、どれも根拠の語句が
+    正解と重なり同じ列に入っているので「表記の違い(中)」に移る。残る重大な誤りは
+    #3 の誤った再利用と #5 の条件の付け足しの2件である。
+    """
+    before = json.loads(
+        (ROOT / "docs" / "eval" / "fact_eval_irgold_20261125_v012.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert before["summary"]["errors_by_kind"]["value_mistaken"] == 4
+    after = reclassify(before)
+    summary = after["summary"]
+    assert summary["errors_by_kind"]["value_mistaken"] == 0
+    assert summary["errors_by_kind"]["notation_differs"] == 4
+    assert summary["severe_errors"] == 2
+    assert summary["slipped"] == 0
+    # 参考指標では、#3 が疑いのゲート無しの重大な誤りとして残る
+    assert summary["slipped_strict_items"] == ["ipa_secguide_v4_personnel_2"]
+    # 出力そのものは変えていない(値の数は同じ)
+    assert summary["output_values"] == before["summary"]["output_values"]
+    assert summary["gold_values"] == before["summary"]["gold_values"]
+
+
+def test_reclassifying_counts_the_suggestions_by_column(items):
+    """パートC3: 提案の当たりは列の単位で数える。
+
+    第49回は、正解の列(`birth_match`・`phone_match`)を当てていたのに、渡した値が
+    正解の値「一致」ではなかったため値の単位では誤報2と数えていた。
+    """
+    before = json.loads(
+        (ROOT / "docs" / "eval" / "fact_eval_irgold_20261125_v012.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert before["summary"]["suggestion_hits"] == 0
+    after = reclassify(before)
+    assert after["summary"]["suggestions"] == 2
+    assert after["summary"]["suggestion_hits"] == 2
+    assert after["summary"]["suggestion_false_alarms"] == 0
+    assert [r["answer"] for r in after["summary"]["suggestion_rows"]] == [
+        "birth_match",
+        "phone_match",
+    ]
+
+
+def test_the_eval_uses_the_wiring_so_step_3a_is_scoped(oracle_run):
+    """評価は配線付きの台帳で流す(P37 改訂が効いていることの確かめ)。
+
+    配線を読み忘れると 3a が v0.12 の挙動(層3の全体が相手)に戻ってしまうので、
+    寄せ先の範囲が記録に残っていることを確かめる。
+    """
+    by_item = {i["gold_id"]: i for i in oracle_run["items"]}
+    # 第11条(使用)を教えた後の提供の条文で、寄せ先の範囲が空である
+    personnel = by_item["ipa_secguide_v4_personnel_2"]
+    assert personnel["reuse_scope_facts"] == []
+    assert personnel["out_of_scope_hits"]
+    # 教師ありで層1も育っている(行為「使用」の表が入っている)
+    taught = [line for e in oracle_run["ledger_log"] for line in e["taught"]]
+    assert any("行為「使用」の判定" in line for line in taught)

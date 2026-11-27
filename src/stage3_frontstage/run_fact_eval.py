@@ -83,7 +83,14 @@ OUT_DIR = "out/fact_eval"
 
 # P40: 重大な誤り(禁止が効かなくなる・別の列で判定する)。すり抜け0件が合格の条件
 SEVERE_KINDS = ("condition_added", "wrong_reuse", "value_mistaken")
-MIDDLE_KINDS = ("condition_dropped", "reuse_missed", "grouping_differs")
+# P40 改訂【v0.13】: 新しい fact の値で、根拠の語句が正解と同じで同じ列に入っているが
+# 書き方だけが違うものは「表記の違い(中)」にする(重大な「値の取り違え」にしない)
+MIDDLE_KINDS = (
+    "condition_dropped",
+    "reuse_missed",
+    "grouping_differs",
+    "notation_differs",
+)
 ERROR_LABELS = {
     "condition_added": "条件の付け足し",
     "wrong_reuse": "誤った再利用",
@@ -91,6 +98,7 @@ ERROR_LABELS = {
     "condition_dropped": "条件の落とし",
     "reuse_missed": "取りこぼし",
     "grouping_differs": "fact の分け方の違い",
+    "notation_differs": "表記の違い",
 }
 VERDICT_LABELS = {
     "correct": "正しい",
@@ -137,6 +145,11 @@ def same_condition(
     if out_quote and gold_quote and (out_quote in gold_quote or gold_quote in out_quote):
         return True
     return values_are_close(out_value, gold_value)
+
+
+def quotes_overlap(a: str, b: str) -> bool:
+    """2つの根拠の語句が、どちらかがもう一方を含むか(10.4.1節)。"""
+    return bool(a) and bool(b) and (a in b or b in a)
 
 
 def has_judgment_word(text: str) -> list[str]:
@@ -332,6 +345,10 @@ class ItemResult:
     suggestions: list[dict] = field(default_factory=list)
     proposals: list[dict] = field(default_factory=list)
     primitive_checks: list[dict] = field(default_factory=list)
+    # 手順3a の記録(P37 改訂の寄せ先と、寄せなかった一致)
+    matches: list[dict] = field(default_factory=list)
+    reuse_scope_facts: list[str] = field(default_factory=list)
+    out_of_scope_hits: list[dict] = field(default_factory=list)
     elapsed_seconds: float = 0.0
     llm_calls: int = 0
 
@@ -359,6 +376,16 @@ class ItemResult:
     def slipped(self) -> bool:
         """重大な誤りなのにゲートが1つも立たなかった(P40 の合格の条件)。"""
         return bool(self.severe_errors) and not self.gates
+
+    @property
+    def slipped_strict(self) -> bool:
+        """重大な誤りなのに**疑いのゲート**が1つも立たなかった(参考指標。Q2)。
+
+        `new_fact_unapproved`(設計上の確認)は新しい fact を提案すればほぼ毎件立つ
+        ので、それだけで止まっている件は「人が気づける」とは言いにくい。合格の条件は
+        P40 のまま(`slipped`)で、この指標は必ず併記する(第50回 Kazuhiro さんの判断)。
+        """
+        return bool(self.severe_errors) and not self.suspicion_gates
 
     @property
     def suspicion_gates(self) -> list[str]:
@@ -394,6 +421,7 @@ class ItemResult:
             "verdict": self.verdict,
             "verdict_label": VERDICT_LABELS[self.verdict],
             "slipped": self.slipped,
+            "slipped_strict": self.slipped_strict,
             "gold": [g.to_json() for g in self.gold],
             "output": [o.to_json() for o in self.output],
             "matched": [dict(m) for m in self.matched],
@@ -406,9 +434,258 @@ class ItemResult:
             "suggestions": [dict(s) for s in self.suggestions],
             "proposals": [dict(p) for p in self.proposals],
             "primitive_checks": [dict(p) for p in self.primitive_checks],
+            "matches": [dict(m) for m in self.matches],
+            "reuse_scope_facts": list(self.reuse_scope_facts),
+            "out_of_scope_hits": [dict(h) for h in self.out_of_scope_hits],
             "elapsed_seconds": round(self.elapsed_seconds, 1),
             "llm_calls": self.llm_calls,
         }
+
+    @classmethod
+    def from_json(cls, payload: dict) -> "ItemResult":
+        """保存した結果から読み直す(LLM を回さずに数え直すため。パートB3)。"""
+        item = cls(
+            order=payload["order"],
+            gold_id=payload["gold_id"],
+            clause_ref=payload.get("clause_ref", ""),
+            clause_text=payload.get("clause_text", ""),
+            action=payload.get("action", ""),
+            gold=[
+                GoldValue(
+                    variable=g["variable"],
+                    value=g["value"],
+                    is_new=g["is_new"],
+                    quote=g.get("quote", ""),
+                    primitive=g.get("primitive", "passthrough"),
+                )
+                for g in payload.get("gold", [])
+            ],
+            output=[
+                OutValue(
+                    variable=o["variable"],
+                    value=o["value"],
+                    is_new=o["is_new"],
+                    quote=o.get("quote", ""),
+                    primitive=o.get("primitive", "passthrough"),
+                )
+                for o in payload.get("output", [])
+            ],
+            gates=list(payload.get("gates") or []),
+            conditions=[dict(c) for c in payload.get("conditions") or []],
+            suggestions=[dict(x) for x in payload.get("suggestions") or []],
+            proposals=[dict(x) for x in payload.get("proposals") or []],
+            primitive_checks=[dict(x) for x in payload.get("primitive_checks") or []],
+            matches=[dict(x) for x in payload.get("matches") or []],
+            reuse_scope_facts=list(payload.get("reuse_scope_facts") or []),
+            out_of_scope_hits=[dict(x) for x in payload.get("out_of_scope_hits") or []],
+            elapsed_seconds=payload.get("elapsed_seconds", 0.0),
+            llm_calls=payload.get("llm_calls", 0),
+        )
+        item.errors = [dict(e) for e in payload.get("errors") or []]
+        item.matched = [dict(m) for m in payload.get("matched") or []]
+        item.excluded_values = [dict(e) for e in payload.get("excluded_values") or []]
+        return item
+
+
+def classify_values(
+    golds: list[GoldValue],
+    outs: list[OutValue],
+    extracted_values: set[str],
+) -> tuple[list[dict], list[dict], list[dict]]:
+    """正解の値と出力の値を突き合わせ、誤りを分類する(10.4.1節・P40・P40 改訂)。
+
+    `(errors, matched, excluded_values)` を返す。プログラムの外から呼べる形にして
+    あるので、済んだ結果の数え直し(`reclassify`)でも同じ規則を使える。
+
+    **表記の違い(中)の分け方(P40 改訂【v0.13】)**: 出力の値が正解のどの値とも一致
+    しないとき、次の3つがすべて成り立てば「表記の違い(中)」とし、1つでも欠ければ
+    これまでどおり「値の取り違え(重大)」とする。
+
+    1. 近いと見た正解の値が、**新しい fact の値**である(既存の fact への寄せには
+       当てない。P40 改訂の但し書き)
+    2. **根拠の語句が重なる**(どちらかがもう一方を含む)。値の近さだけでは足りない
+    3. 出力のその列が、**別の正解の列に結びついていない**(列の対応が1対1である)。
+       名前は比べない(Q2)。結びつきは値の対応から求める
+    """
+    errors: list[dict] = []
+    matched: list[dict] = []
+    excluded: list[dict] = []
+
+    gold_groups: dict[str, set[str]] = {}
+    for g in golds:
+        gold_groups.setdefault(g.variable, set()).add(g.value)
+    out_groups: dict[str, set[str]] = {}
+    for o in outs:
+        out_groups.setdefault(o.variable, set()).add(o.value)
+
+    # 列の結びつき: 値が完全一致した組から先に求める(表記の違いの条件3)
+    bindings: dict[str, set[str]] = {}
+    for o in outs:
+        for g in golds:
+            if g.value == o.value:
+                bindings.setdefault(o.variable, set()).add(g.variable)
+
+    used_gold: set[int] = set()
+
+    for o in outs:
+        # 値が同じ正解を探す。同じ値が2つの列に入る条文(第14条)があるので、
+        # 列の名前が同じものを先に当てる
+        candidates = [
+            i for i, g in enumerate(golds) if i not in used_gold and g.value == o.value
+        ]
+        same_name = [i for i in candidates if golds[i].variable == o.variable]
+        index = (same_name or candidates or [None])[0]
+        if index is None:
+            judgment = has_judgment_word(o.value) or has_judgment_word(o.quote)
+            if judgment:
+                # FU2: 評価の判断を含む条件は評価から外し、件数だけ数える
+                excluded.append(
+                    {"value": o.value, "fact": o.variable, "words": judgment}
+                )
+                continue
+            near_index = next(
+                (
+                    i
+                    for i, g in enumerate(golds)
+                    if i not in used_gold
+                    and same_condition(o.value, o.quote, g.value, g.quote)
+                ),
+                None,
+            )
+            near = None if near_index is None else golds[near_index]
+            if near is not None:
+                # 同じ条件を取り違えた1件なので、正解の値はここで使い切る
+                # (「条件の落とし」と二重に数えない)
+                used_gold.add(near_index)
+                others = bindings.get(o.variable, set()) - {near.variable}
+                notation = (
+                    near.is_new
+                    and quotes_overlap(o.quote, near.quote)
+                    and not others
+                )
+                bindings.setdefault(o.variable, set()).add(near.variable)
+                if notation:
+                    errors.append(
+                        {
+                            "kind": "notation_differs",
+                            "label": ERROR_LABELS["notation_differs"],
+                            "fact": o.variable,
+                            "value": o.value,
+                            "gold_fact": near.variable,
+                            "gold_value": near.value,
+                            "note": "同じ条件・同じ列で、値の書き方が正解と違う"
+                            "(P40 改訂)",
+                        }
+                    )
+                else:
+                    errors.append(
+                        {
+                            "kind": "value_mistaken",
+                            "label": ERROR_LABELS["value_mistaken"],
+                            "fact": o.variable,
+                            "value": o.value,
+                            "gold_fact": near.variable,
+                            "gold_value": near.value,
+                            "note": "同じ条件を、正解と違う値にした",
+                        }
+                    )
+            else:
+                errors.append(
+                    {
+                        "kind": "condition_added",
+                        "label": ERROR_LABELS["condition_added"],
+                        "fact": o.variable,
+                        "value": o.value,
+                        "note": "正解に無い条件を足した",
+                    }
+                )
+            continue
+        g = golds[index]
+        used_gold.add(index)
+        matched.append(
+            {
+                "value": o.value,
+                "fact": o.variable,
+                "gold_fact": g.variable,
+                "gold_is_new": g.is_new,
+                "out_is_new": o.is_new,
+            }
+        )
+        if not g.is_new:
+            if o.is_new:
+                errors.append(
+                    {
+                        "kind": "reuse_missed",
+                        "label": ERROR_LABELS["reuse_missed"],
+                        "fact": o.variable,
+                        "value": o.value,
+                        "gold_fact": g.variable,
+                        "note": "正解は既存の fact を使うが、新規候補にした",
+                    }
+                )
+            elif o.variable != g.variable:
+                errors.append(
+                    {
+                        "kind": "wrong_reuse",
+                        "label": ERROR_LABELS["wrong_reuse"],
+                        "fact": o.variable,
+                        "value": o.value,
+                        "gold_fact": g.variable,
+                        "note": "別の既存の fact に値を入れた",
+                    }
+                )
+        else:
+            if not o.is_new:
+                errors.append(
+                    {
+                        "kind": "wrong_reuse",
+                        "label": ERROR_LABELS["wrong_reuse"],
+                        "fact": o.variable,
+                        "value": o.value,
+                        "gold_fact": g.variable,
+                        "note": "正解は新しい列だが、既存の fact に値を入れた",
+                    }
+                )
+            elif out_groups.get(o.variable) != gold_groups.get(g.variable):
+                errors.append(
+                    {
+                        "kind": "grouping_differs",
+                        "label": ERROR_LABELS["grouping_differs"],
+                        "fact": o.variable,
+                        "value": o.value,
+                        "gold_fact": g.variable,
+                        "out_group": sorted(out_groups.get(o.variable, set())),
+                        "gold_group": sorted(gold_groups.get(g.variable, set())),
+                        "note": "値の組が正解の列と違う(まとめた、または分けた)",
+                    }
+                )
+
+    for i, g in enumerate(golds):
+        if i in used_gold:
+            continue
+        if g.value in extracted_values and not g.is_new:
+            errors.append(
+                {
+                    "kind": "reuse_missed",
+                    "label": ERROR_LABELS["reuse_missed"],
+                    "fact": None,
+                    "value": g.value,
+                    "gold_fact": g.variable,
+                    "note": "値は抜き出したが、正解の既存の fact を使わなかった",
+                }
+            )
+        else:
+            errors.append(
+                {
+                    "kind": "condition_dropped",
+                    "label": ERROR_LABELS["condition_dropped"],
+                    "fact": None,
+                    "value": g.value,
+                    "gold_fact": g.variable,
+                    "note": "正解の条件を出さなかった",
+                }
+            )
+    return errors, matched, excluded
 
 
 def judge(
@@ -430,159 +707,16 @@ def judge(
         conditions=[c.to_json() for c in result.trace.conditions],
         suggestions=[s.to_json() for s in result.trace.suggestions],
         proposals=[p.to_json() for p in result.trace.proposals],
+        matches=[m.to_json() for m in result.trace.matches],
+        reuse_scope_facts=list(result.trace.reuse_scope),
+        out_of_scope_hits=[dict(h) for h in result.trace.out_of_scope_hits],
         elapsed_seconds=result.trace.elapsed_seconds,
         llm_calls=result.trace.llm_calls,
     )
 
-    gold_groups: dict[str, set[str]] = {}
-    for g in golds:
-        gold_groups.setdefault(g.variable, set()).add(g.value)
-    out_groups: dict[str, set[str]] = {}
-    for o in outs:
-        out_groups.setdefault(o.variable, set()).add(o.value)
-
-    used_gold: set[int] = set()
-    extracted_values = {c.value for c in result.trace.conditions}
-
-    for o in outs:
-        # 値が同じ正解を探す。同じ値が2つの列に入る条文(第14条)があるので、
-        # 列の名前が同じものを先に当てる
-        candidates = [
-            i
-            for i, g in enumerate(golds)
-            if i not in used_gold and g.value == o.value
-        ]
-        same_name = [i for i in candidates if golds[i].variable == o.variable]
-        index = (same_name or candidates or [None])[0]
-        if index is None:
-            judgment = has_judgment_word(o.value) or has_judgment_word(o.quote)
-            if judgment:
-                # FU2: 評価の判断を含む条件は評価から外し、件数だけ数える
-                item.excluded_values.append(
-                    {"value": o.value, "fact": o.variable, "words": judgment}
-                )
-                continue
-            near_index = next(
-                (
-                    i
-                    for i, g in enumerate(golds)
-                    if i not in used_gold
-                    and same_condition(o.value, o.quote, g.value, g.quote)
-                ),
-                None,
-            )
-            near = None if near_index is None else golds[near_index]
-            if near is not None:
-                # 同じ条件を取り違えた1件なので、正解の値はここで使い切る
-                # (「条件の落とし」と二重に数えない)
-                used_gold.add(near_index)
-                item.errors.append(
-                    {
-                        "kind": "value_mistaken",
-                        "label": ERROR_LABELS["value_mistaken"],
-                        "fact": o.variable,
-                        "value": o.value,
-                        "gold_fact": near.variable,
-                        "gold_value": near.value,
-                        "note": "同じ条件を、正解と違う値にした",
-                    }
-                )
-            else:
-                item.errors.append(
-                    {
-                        "kind": "condition_added",
-                        "label": ERROR_LABELS["condition_added"],
-                        "fact": o.variable,
-                        "value": o.value,
-                        "note": "正解に無い条件を足した",
-                    }
-                )
-            continue
-        g = golds[index]
-        used_gold.add(index)
-        item.matched.append(
-            {
-                "value": o.value,
-                "fact": o.variable,
-                "gold_fact": g.variable,
-                "gold_is_new": g.is_new,
-                "out_is_new": o.is_new,
-            }
-        )
-        if not g.is_new:
-            if o.is_new:
-                item.errors.append(
-                    {
-                        "kind": "reuse_missed",
-                        "label": ERROR_LABELS["reuse_missed"],
-                        "fact": o.variable,
-                        "value": o.value,
-                        "gold_fact": g.variable,
-                        "note": "正解は既存の fact を使うが、新規候補にした",
-                    }
-                )
-            elif o.variable != g.variable:
-                item.errors.append(
-                    {
-                        "kind": "wrong_reuse",
-                        "label": ERROR_LABELS["wrong_reuse"],
-                        "fact": o.variable,
-                        "value": o.value,
-                        "gold_fact": g.variable,
-                        "note": "別の既存の fact に値を入れた",
-                    }
-                )
-        else:
-            if not o.is_new:
-                item.errors.append(
-                    {
-                        "kind": "wrong_reuse",
-                        "label": ERROR_LABELS["wrong_reuse"],
-                        "fact": o.variable,
-                        "value": o.value,
-                        "gold_fact": g.variable,
-                        "note": "正解は新しい列だが、既存の fact に値を入れた",
-                    }
-                )
-            elif out_groups.get(o.variable) != gold_groups.get(g.variable):
-                item.errors.append(
-                    {
-                        "kind": "grouping_differs",
-                        "label": ERROR_LABELS["grouping_differs"],
-                        "fact": o.variable,
-                        "value": o.value,
-                        "gold_fact": g.variable,
-                        "out_group": sorted(out_groups.get(o.variable, set())),
-                        "gold_group": sorted(gold_groups.get(g.variable, set())),
-                        "note": "値の組が正解の列と違う(まとめた、または分けた)",
-                    }
-                )
-
-    for i, g in enumerate(golds):
-        if i in used_gold:
-            continue
-        if g.value in extracted_values and not g.is_new:
-            item.errors.append(
-                {
-                    "kind": "reuse_missed",
-                    "label": ERROR_LABELS["reuse_missed"],
-                    "fact": None,
-                    "value": g.value,
-                    "gold_fact": g.variable,
-                    "note": "値は抜き出したが、正解の既存の fact を使わなかった",
-                }
-            )
-        else:
-            item.errors.append(
-                {
-                    "kind": "condition_dropped",
-                    "label": ERROR_LABELS["condition_dropped"],
-                    "fact": None,
-                    "value": g.value,
-                    "gold_fact": g.variable,
-                    "note": "正解の条件を出さなかった",
-                }
-            )
+    item.errors, item.matched, item.excluded_values = classify_values(
+        golds, outs, {c.value for c in result.trace.conditions}
+    )
 
     # 新規候補の primitive の一致(10.4.2節)
     gold_primitives = gold_new_fact_primitives(gold)
@@ -624,6 +758,47 @@ def judge(
 # --------------------------------------------------------------------------
 
 
+def teach_wiring(ledger: FactLedger, gold: dict) -> list[str]:
+    """正解 IR の層1・層2(決定表と行)を配線に足す(P42・P37 改訂)。
+
+    手順3a の寄せ先は「同じ行為の決定表が使っている fact」なので、教師ありの評価では
+    fact だけでなく**どの行為のどの表がその fact を使うか**も足さないと、次の条文で
+    寄せ先が分からない。`entry_points` は配線ジェネレータと同じ形で作る
+    (起点の判定だけに `{actor, action}` を入れ、中間判定は空。D16)。
+    """
+    if ledger.wiring is None:
+        return []
+    ir = gold["ir"]
+    log: list[str] = []
+    entry_decision = (ir.get("target") or {}).get("entry_decision_id")
+    for table in ir.get("new_decision_tables", []) or []:
+        is_entry = table.get("decision_id") == entry_decision
+        ledger.wiring.add_table(
+            {
+                "decision_table_id": table.get("decision_table_id"),
+                "decision_id": table.get("decision_id"),
+                "dmn_model": (ir.get("target") or {}).get("dmn_model"),
+                "entry_points": (
+                    [{"actor": ir.get("actor"), "action": ir["action"]["normalized"]}]
+                    if is_entry
+                    else []
+                ),
+                "input_columns": list(table.get("input_columns") or []),
+                "depends_on_decisions": [],
+            }
+        )
+        for row in table.get("rule_rows") or []:
+            ledger.wiring.add_row(row)
+        log.append(
+            f"{table.get('decision_table_id')}（行為「{ir['action']['normalized']}」"
+            f"の判定）を層1に足した"
+        )
+    for row in ir.get("rule_row_additions", []) or []:
+        ledger.wiring.add_row(row)
+        log.append(f"{row.get('decision_table_id')} に行を足した")
+    return log
+
+
 def teach(ledger: FactLedger, gold: dict) -> list[str]:
     """正解の fact を層3に足してから次へ進む(P42)。足した内容を返す。"""
     log: list[str] = []
@@ -644,6 +819,7 @@ def teach(ledger: FactLedger, gold: dict) -> list[str]:
         added = ledger.add_values(variable, [a["value"] for a in additions])
         if added:
             log.append(f"{variable} に値 {'、'.join(added)} を足した")
+    log.extend(teach_wiring(ledger, gold))
     if not log:
         log.append("新しい fact・値は無い(既存の fact を使う条文)")
     return log
@@ -724,6 +900,190 @@ class OracleFactLlm:
 # --------------------------------------------------------------------------
 
 
+def build_summary(
+    results: list[ItemResult], elapsed: float, errors: Optional[list[dict]] = None
+) -> dict:
+    """1件ごとの結果から集計を作る(10.4.2節)。数え直し(`reclassify`)でも使う。"""
+    errors = errors or []
+    gate_counts: dict[str, int] = {}
+    false_alarm_counts: dict[str, int] = {}
+    for r in results:
+        for gate in r.gates:
+            gate_counts[gate] = gate_counts.get(gate, 0) + 1
+        for gate in r.false_alarm_gates:
+            false_alarm_counts[gate] = false_alarm_counts.get(gate, 0) + 1
+    by_kind = {
+        kind: sum(1 for r in results for e in r.errors if e["kind"] == kind)
+        for kind in ERROR_LABELS
+    }
+    gold_total = sum(len(r.gold) for r in results)
+    reuse_scope = sum(1 for r in results for g in r.gold if not g.is_new)
+    reuse_correct = sum(
+        1
+        for r in results
+        for m in r.matched
+        if not m["gold_is_new"] and not m["out_is_new"] and m["fact"] == m["gold_fact"]
+    )
+    # 手順3b の提案は**列の単位**で数える(第50回パートC3)。渡した値の書き方が
+    # 正解と違っても、提案した列が正解の既存の列と同じなら当たりとする
+    suggestion_rows = [
+        {
+            "order": r.order,
+            "gold_id": r.gold_id,
+            "value": s["value"],
+            "answer": s["answer"],
+            "matched_by": s.get("matched_by", "unrecorded"),
+            # その条文で正解が再利用している既存の列(当たりの的)
+            "gold_reused_facts": sorted({g.variable for g in r.gold if not g.is_new}),
+            # 参考: その値が入る正解の列(値の単位の見方)
+            "gold_facts_of_value": [g.variable for g in r.gold if g.value == s["value"]],
+            "hit": s["answer"] in {g.variable for g in r.gold if not g.is_new},
+        }
+        for r in results
+        for s in r.suggestions
+        if s["answer"] is not None
+    ]
+    primitive_checks = [p for r in results for p in r.primitive_checks]
+    summary = {
+        "items": len(results),
+        # P40: すり抜け(ゲートが1つも立たなかった重大な誤り)が0件なら合格
+        "slipped": sum(1 for r in results if r.slipped),
+        # 参考指標(第50回 Q2): 重大な誤りで**疑いの**ゲートが1つも立たなかった件。
+        # 合格の条件は P40 のまま(`slipped`)で、こちらは必ず併記する
+        "slipped_strict": sum(1 for r in results if r.slipped_strict),
+        "slipped_strict_items": [
+            r.gold_id for r in results if r.slipped_strict
+        ],
+        "severe_items": sum(1 for r in results if r.severe_errors),
+        "middle_items": sum(1 for r in results if r.middle_errors),
+        "correct": sum(1 for r in results if r.correct),
+        "by_verdict": {
+            key: sum(1 for r in results if r.verdict == key) for key in VERDICT_LABELS
+        },
+        "errors_by_kind": by_kind,
+        "severe_errors": sum(len(r.severe_errors) for r in results),
+        "middle_errors": sum(len(r.middle_errors) for r in results),
+        # 値の単位の突き合わせ
+        "gold_values": gold_total,
+        "output_values": sum(len(r.output) for r in results),
+        "matched_values": sum(len(r.matched) for r in results),
+        # 条件の語句の逐語率(10.4.2節)
+        "conditions_total": sum(r.verbatim_total for r in results),
+        "conditions_verbatim": sum(r.verbatim_ok for r in results),
+        # 既存の fact の再利用
+        # P37 改訂: 値は一致したが別の行為の fact だったので寄せなかったもの
+        "out_of_scope_matches": sum(len(r.out_of_scope_hits) for r in results),
+        "out_of_scope_ancestor_only": sum(
+            1 for r in results for h in r.out_of_scope_hits if h.get("ancestor_only")
+        ),
+        "reuse_scope": reuse_scope,
+        "reuse_correct": reuse_correct,
+        "reuse_missed": by_kind["reuse_missed"],
+        "reuse_wrong": by_kind["wrong_reuse"],
+        # 提案の当たり・誤報(P33 と同じ数え方)
+        "suggestions": len(suggestion_rows),
+        "suggestion_hits": sum(1 for s in suggestion_rows if s["hit"]),
+        "suggestion_false_alarms": sum(1 for s in suggestion_rows if not s["hit"]),
+        "suggestion_offered": sum(len(r.suggestions) for r in results),
+        # Q5: 答えの見出しを渡した値に当てた方法。第49回の結果には記録が無いので
+        # "unrecorded" に入る(第50回パートC で入れた記録である)
+        "suggestion_matched_by": {
+            key: sum(
+                1
+                for r in results
+                for s in r.suggestions
+                if s.get("matched_by", "unrecorded") == key
+            )
+            for key in (
+                "exact",
+                "contains",
+                "no_match_answer",
+                "ambiguous",
+                "none",
+                "unrecorded",
+            )
+        },
+        "suggestion_rows": suggestion_rows,
+        # 人に回る割合
+        "routed_to_human": sum(1 for r in results if r.routed_to_human),
+        "routed_with_suspicion": sum(1 for r in results if r.suspicion_gates),
+        "routed_design_check_only": sum(
+            1 for r in results if r.gates and not r.suspicion_gates
+        ),
+        "automatic": sum(1 for r in results if not r.gates),
+        "gates": gate_counts,
+        "false_alarm_items": sum(1 for r in results if r.false_alarm_gates),
+        "false_alarm_gates": false_alarm_counts,
+        # 新規候補の primitive の一致
+        "primitive_total": len(primitive_checks),
+        "primitive_matches": sum(1 for p in primitive_checks if p["matches"]),
+        # FU2: 評価から外した値(評価の判断を含む条件)
+        "excluded_values": sum(len(r.excluded_values) for r in results),
+        "elapsed_seconds_total": round(elapsed, 1),
+        "elapsed_seconds_per_item": round(elapsed / max(len(results), 1), 1),
+        "llm_calls_total": sum(r.llm_calls for r in results),
+        "errors": len(errors),
+    }
+    return summary
+
+
+def reclassify(payload: dict, *, design: str = "前段 v0.13") -> dict:
+    """済んだ結果を、**LLM を回さずに**今の数え方で数え直す(第50回パートB3)。
+
+    保存してある1件ごとの正解の値・出力の値・根拠の語句・ゲートだけを使うので、
+    結果を見てからプロンプトや正解を直すことにはならない(P20)。数え直すのは誤りの
+    分類と集計だけで、出力そのものは変えない。
+    """
+    results = [ItemResult.from_json(item) for item in payload.get("items", [])]
+    for item in results:
+        extracted = {c.get("value", "") for c in item.conditions}
+        item.errors, item.matched, item.excluded_values = classify_values(
+            item.gold, item.output, extracted
+        )
+    elapsed = payload.get("summary", {}).get("elapsed_seconds_total", 0.0)
+    summary = build_summary(results, elapsed, payload.get("errors") or [])
+    before = payload.get("summary", {})
+    out = {
+        "_meta": dict(
+            payload.get("_meta", {}),
+            design=design,
+            reclassified_from=before.get("_source", "（同じ回の結果）"),
+            note="LLM は回していない。保存した出力をいまの分類の規則で数え直した"
+            "だけである(第50回パートB3)。所要時間と LLM の回数は元の実行の値",
+        ),
+        "summary": summary,
+        "summary_before": before,
+        "changed": [
+            {
+                "order": item.order,
+                "gold_id": item.gold_id,
+                "verdict_before": next(
+                    (
+                        i.get("verdict")
+                        for i in payload.get("items", [])
+                        if i["order"] == item.order
+                    ),
+                    None,
+                ),
+                "verdict_after": item.verdict,
+                "errors_before": [
+                    dict(e)
+                    for i in payload.get("items", [])
+                    if i["order"] == item.order
+                    for e in i.get("errors") or []
+                ],
+                "errors_after": [dict(e) for e in item.errors],
+            }
+            for item in results
+        ],
+        "errors": payload.get("errors") or [],
+        "items": [item.to_json() for item in results],
+        "ledger_log": payload.get("ledger_log") or [],
+        "ledger_after": payload.get("ledger_after") or [],
+    }
+    return out
+
+
 def run(
     gold_dir: str | Path = GOLD_DIR,
     registry_path: str | Path = REGISTRY_PATH,
@@ -738,7 +1098,9 @@ def run(
     if limit:
         items = items[:limit]
     registry = Registry.load(registry_path)
-    ledger = FactLedger.from_json(registry.fact_registry)
+    # P37 改訂: 寄せ先を「同じ行為の決定表が使う fact」に限るので、層3だけでなく
+    # 層1・層2の配線も読む
+    ledger = FactLedger.from_registry(registry)
     llm = OracleFactLlm(items) if use_oracle else OllamaJsonLlm()
     extractor = FactExtractor(llm)
 
@@ -819,98 +1181,7 @@ def run(
             )
 
     elapsed = time.monotonic() - started
-    gate_counts: dict[str, int] = {}
-    false_alarm_counts: dict[str, int] = {}
-    for r in results:
-        for gate in r.gates:
-            gate_counts[gate] = gate_counts.get(gate, 0) + 1
-        for gate in r.false_alarm_gates:
-            false_alarm_counts[gate] = false_alarm_counts.get(gate, 0) + 1
-    by_kind = {
-        kind: sum(1 for r in results for e in r.errors if e["kind"] == kind)
-        for kind in ERROR_LABELS
-    }
-    gold_total = sum(len(r.gold) for r in results)
-    reuse_scope = sum(1 for r in results for g in r.gold if not g.is_new)
-    reuse_correct = sum(
-        1
-        for r in results
-        for m in r.matched
-        if not m["gold_is_new"] and not m["out_is_new"] and m["fact"] == m["gold_fact"]
-    )
-    suggestion_rows = [
-        {
-            "order": r.order,
-            "gold_id": r.gold_id,
-            "value": s["value"],
-            "answer": s["answer"],
-            # 同じ値が2つの列に入る条文(第14条)があるので、正解の列は一覧で持つ
-            "gold_facts": [g.variable for g in r.gold if g.value == s["value"]],
-            "gold_is_new": next(
-                (g.is_new for g in r.gold if g.value == s["value"]), None
-            ),
-        }
-        for r in results
-        for s in r.suggestions
-        if s["answer"] is not None
-    ]
-    primitive_checks = [p for r in results for p in r.primitive_checks]
-    summary = {
-        "items": len(results),
-        # P40: すり抜け(ゲートが1つも立たなかった重大な誤り)が0件なら合格
-        "slipped": sum(1 for r in results if r.slipped),
-        "severe_items": sum(1 for r in results if r.severe_errors),
-        "middle_items": sum(1 for r in results if r.middle_errors),
-        "correct": sum(1 for r in results if r.correct),
-        "by_verdict": {
-            key: sum(1 for r in results if r.verdict == key) for key in VERDICT_LABELS
-        },
-        "errors_by_kind": by_kind,
-        "severe_errors": sum(len(r.severe_errors) for r in results),
-        "middle_errors": sum(len(r.middle_errors) for r in results),
-        # 値の単位の突き合わせ
-        "gold_values": gold_total,
-        "output_values": sum(len(r.output) for r in results),
-        "matched_values": sum(len(r.matched) for r in results),
-        # 条件の語句の逐語率(10.4.2節)
-        "conditions_total": sum(r.verbatim_total for r in results),
-        "conditions_verbatim": sum(r.verbatim_ok for r in results),
-        # 既存の fact の再利用
-        "reuse_scope": reuse_scope,
-        "reuse_correct": reuse_correct,
-        "reuse_missed": by_kind["reuse_missed"],
-        "reuse_wrong": by_kind["wrong_reuse"],
-        # 提案の当たり・誤報(P33 と同じ数え方)
-        "suggestions": len(suggestion_rows),
-        "suggestion_hits": sum(
-            1
-            for s in suggestion_rows
-            if s["gold_is_new"] is False and s["answer"] in s["gold_facts"]
-        ),
-        "suggestion_false_alarms": sum(
-            1 for s in suggestion_rows if s["gold_is_new"] is not False
-        ),
-        "suggestion_rows": suggestion_rows,
-        # 人に回る割合
-        "routed_to_human": sum(1 for r in results if r.routed_to_human),
-        "routed_with_suspicion": sum(1 for r in results if r.suspicion_gates),
-        "routed_design_check_only": sum(
-            1 for r in results if r.gates and not r.suspicion_gates
-        ),
-        "automatic": sum(1 for r in results if not r.gates),
-        "gates": gate_counts,
-        "false_alarm_items": sum(1 for r in results if r.false_alarm_gates),
-        "false_alarm_gates": false_alarm_counts,
-        # 新規候補の primitive の一致
-        "primitive_total": len(primitive_checks),
-        "primitive_matches": sum(1 for p in primitive_checks if p["matches"]),
-        # FU2: 評価から外した値(評価の判断を含む条件)
-        "excluded_values": sum(len(r.excluded_values) for r in results),
-        "elapsed_seconds_total": round(elapsed, 1),
-        "elapsed_seconds_per_item": round(elapsed / max(len(results), 1), 1),
-        "llm_calls_total": sum(r.llm_calls for r in results),
-        "errors": len(errors),
-    }
+    summary = build_summary(results, elapsed, errors)
     out = {
         "_meta": {
             "gold_dir": str(gold_dir),
@@ -918,9 +1189,11 @@ def run(
             "llm": "oracle(偽物)" if use_oracle else f"ollama {llm.model}",  # type: ignore[union-attr]
             "k": 1,
             "temperature": TEMPERATURE,
-            "design": "前段 v0.12（第2要素「事実の抽出」。P34〜P42）",
+            "design": "前段 v0.13（第2要素「事実の抽出」。P34〜P42。"
+            "P37 改訂＝寄せ先は同じ行為の fact／P40 改訂＝表記の違いは中）",
             "note": "合格の条件は「ゲートをすり抜けた重大な誤りが0件」(P40・10.4.2節)。"
-            "sources は評価しない(P39)。fact の名前は文字列で比べない(Q2)",
+            "参考指標 slipped_strict（重大な誤りで疑いのゲートが1つも立たなかった件）"
+            "を併記する。sources は評価しない(P39)。fact の名前は文字列で比べない(Q2)",
         },
         "summary": summary,
         "errors": errors,
@@ -940,6 +1213,10 @@ def print_summary(out: dict) -> None:
     print(
         f"  すり抜け(重大な誤りでゲート無し): {s['slipped']}件"
         f" → {'合格' if s['slipped'] == 0 else '不合格'}（P40）"
+    )
+    print(
+        f"  [参考] 重大な誤りで疑いのゲート無し: {s['slipped_strict']}件"
+        f" {s['slipped_strict_items']}"
     )
     print(
         f"  正しい: {s['correct']}/{s['items']}"
@@ -962,8 +1239,14 @@ def print_summary(out: dict) -> None:
         f"（取りこぼし {s['reuse_missed']}／誤った再利用 {s['reuse_wrong']}）"
     )
     print(
-        f"  手順3b の提案: {s['suggestions']}件（当たり {s['suggestion_hits']}／"
-        f"誤報 {s['suggestion_false_alarms']}）"
+        f"  手順3b の提案: {s['suggestions']}件／渡した値 {s['suggestion_offered']}件"
+        f"（当たり {s['suggestion_hits']}／誤報 {s['suggestion_false_alarms']}。列の単位）"
+    )
+    print(f"  手順3b の答えの照合: {s['suggestion_matched_by']}")
+    print(
+        f"  別の行為の fact と値が一致(寄せずに提案へ。P37 改訂): "
+        f"{s['out_of_scope_matches']}件"
+        f"（うち祖先の行為だけ {s['out_of_scope_ancestor_only']}件）"
     )
     print(
         f"  人に回る割合: {s['routed_to_human']}/{s['items']}"
@@ -995,7 +1278,36 @@ def main(argv: Optional[list[str]] = None) -> int:
         help="LLM を正解を返す偽物に差し替える(Ollama 不要。評価の筋の確認用)",
     )
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument(
+        "--reclassify",
+        default=None,
+        metavar="RESULT_JSON",
+        help="済んだ結果を LLM なしでいまの数え方で数え直す(第50回パートB3)",
+    )
+    parser.add_argument(
+        "--reclassify-out",
+        default=None,
+        metavar="PATH",
+        help="--reclassify の書き出し先(既定は入力と同じ場所に _reclassified を付ける)",
+    )
     args = parser.parse_args(argv)
+
+    if args.reclassify:
+        src = Path(args.reclassify)
+        payload = json.loads(src.read_text(encoding="utf-8"))
+        out = reclassify(payload)
+        dest = (
+            Path(args.reclassify_out)
+            if args.reclassify_out
+            else src.with_name(src.stem + "_reclassified" + src.suffix)
+        )
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(
+            json.dumps(out, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
+        print_summary(out)
+        print(f"\n数え直した結果: {dest}")
+        return 0
 
     out_dir = Path(args.out)
     out = run(
