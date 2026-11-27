@@ -133,10 +133,39 @@ class FactDuplicateCheck:
     collides: bool = False
     shared_values: list[dict] = field(default_factory=list)
     reason: str = ""
+    # 手順3a が「別の行為の fact」として寄せなかった fact の名前(Q1)
+    out_of_scope_facts: list[str] = field(default_factory=list)
 
     @property
     def flagged(self) -> bool:
         return bool(self.collides or self.shared_values or self.reason)
+
+    @property
+    def scope_check_only(self) -> bool:
+        """近いと見た理由が「別の行為の fact と値が一致した」ことだけか(Q1)。
+
+        P37 改訂【v0.13】で寄せ先を同じ行為の fact に限ったので、別の行為の fact と
+        値が一致した値は新規候補に入る。その候補は必ず「候補の値が既存の fact の値と
+        同じ」で近いと判定されるが、これは**寄せ先の確認**であって誤報ではない
+        (第52回 Q1)。
+
+        名前の類似も同じことを指すことがある(「使用の許可」の列に寄せなかったので
+        「提供先の許可」を作る、という場面では名前も似る)。そこで、近いと見た相手が
+        **寄せなかった fact そのもの**であるときだけ別枠にし、名前の衝突や、寄せなかった
+        fact 以外との一致が混ざっていれば誤報の側に残す(迷ったら重い側)。
+        """
+        if not self.flagged or self.collides:
+            return False
+        if not self.shared_values:
+            return False
+        if not all(s.get("out_of_scope") for s in self.shared_values):
+            return False
+        if (
+            self.name_ratio >= FACT_NAME_RATIO_THRESHOLD
+            and self.closest not in self.out_of_scope_facts
+        ):
+            return False
+        return True
 
     def to_json(self) -> dict:
         return {
@@ -145,7 +174,9 @@ class FactDuplicateCheck:
             "name_ratio": round(self.name_ratio, 3),
             "collides": self.collides,
             "shared_values": [dict(s) for s in self.shared_values],
+            "out_of_scope_facts": list(self.out_of_scope_facts),
             "flagged": self.flagged,
+            "scope_check_only": self.scope_check_only,
             "reason": self.reason,
             "threshold": FACT_NAME_RATIO_THRESHOLD,
         }
@@ -488,9 +519,23 @@ class FactLedger:
 
     # ---- P41: 近さの判定 ----
 
-    def duplicate_check(self, variable: str, values: list[str]) -> FactDuplicateCheck:
-        """新規候補の fact が既存の fact に近いか(P41)。"""
-        check = FactDuplicateCheck(variable=variable)
+    def duplicate_check(
+        self,
+        variable: str,
+        values: list[str],
+        *,
+        out_of_scope_pairs: Optional[set[tuple[str, str]]] = None,
+    ) -> FactDuplicateCheck:
+        """新規候補の fact が既存の fact に近いか(P41)。
+
+        `out_of_scope_pairs` は、手順3a で**値は一致したが別の行為の fact だったので
+        寄せなかった** (fact, 値) の組(P37 改訂)。この組で近いと判定された値には
+        印を付け、誤報ではなく「寄せ先の確認」として数えられるようにする(Q1)。
+        """
+        pairs = out_of_scope_pairs or set()
+        check = FactDuplicateCheck(
+            variable=variable, out_of_scope_facts=sorted({f for f, _v in pairs})
+        )
         reasons: list[str] = []
         if self.find(variable) is not None:
             check.collides = True
@@ -523,6 +568,8 @@ class FactLedger:
                             "value": value,
                             "fact": entry.variable,
                             "primitive": entry.primitive,
+                            # Q1: 手順3a が「別の行為の fact」として寄せなかった一致
+                            "out_of_scope": (entry.variable, value) in pairs,
                         }
                     )
         if check.shared_values:

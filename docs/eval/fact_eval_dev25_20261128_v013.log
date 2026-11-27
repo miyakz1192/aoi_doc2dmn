@@ -1,0 +1,226 @@
+[1/25] ipa_secguide_v4_6_7_1 (層3 7件) ...
+      [NG] 中の誤りのみ（重大0／中1） 値2件 ゲート=['new_fact_unapproved'] 243秒／3回
+        - 条件の落とし: 値 '特権'（出力の列 None／正解の列 requested_privilege）
+      operator_role（システム開発担当、その他）を層3に足した
+      target_environment（本番環境、その他）を層3に足した
+      requested_privilege（特権、その他）を層3に足した
+      dt_privileged_operation（行為「操作」の判定）を層1に足した
+[2/25] mhlw_r7dec_art11_1 (層3 10件) ...
+      [OK] 正しい（重大0／中0） 値4件 ゲート=['new_fact_unapproved'] 316秒／3回
+      usage_authorization（許可なし、その他）を層3に足した
+      usage_purpose（職務以外の目的、その他）を層3に足した
+      usage_target（会社の施設、物品等、その他）を層3に足した
+      dt_facility_property_use（行為「使用」の判定）を層1に足した
+[3/25] ipa_secguide_v4_personnel_2 (層3 13件) ...
+      [NG] 中の誤りのみ（重大0／中2） 値2件 ゲート=['new_fact_unapproved', 'fact_possible_duplicate', 'fact_reuse_suggested'] 263秒／3回
+        - 表記の違い: 値 '営業秘密'（出力の列 secret_type／正解の列 provided_information）
+        - 条件の落とし: 値 '複製物'（出力の列 None／正解の列 provided_information）
+      provided_information（営業秘密として管理する情報、複製物、その他）を層3に足した
+      recipient_authorization（許可なし、その他）を層3に足した
+      dt_trade_secret_provision（行為「提供」の判定）を層1に足した
+[4/25] mhlw_r7dec_art21_3 (層3 15件) ...
+      [NG] 中の誤りのみ（重大0／中7） 値4件 ゲート=['new_fact_unapproved'] 335秒／3回
+        - 表記の違い: 値 '妊娠中'（出力の列 pregnant_status／正解の列 worker_category）
+        - 表記の違い: 値 '産後1年内'（出力の列 postpartum_period／正解の列 worker_category）
+        - 表記の違い: 値 '請求あり'（出力の列 request_status／正解の列 exemption_request）
+        - 表記の違い: 値 '18歳未満'（出力の列 age_under_18／正解の列 worker_category）
+        - 条件の落とし: 値 '時間外労働'（出力の列 None／正解の列 work_type）
+        - 条件の落とし: 値 '休日労働'（出力の列 None／正解の列 work_type）
+        - 条件の落とし: 値 '深夜労働'（出力の列 None／正解の列 work_type）
+      worker_category（妊娠中の女性、産後1年を経過しない女性労働者、18歳未満の者、その他）を層3に足した
+      exemption_request（請求した者、その他）を層3に足した
+      work_type（時間外労働、休日労働、深夜労働、その他）を層3に足した
+      dt_overtime_assignment（行為「労働指示」の判定）を層1に足した
+[5/25] aoi_johokanri_art14 (層3 18件) ...
+      [NG] 中の誤りのみ（重大0／中2） 値0件 ゲート=['new_fact_unapproved', 'fact_value_unverified', 'fact_possible_duplicate', 'comparison_fact_proposed', 'fact_reuse_suggested'] 306秒／3回
+        - 条件の落とし: 値 '一致'（出力の列 None／正解の列 birth_match）
+        - 条件の落とし: 値 '一致'（出力の列 None／正解の列 phone_match）
+      dt_verbal_disclosure（行為「伝達」の判定）を層1に足した
+[6/25] ipa_secguide_v4_6_1_5 (層3 18件) ...
+      [NG] 中の誤りのみ（重大0／中4） 値4件 ゲート=['new_fact_unapproved', 'fact_reuse_suggested'] 364秒／3回
+        - fact の分け方の違い: 値 '社有機器'（出力の列 device_type／正解の列 device_ownership）
+        - fact の分け方の違い: 値 '指定経路'（出力の列 device_type／正解の列 access_route）
+        - 表記の違い: 値 '私有機器なし'（出力の列 private_device_usage／正解の列 device_ownership）
+        - 条件の落とし: 値 '特権'（出力の列 None／正解の列 requested_privilege）
+      authentication_method（多要素認証、その他）を層3に足した
+      device_ownership（社有機器、私有機器、その他）を層3に足した
+      access_route（指定経路、その他）を層3に足した
+      dt_fact_gold_ipa_secguide_v4_6_1_5（行為「操作」の判定）を層1に足した
+[7/25] ipa_secguide_v4_phys_1_2_level2 (層3 21件) ...
+      [NG] 中の誤りのみ（重大0／中4） 値2件 ゲート=['new_fact_unapproved', 'fact_possible_duplicate', 'fact_reuse_suggested'] 315秒／3回
+        - 表記の違い: 値 '情報機器・設備'（出力の列 target_device／正解の列 operation_target）
+        - 表記の違い: 値 '許可なし'（出力の列 usage_authorization／正解の列 operation_authorization）
+        - 条件の落とし: 値 '設備'（出力の列 None／正解の列 operation_target）
+        - 条件の落とし: 値 'レベル2領域'（出力の列 None／正解の列 area_level）
+      operation_target（情報機器、設備、その他）を層3に足した
+      operation_authorization（無断、その他）を層3に足した
+      area_level（レベル2領域、その他）を層3に足した
+      dt_fact_gold_ipa_secguide_v4_phys_1_2_level2（行為「操作」の判定）を層1に足した
+[8/25] ipa_secguide_v4_2_3_3_forward (層3 24件) ...
+      [NG] 中の誤りのみ（重大0／中2） 値2件 ゲート=['new_fact_unapproved', 'fact_possible_duplicate'] 327秒／3回
+        - 表記の違い: 値 '社用メールアドレス受信メール'（出力の列 email_origin／正解の列 send_target）
+        - 表記の違い: 値 '従業員個人アドレス'（出力の列 recipient_email_type／正解の列 destination）
+      send_target（社用メールアドレスで受信したメール、その他）を層3に足した
+      destination（従業員個人のアドレス、その他）を層3に足した
+      dt_fact_gold_ipa_secguide_v4_2_3_3_forward（行為「送信」の判定）を層1に足した
+[9/25] ipa_secguide_v4_2_3_3_send (層3 26件) ...
+      [NG] 重大な誤りあり（重大2／中0） 値2件 ゲート=['new_fact_unapproved', 'fact_reuse_suggested'] 303秒／3回
+        - 値の取り違え: 値 '社内利用データ'（出力の列 internal_data_usage／正解の列 send_target）
+        - 値の取り違え: 値 '従業員個人アドレス'（出力の列 recipient_address_type／正解の列 destination）
+      send_target に値 社内で利用したデータ を足した
+      dt_fact_gold_ipa_secguide_v4_2_3_3_send（行為「送信」の判定）を層1に足した
+[10/25] ipa_secguide_v4_5_6_outdoor (層3 26件) ...
+      [NG] 重大な誤りあり（重大1／中3） 値4件 ゲート=['new_fact_unapproved', 'fact_possible_duplicate', 'fact_reuse_suggested'] 398秒／3回
+        - 条件の付け足し: 値 'ネットワーク接続'（出力の列 network_connection／正解の列 None）
+        - 表記の違い: 値 '極秘情報資産'（出力の列 asset_classification_secret／正解の列 information_classification）
+        - 表記の違い: 値 '社外秘情報資産'（出力の列 asset_classification_confidential／正解の列 information_classification）
+        - 条件の落とし: 値 '暗号化する'（出力の列 None／正解の列 encryption_status）
+      location（屋外、その他）を層3に足した
+      information_classification（極秘、社外秘、その他）を層3に足した
+      encryption_status（暗号化する、その他）を層3に足した
+      dt_fact_gold_ipa_secguide_v4_5_6_outdoor（行為「送信」の判定）を層1に足した
+[11/25] ipa_secguide_v4_phys_3_printer (層3 29件) ...
+      [NG] 中の誤りのみ（重大0／中2） 値2件 ゲート=['new_fact_unapproved'] 293秒／3回
+        - 条件の落とし: 値 '原稿'（出力の列 None／正解の列 leave_target）
+        - 条件の落とし: 値 '印刷物'（出力の列 None／正解の列 leave_target）
+      leave_place（複合機、プリンタ、その他）を層3に足した
+      leave_target（原稿、印刷物、その他）を層3に足した
+      dt_fact_gold_ipa_secguide_v4_phys_3_printer（行為「放置」の判定）を層1に足した
+[12/25] ipa_secguide_v4_phys_1_2_level1 (層3 31件) ...
+      [NG] 中の誤りのみ（重大0／中3） 値1件 ゲート=['new_fact_unapproved', 'fact_value_unverified', 'fact_possible_duplicate', 'fact_reuse_suggested'] 344秒／3回
+        - 条件の落とし: 値 '社外秘'（出力の列 None／正解の列 information_classification）
+        - 条件の落とし: 値 '極秘'（出力の列 None／正解の列 information_classification）
+        - 条件の落とし: 値 'レベル1領域'（出力の列 None／正解の列 area_level）
+      usage_state（未使用時、その他）を層3に足した
+      area_level に値 レベル1領域 を足した
+      dt_fact_gold_ipa_secguide_v4_phys_1_2_level1（行為「放置」の判定）を層1に足した
+[13/25] ipa_secguide_v4_personnel_6_4_4_leave (層3 32件) ...
+      [NG] 重大な誤りあり（重大1／中2） 値1件 ゲート=['new_fact_unapproved', 'fact_value_unverified', 'fact_possible_duplicate', 'fact_reuse_suggested'] 309秒／3回
+        - 条件の付け足し: 値 '目の届く範囲内'（出力の列 location_status／正解の列 None）
+        - 条件の落とし: 値 '機器'（出力の列 None／正解の列 leave_target）
+        - 条件の落とし: 値 '書類'（出力の列 None／正解の列 leave_target）
+      leave_target に値 機器、書類 を足した
+      dt_fact_gold_ipa_secguide_v4_personnel_6_4_4_leave（行為「放置」の判定）を層1に足した
+[14/25] ipa_secguide_v4_2_3_3_store (層3 32件) ...
+      [NG] 中の誤りのみ（重大0／中5） 値0件 ゲート=['fact_value_unverified', 'fact_possible_duplicate', 'fact_reuse_suggested'] 333秒／3回
+        - 条件の落とし: 値 '社外秘'（出力の列 None／正解の列 information_classification）
+        - 条件の落とし: 値 '極秘'（出力の列 None／正解の列 information_classification）
+        - 条件の落とし: 値 'IT機器'（出力の列 None／正解の列 storage_medium）
+        - 条件の落とし: 値 '電子媒体'（出力の列 None／正解の列 storage_medium）
+        - 条件の落とし: 値 '利用期間中'（出力の列 None／正解の列 usage_period）
+      storage_medium（IT機器、電子媒体、その他）を層3に足した
+      usage_period（利用期間中、その他）を層3に足した
+      dt_fact_gold_ipa_secguide_v4_2_3_3_store（行為「保存」の判定）を層1に足した
+[15/25] mhlw_r7dec_art58_3_6 (層3 34件) ...
+      [OK] 正しい（重大0／中0） 値2件 ゲート=['new_fact_unapproved', 'fact_reuse_suggested'] 295秒／3回
+      area_type（立入禁止区域、通行禁止区域、その他）を層3に足した
+      dt_fact_gold_mhlw_r7dec_art58_3_6（行為「立入り」の判定）を層1に足した
+[16/25] mhlw_r7dec_art58_3_4 (層3 35件) ...
+      [NG] 重大な誤りあり（重大1／中1） 値2件 ゲート=['new_fact_unapproved', 'fact_possible_duplicate', 'fact_reuse_suggested'] 311秒／3回
+        - 表記の違い: 値 '20歳未満'（出力の列 age_category／正解の列 entrant_age）
+        - 値の取り違え: 値 '喫煙可能'（出力の列 area_type／正解の列 area_type）
+      entrant_age（20歳未満の者、その他）を層3に足した
+      area_type に値 喫煙可能な場所 を足した
+      dt_fact_gold_mhlw_r7dec_art58_3_4（行為「立入り」の判定）を層1に足した
+[17/25] mhlw_r7dec_art58_3_5 (層3 36件) ...
+      [NG] 中の誤りのみ（重大0／中2） 値1件 ゲート=['new_fact_unapproved', 'fact_value_unverified', 'fact_possible_duplicate', 'fact_reuse_suggested'] 338秒／3回
+        - 表記の違い: 値 '受動喫煙望まない者'（出力の列 passive_smoker_status／正解の列 companion_attribute）
+        - 条件の落とし: 値 '喫煙可能な場所'（出力の列 None／正解の列 area_type）
+      companion_attribute（受動喫煙を望まない者、その他）を層3に足した
+      dt_fact_gold_mhlw_r7dec_art58_3_5（行為「同伴」の判定）を層1に足した
+[18/25] mhlw_r7dec_art25_2 (層3 37件) ...
+      [NG] 重大な誤りあり（重大1／中0） 値1件 ゲート=['new_fact_unapproved'] 296秒／3回
+        - 値の取り違え: 値 '産後8週間以内の女性労働者'（出力の列 postpartum_period_status／正解の列 worker_category）
+      worker_category に値 産後8週間を経過していない女性労働者 を足した
+      dt_fact_gold_mhlw_r7dec_art25_2（行為「労働指示」の判定）を層1に足した
+[19/25] mhlw_r7dec_art21_4 (層3 37件) ...
+      [NG] 重大な誤りあり（重大6／中1） 値6件 ゲート=['new_fact_unapproved', 'fact_possible_duplicate', 'fact_reuse_suggested'] 503秒／3回
+        - 条件の付け足し: 値 '災害'（出力の列 emergency_circumstance／正解の列 None）
+        - 条件の付け足し: 値 '避けることのできない事由'（出力の列 emergency_circumstance／正解の列 None）
+        - 条件の付け足し: 値 '臨時'（出力の列 temporary_need／正解の列 None）
+        - 値の取り違え: 値 '所定労働時間外'（出力の列 work_type_exception／正解の列 work_type）
+        - 値の取り違え: 値 '休日'（出力の列 work_type_exception／正解の列 work_type）
+        - 値の取り違え: 値 '請求のあった妊産婦'（出力の列 pregnant_worker_request／正解の列 worker_category）
+        - 条件の落とし: 値 '請求のあった'（出力の列 None／正解の列 exemption_request）
+      worker_category に値 妊産婦 を足した
+      exemption_request に値 請求のあった を足した
+      work_type に値 所定労働時間外労働 を足した
+      dt_fact_gold_mhlw_r7dec_art21_4（行為「労働指示」の判定）を層1に足した
+[20/25] ipa_secguide_v4_2_3_3_wifi (層3 37件) ...
+      [NG] 重大な誤りあり（重大1／中1） 値2件 ゲート=['new_fact_unapproved'] 354秒／3回
+        - 表記の違い: 値 '会社で契約したサービス'（出力の列 company_contracted_service／正解の列 service_contract）
+        - 値の取り違え: 値 '社外のWi-Fiサービス'（出力の列 wifi_service_type／正解の列 usage_target）
+      service_contract（会社で契約したサービス社外、その他）を層3に足した
+      usage_target に値 Wi-Fiサービス を足した
+      dt_fact_gold_ipa_secguide_v4_2_3_3_wifi（行為「使用」の判定）を層1に足した
+[21/25] ipa_secguide_v4_6_10_password_reuse (層3 38件) ...
+      [NG] 中の誤りのみ（重大0／中3） 値0件 ゲート=['fact_value_unverified', 'fact_possible_duplicate', 'fact_reuse_suggested'] 292秒／3回
+        - 条件の落とし: 値 'パスワード'（出力の列 None／正解の列 usage_target）
+        - 条件の落とし: 値 '機器間'（出力の列 None／正解の列 reuse_scope）
+        - 条件の落とし: 値 'サービス間'（出力の列 None／正解の列 reuse_scope）
+      reuse_scope（機器間、サービス間、その他）を層3に足した
+      usage_target に値 パスワード を足した
+      dt_fact_gold_ipa_secguide_v4_6_10_password_reuse（行為「使用」の判定）を層1に足した
+[22/25] ipa_secguide_v4_personnel_6_4_2_cloud (層3 39件) ...
+      [NG] 中の誤りのみ（重大0／中4） 値0件 ゲート=['fact_value_unverified'] 296秒／3回
+        - 条件の落とし: 値 '送受信'（出力の列 None／正解の列 usage_purpose）
+        - 条件の落とし: 値 '保存'（出力の列 None／正解の列 usage_purpose）
+        - 条件の落とし: 値 '共有'（出力の列 None／正解の列 usage_purpose）
+        - 条件の落とし: 値 '業務関連データ'（出力の列 None／正解の列 handled_data）
+      handled_data（業務関連データ、その他）を層3に足した
+      usage_purpose に値 送受信、保存、共有 を足した
+      dt_fact_gold_ipa_secguide_v4_personnel_6_4_2_cloud（行為「使用」の判定）を層1に足した
+[23/25] ipa_secguide_v4_6_10_priv_name (層3 40件) ...
+      [NG] 中の誤りのみ（重大0／中2） 値1件 ゲート=['new_fact_unapproved', 'fact_value_unverified', 'fact_reuse_suggested'] 369秒／3回
+        - 表記の違い: 値 '複数利用なし'（出力の列 account_sharing_status／正解の列 sharer_count）
+        - 条件の落とし: 値 '特権アカウント名'（出力の列 None／正解の列 share_target）
+      share_target（特権アカウント名、その他）を層3に足した
+      sharer_count（2名以上、その他）を層3に足した
+      dt_fact_gold_ipa_secguide_v4_6_10_priv_name（行為「共有」の判定）を層1に足した
+[24/25] ipa_secguide_v4_6_2_1_item2 (層3 42件) ...
+      [NG] 中の誤りのみ（重大0／中2） 値2件 ゲート=['new_fact_unapproved', 'fact_possible_duplicate', 'fact_reuse_suggested'] 351秒／3回
+        - 取りこぼし: 値 '同一アカウント'（出力の列 same_account_target／正解の列 share_target）
+        - 表記の違い: 値 '他者との共有'（出力の列 sharing_situation／正解の列 share_partner）
+      share_partner（他者、その他）を層3に足した
+      share_target に値 同一アカウント を足した
+      dt_fact_gold_ipa_secguide_v4_6_2_1_item2（行為「共有」の判定）を層1に足した
+[25/25] ipa_secguide_v4_5_6_share (層3 43件) ...
+      [NG] 重大な誤りあり（重大3／中2） 値3件 ゲート=['new_fact_unapproved', 'fact_possible_duplicate', 'fact_reuse_suggested'] 393秒／3回
+        - 値の取り違え: 値 '社外秘情報ファイル'（出力の列 secret_information_type／正解の列 information_classification）
+        - 値の取り違え: 値 '極秘情報ファイル'（出力の列 secret_information_type／正解の列 information_classification）
+        - 値の取り違え: 値 '秘密保持に関する合意あり'（出力の列 secrecy_agreement_status／正解の列 share_partner）
+        - 条件の落とし: 値 '情報ファイル'（出力の列 None／正解の列 share_target）
+        - 条件の落とし: 値 '社外'（出力の列 None／正解の列 share_scope）
+      share_scope（社外、その他）を層3に足した
+      share_target に値 情報ファイル を足した
+      share_partner に値 秘密保持に関する合意をした相手 を足した
+      dt_fact_gold_ipa_secguide_v4_5_6_share（行為「共有」の判定）を層1に足した
+
+== 集計 ==
+  件数: 25
+  すり抜け(重大な誤りでゲート無し): 0件 → 合格（P40）
+  [参考] 重大な誤りで疑いのゲート無し: 3件 ['ipa_secguide_v4_2_3_3_send', 'mhlw_r7dec_art25_2', 'ipa_secguide_v4_2_3_3_wifi']
+  正しい: 2/25（重大な誤りを含む件 8／中の誤りを含む件 21／中の誤りだけの件 15）
+  誤りの内訳（値の単位）:
+    条件の付け足し（重大）: 5件
+    誤った再利用（重大）: 0件
+    値の取り違え（重大）: 11件
+    条件の落とし（中）: 35件
+    取りこぼし（中）: 1件
+    fact の分け方の違い（中）: 2件
+    表記の違い（中）: 17件
+  値の突き合わせ: 正解 80件／出力 50件／対応 17件
+  条件の語句の逐語率: 61/61
+  既存の fact の再利用: 正しい 0/29（取りこぼし 1／誤った再利用 0）
+  手順3b の提案: 25件／渡した値 61件（当たり 13／誤報 12。列の単位）
+  手順3b の答えの照合: {'exact': 53, 'contains': 0, 'no_match_answer': 6, 'ambiguous': 0, 'none': 2, 'unrecorded': 0}
+  別の行為の fact と値が一致(寄せずに提案へ。P37 改訂): 2件（うち祖先の行為だけ 0件）
+  人に回る割合: 25/25（疑いあり 16／設計上の確認だけ 9／自動 0）
+  ゲート: {'new_fact_unapproved': 22, 'fact_possible_duplicate': 14, 'fact_reuse_suggested': 17, 'fact_value_unverified': 8, 'comparison_fact_proposed': 1}
+  疑いのゲートの誤報: 0件 {}
+  [別枠] 寄せ先の確認で立った fact_possible_duplicate(Q1): 1件 ['ipa_secguide_v4_personnel_2']
+  新規候補の primitive の一致: 13/13
+  評価から外した値(FU2): 0件
+  所要: 8245.6秒（1件あたり 329.8秒／LLM 75回）
+
+結果: /tmp/claude-1000/-home-miyakz-aoi-doc2dmn/99421067-b426-436f-b3e7-989e2e2e90c3/scratchpad/dev25/result.json

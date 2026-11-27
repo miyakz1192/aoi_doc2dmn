@@ -1,4 +1,4 @@
-"""事実の抽出(前段設計書10章 v0.12)。③a 前段の第2要素。
+"""事実の抽出(前段設計書10章 v0.13)。③a 前段の第2要素。
 
 Action 正規化が済んだ条文から、決定表の**列(fact)とその値**を取り出し、IR の
 `facts` 欄(`FactUsage`。IR v2 の型をそのまま使う)を埋める(P34)。
@@ -52,6 +52,14 @@ Action 正規化が済んだ条文から、決定表の**列(fact)とその値**
 - **値の付け足しの歯止め**: 手順4 が返した値のうち、手順1 の語句から作った値に無い
   ものは候補の値に入れない(条文に無い値を層3に入れないため)。捨てた値は Trace に
   残し、`fact_value_unverified` を立てる
+- **比較型の候補にはこの歯止めを当てない**(Q7・第52回): 比較型の値はプリミティブの
+  定義で決まる(D59)ので、手順4 が「一致・不一致・未提供」を返しても条文に無い値を
+  足したことにはならない。候補の値には入れず、`comparison_values_ignored` に記録
+  するだけにする
+- **寄せ先の確認**(Q1・第52回): P37 改訂で寄せ先を同じ行為の fact に限ったので、別の
+  行為の fact と値が一致した値は新規候補に入り、その候補は必ず `fact_possible_duplicate`
+  で近いと判定される。ゲートは立てたまま、それが寄せ先の確認だけかどうかを
+  `duplicate_scope_only` に残す(評価では疑いの誤報に数えない)
 """
 from __future__ import annotations
 
@@ -218,6 +226,9 @@ class NewFactProposal:
     comparison_kind: Optional[str] = None
     quotes: list[str] = field(default_factory=list)
     dropped_values: list[str] = field(default_factory=list)
+    # 比較型の候補で手順4 が返した値(Q7)。比較型の値はプリミティブの定義で決まる
+    # (D59)ので、条文に無い値を落とす歯止め(K50)は当てず、記録だけ残す
+    comparison_values_ignored: list[str] = field(default_factory=list)
     # 手順3a で既存の fact に寄せた値(手順4 には渡していないので、候補の値には
     # 入れない)。条文に無い値ではないので fact_value_unverified は立てない
     reused_values: list[str] = field(default_factory=list)
@@ -248,6 +259,7 @@ class NewFactProposal:
             "comparison_kind": self.comparison_kind,
             "quotes": list(self.quotes),
             "dropped_values": list(self.dropped_values),
+            "comparison_values_ignored": list(self.comparison_values_ignored),
             "reused_values": list(self.reused_values),
             "primitive_demoted_from": self.primitive_demoted_from,
             "demote_reason": self.demote_reason,
@@ -270,6 +282,9 @@ class FactExtractionTrace:
     out_of_scope_hits: list[dict] = field(default_factory=list)
     # 手順3a で寄せてよい fact の範囲(その行為の決定表が使っている fact)
     reuse_scope: list[str] = field(default_factory=list)
+    # fact_possible_duplicate が立った理由が「別の行為の fact と値が一致した」ことだけか
+    # (Q1。誤報ではなく寄せ先の確認として数える)
+    duplicate_scope_only: bool = False
     sources_note: str = ""
     elapsed_seconds: float = 0.0
     llm_calls: int = 0
@@ -285,6 +300,7 @@ class FactExtractionTrace:
             "comparison_value_hits": [dict(h) for h in self.comparison_value_hits],
             "out_of_scope_hits": [dict(h) for h in self.out_of_scope_hits],
             "reuse_scope": list(self.reuse_scope),
+            "duplicate_scope_only": self.duplicate_scope_only,
             "sources_note": self.sources_note,
             "elapsed_seconds": round(self.elapsed_seconds, 1),
             "llm_calls": self.llm_calls,
@@ -373,8 +389,8 @@ CONDITION_PROMPT = """あなたは就業規則・情報セキュリティ規程�
      次の直しはしてよい
      - 体言にする(例:「システム開発を担当する者」→「システム開発担当」、
        「許可なく」→「許可なし」)
-     - 並列で共有された語を展開する(例:「休日若しくは深夜労働」→「休日労働」と
-       「深夜労働」の2件に分ける)
+     - 並列で共有された語を展開する(例:「国内若しくは海外出張」→「国内出張」と
+       「海外出張」の2件に分ける)
      - 指示語や主体の限定を外す(例:「その複製物」→「複製物」)
 4. **条文に書かれていない条件を足さないこと。**条文が片方の状態しか書いていなければ、
    その片方だけを出す(反対側の状態は、こちらのプログラムが別に扱います)
@@ -383,6 +399,20 @@ CONDITION_PROMPT = """あなたは就業規則・情報セキュリティ規程�
 6. 規範の語尾(してはならない・しないこと・禁止する)は条件ではないので入れない
 7. 同じ列に入る値が2つ以上あるときは、`value` を分けて別の条件として並べる
    (例:「会社の施設、物品等」→「会社の施設」と「物品等」)
+8. **並べて書かれた語は、1つずつ別の条件にする。**条文が「A及びB」「A又はB」
+   「A、B」「AもしくはB」のように2つ以上を並べているときは、並んでいる項を
+   **すべて**別の条件として出す。代表の1つだけを出したり、1つにまとめたりしない
+   (例:「出張旅費及び宿泊費」→「出張旅費」と「宿泊費」の2件)。
+   - 後ろの語が共有されているときは、各項に補って展開する
+     (例:「書面又は電子データの提出」→「書面の提出」と「電子データの提出」の2件)
+   - 条文がその並びに括弧で言い換えの名前を付けているとき(「(以下「〇〇」という。)」)
+     は、**言い換えの名前ではなく、並んでいた元の語をそれぞれ**出す
+9. **行為のきっかけは条件にしない。**「〜に対し」「〜を受けて」「〜の求めにより」
+   「〜の際に」のように、行為が起きた発端や経緯を述べている語句は、規範が当てはまる
+   場面を狭めていないので条件に入れない(例:「取引先からの依頼に対し見積書を提出する」
+   の「取引先からの依頼」は、きっかけなので条件ではない)。狭めているかどうかは
+   **その語句が無くてもこの規範が当てはまるか**で見る。当てはまるなら条件ではない。
+   ただし、行為の相手や対象**そのものの属性**(誰に・何に・どの区分の)は条件である
 
 出力は必ず次のJSON形式のみで返してください(前後に他のテキストを含めないこと):
 {{"conditions": [{{"quote": "条文から一言一句そのまま抜き出した語句",
@@ -659,6 +689,7 @@ class FactExtractor:
         conditions: list[ConditionValue],
         ledger: FactLedger,
         reused_values: Optional[list[str]] = None,
+        out_of_scope_pairs: Optional[set[tuple[str, str]]] = None,
     ) -> list[NewFactProposal]:
         """手順4(LLM): 新規候補の案(P38)。値はプログラムが選び直す。
 
@@ -721,10 +752,16 @@ class FactExtractor:
             values: list[str] = []
             dropped: list[str] = []
             reused_here: list[str] = []
+            ignored: list[str] = []
             for value in entry.get("values") or []:
                 text = str(value).strip().strip(_STRIP_CHARS).strip()
                 normalized, _applied = normalize_value(text)
-                if normalized in allowed_values:
+                if primitive != "passthrough":
+                    # Q7: 比較型の候補の値はプリミティブの定義で決まる(D59)ので、
+                    # 条文に無い値を落とす歯止め(K50)は当てない。記録だけ残す
+                    if normalized:
+                        ignored.append(normalized)
+                elif normalized in allowed_values:
                     if normalized not in values:
                         values.append(normalized)
                 elif normalized in reused:
@@ -746,10 +783,13 @@ class FactExtractor:
                     ),
                     quotes=[quote_of[v] for v in values if v in quote_of],
                     dropped_values=dropped,
+                    comparison_values_ignored=ignored,
                     reused_values=reused_here,
                     primitive_demoted_from=demoted_from,
                     demote_reason=demote_reason,
-                    duplicate=ledger.duplicate_check(variable, values),
+                    duplicate=ledger.duplicate_check(
+                        variable, values, out_of_scope_pairs=out_of_scope_pairs
+                    ),
                 )
             )
         return proposals
@@ -808,6 +848,11 @@ class FactExtractor:
 
         # 手順4(LLM): 新規候補
         reused_values = [m.value for m in matches if m.chosen is not None]
+        # Q1: 寄せなかった一致の (fact, 値)。新規候補が「既存の fact の値と同じ」で
+        # 近いと判定されたとき、それが寄せ先の確認かどうかを分けるために渡す
+        out_of_scope_pairs = {
+            (o["fact"], m.value) for m in matches for o in m.out_of_scope
+        }
         proposals = (
             self._propose_facts(
                 clause_text,
@@ -817,6 +862,7 @@ class FactExtractor:
                 unmatched,
                 ledger,
                 reused_values=reused_values,
+                out_of_scope_pairs=out_of_scope_pairs,
             )
             if unmatched
             else []
@@ -859,6 +905,24 @@ class FactExtractor:
             value_additions={},
         )
 
+        # Q1: fact_possible_duplicate が立った理由が「別の行為の fact と値が一致した」
+        # ことだけなら、誤報ではなく**寄せ先の確認**として数える(ゲートは立てたまま)
+        flagged_duplicates = [
+            p for p in proposals if p.duplicate is not None and p.duplicate.flagged
+        ]
+        duplicate_flagged = bool(
+            any(m.ambiguous for m in matches) or flagged_duplicates
+        )
+        duplicate_scope_only = bool(
+            duplicate_flagged
+            and not any(m.ambiguous for m in matches)
+            and flagged_duplicates
+            and all(
+                p.duplicate is not None and p.duplicate.scope_check_only
+                for p in flagged_duplicates
+            )
+        )
+
         gates = ReviewGates(
             new_fact_unapproved=bool(
                 [f for f in new_facts if f.approved_by is None]
@@ -868,10 +932,7 @@ class FactExtractor:
                 or any(p.dropped_values for p in proposals)
                 or not conditions
             ),
-            fact_possible_duplicate=(
-                any(m.ambiguous for m in matches)
-                or any(p.duplicate and p.duplicate.flagged for p in proposals)
-            ),
+            fact_possible_duplicate=duplicate_flagged,
             comparison_fact_proposed=any(p.is_comparison for p in proposals),
             fact_reuse_suggested=any(s.answer is not None for s in suggestions),
         )
@@ -885,6 +946,7 @@ class FactExtractor:
             comparison_value_hits=comparison_hits,
             out_of_scope_hits=out_of_scope_hits,
             reuse_scope=list(ledger.action_scope(action_name) or []),
+            duplicate_scope_only=duplicate_scope_only,
             sources_note=SOURCES_NOTE,
             elapsed_seconds=time.monotonic() - started,
             llm_calls=self.calls,

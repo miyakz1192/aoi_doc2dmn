@@ -12,6 +12,8 @@
 | ゲートは5つ、疑いと設計上の確認に分かれる | P41 |
 | 寄せる相手は**同じ行為の決定表が使う** fact に限る | **P37 改訂【v0.13】** |
 | 手順3b の答えは含む関係でも当てる | Q5(第50回) |
+| 比較型の候補の値には K50 を当てない | Q7(第52回) |
+| 手順1 は並列を1つずつ出し、きっかけを条件にしない | パートC(第52回) |
 """
 from __future__ import annotations
 
@@ -25,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.stage3_frontstage.fact_extractor import (  # noqa: E402
     CONDITION_KINDS,
+    CONDITION_PROMPT,
     FactExtractor,
     ScriptedJsonLlm,
     build_sources,
@@ -926,3 +929,240 @@ def test_a_positional_answer_with_a_real_column_is_not_matched():
     by_value = {"許可の有無": answers[0], NO_MATCH: answers[1]}
     entry, how = match_answer("職務以外の目的", by_value, position=0, answers=answers, total=2)
     assert how == "none" and entry == {}
+
+
+# --------------------------------------------------------------------------
+# 第52回パートA: 寄せ先の確認(Q1)と、比較型の候補の値(Q7)
+# --------------------------------------------------------------------------
+
+
+def test_a_duplicate_raised_by_another_actions_match_is_a_scope_check():
+    """別の行為の fact と値が一致して立った近さは「寄せ先の確認」である(Q1)。
+
+    P37 改訂で寄せ先を同じ行為の fact に限ったので、別の行為の fact と値が一致した値は
+    新規候補に入る。その候補は必ず「候補の値が既存の fact の値と同じ」で近いと判定
+    されるが、これは誤報ではない。ゲートは立てたまま、別枠で数える。
+    """
+    ledger = wired_ledger(
+        [passthrough("usage_authorization", ["許可なし"])], [USE_TABLE]
+    )
+    llm = ScriptedJsonLlm(
+        [
+            {
+                "conditions": [
+                    {"quote": "許可されていない", "value": "許可なし", "kind": "状態"}
+                ],
+                "rationale": "",
+            },
+            {"assignments": [{"value": "許可なし", "fact": NO_MATCH, "reason": "無い"}]},
+            {
+                "facts": [
+                    {
+                        "variable": "recipient_authorization",
+                        "primitive": "passthrough",
+                        "values": ["許可なし"],
+                        "other_value_note": "許可のある提供先",
+                    }
+                ]
+            },
+        ]
+    )
+    result = FactExtractor(llm).extract(
+        "許可されていない組織、人に提供してはならない。",
+        "ref",
+        ledger,
+        action_name="提供",
+    )
+    assert "fact_possible_duplicate" in result.gates.gate_names()
+    assert result.trace.duplicate_scope_only is True
+    shared = result.trace.proposals[0].duplicate.shared_values
+    assert shared == [
+        {
+            "value": "許可なし",
+            "fact": "usage_authorization",
+            "primitive": "passthrough",
+            "out_of_scope": True,
+        }
+    ]
+    assert result.trace.proposals[0].duplicate.scope_check_only is True
+
+
+def test_a_duplicate_raised_by_a_value_of_the_same_action_is_not_a_scope_check():
+    """同じ行為の fact の値と同じだった近さは、これまでどおり疑いである(Q1 の歯止め)。
+
+    手順3a が寄せられるのに新規候補にした(取りこぼし)場面なので、別枠には入れない。
+    値の一致で寄るのは完全一致のときだけなので、値の書き方が違うとこの形になる。
+    """
+    ledger = wired_ledger(
+        [passthrough("usage_target", ["会社の施設"])], [USE_TABLE]
+    )
+    llm = ScriptedJsonLlm(
+        [
+            {
+                "conditions": [
+                    {"quote": "物品等", "value": "物品等", "kind": "対象"}
+                ],
+                "rationale": "",
+            },
+            {"assignments": [{"value": "物品等", "fact": NO_MATCH, "reason": "無い"}]},
+            {
+                "facts": [
+                    {
+                        "variable": "usage_target_kind",
+                        "primitive": "passthrough",
+                        "values": ["物品等"],
+                        "other_value_note": "それ以外",
+                    }
+                ]
+            },
+        ]
+    )
+    result = FactExtractor(llm).extract(
+        "職務以外の目的で物品等を使用しないこと。",
+        "ref",
+        ledger,
+        action_name="使用",
+    )
+    # 名前が既存の fact に近いので近さが立つ。寄せ先の確認ではない
+    assert "fact_possible_duplicate" in result.gates.gate_names()
+    assert result.trace.duplicate_scope_only is False
+
+
+def test_a_comparison_candidate_does_not_lose_its_values_to_the_k50_guard():
+    """Q7: 比較型の候補には K50(条文に無い値を落とす歯止め)を当てない。
+
+    比較型の値はプリミティブの定義で決まる(D59)ので、手順4 が「一致・不一致・未提供」
+    を返しても、条文に無い値を足したことにはならない。第14条の生年月日・連絡先の
+    比較型の候補が、値のせいでゲートを立てずに IR に入ることを確かめる。
+    """
+    clause = (
+        "当該患者の生年月日及び連絡先の一致が確認できない場合、検査結果その他の医療情報"
+        "を口頭で伝達してはならない。"
+    )
+    registry = Registry.load(ROOT / "registry" / "registry.json")
+    ledger = FactLedger.from_json(registry.fact_registry)
+    llm = ScriptedJsonLlm(
+        [
+            {
+                "conditions": [
+                    {"quote": "生年月日", "value": "一致", "kind": "状態"},
+                    {"quote": "連絡先", "value": "一致", "kind": "状態"},
+                ],
+                "rationale": "",
+            },
+            {
+                "assignments": [
+                    {"value": "一致", "fact": NO_MATCH, "reason": "比較の列は別"}
+                ]
+            },
+            {
+                "facts": [
+                    {
+                        "variable": "birth_date_match",
+                        "primitive": "date_match",
+                        # プリミティブの定義どおりの値(条文にあるのは「一致」だけ)
+                        "values": ["一致", "不一致", "未提供"],
+                        "other_value_note": "",
+                        "comparison_kind": "date",
+                    },
+                    {
+                        "variable": "contact_number_match",
+                        "primitive": "exact_match",
+                        "values": ["一致", "不一致", "未提供"],
+                        "other_value_note": "",
+                        "comparison_kind": "phone",
+                    },
+                ]
+            },
+        ]
+    )
+    result = FactExtractor(llm).extract(clause, "ref", ledger, action_name="伝達")
+    # 比較型の候補が2件とも IR の new_facts に入る(D59・D62)
+    assert [f.variable for f in result.facts.new_facts] == [
+        "birth_date_match",
+        "contact_number_match",
+    ]
+    assert all(isinstance(f, ComparisonFact) for f in result.facts.new_facts)
+    # K50 は当てない。落とした値は無く、記録だけが残る
+    assert [p.dropped_values for p in result.trace.proposals] == [[], []]
+    assert [p.comparison_values_ignored for p in result.trace.proposals] == [
+        ["一致", "不一致", "未提供"],
+        ["一致", "不一致", "未提供"],
+    ]
+    # 値のせいで fact_value_unverified は立たない(立つのは比較型の確認のゲート)
+    assert "fact_value_unverified" not in result.gates.gate_names()
+    assert "comparison_fact_proposed" in result.gates.gate_names()
+
+
+def test_a_passthrough_candidate_still_drops_a_value_not_in_the_clause():
+    """Q7 の歯止め: 区分の値の候補には K50 をこれまでどおり当てる。"""
+    llm = ScriptedJsonLlm(
+        [
+            {
+                "conditions": [
+                    {"quote": "本番環境", "value": "本番環境", "kind": "状況"}
+                ],
+                "rationale": "",
+            },
+            {
+                "facts": [
+                    {
+                        "variable": "target_environment",
+                        "primitive": "passthrough",
+                        "values": ["本番環境", "検証環境"],
+                        "other_value_note": "それ以外の環境",
+                    }
+                ]
+            },
+        ]
+    )
+    result = FactExtractor(llm).extract(
+        GOLDEN_TEXT, "ref", FactLedger(), action_name="操作"
+    )
+    assert result.trace.proposals[0].dropped_values == ["検証環境"]
+    assert result.trace.proposals[0].comparison_values_ignored == []
+    assert "fact_value_unverified" in result.gates.gate_names()
+
+
+# --------------------------------------------------------------------------
+# 第52回パートC: 手順1 のプロンプトの直し
+# --------------------------------------------------------------------------
+
+
+def test_the_condition_prompt_tells_the_llm_to_split_every_parallel_item():
+    """パートC1: 並列の片方を落とす型を直す(第49回の #1・#4)。"""
+    assert "並べて書かれた語は、1つずつ別の条件にする" in CONDITION_PROMPT
+    assert "代表の1つだけを出したり、1つにまとめたりしない" in CONDITION_PROMPT
+    # 後ろの語が共有された並びの展開(D44)
+    assert "書面又は電子データの提出" in CONDITION_PROMPT
+    # 言い換えの名前ではなく元の語を出す(「(以下「〇〇」という。)」の型)
+    assert "言い換えの名前ではなく、並んでいた元の語をそれぞれ" in CONDITION_PROMPT
+
+
+def test_the_condition_prompt_tells_the_llm_not_to_condition_on_the_trigger():
+    """パートC2: 行為のきっかけを条件にする型を直す(第49回の #5)。"""
+    assert "行為のきっかけは条件にしない" in CONDITION_PROMPT
+    assert "その語句が無くてもこの規範が当てはまるか" in CONDITION_PROMPT
+    # 相手や対象そのものの属性は条件のまま(規則2 と矛盾させない)
+    assert "行為の相手や対象**そのものの属性**" in CONDITION_PROMPT
+
+
+def test_the_new_examples_are_not_taken_from_the_dev_gold():
+    """パートC3: 付録の20件の条文や値をプロンプトの例に使わない。
+
+    評価の対象を例にすると測れなくなる。第48回から入っていた例の1つ(「休日若しくは
+    深夜労働」)は付録20件の #19 の正解の値(「休日労働」)と同じだったので、中立な例
+    (「国内若しくは海外出張」)に差し替えた。正解 IR 5件の値を使った例は残っている
+    (第53回の一目確認)。
+    """
+    from src.stage3_frontstage.fact_gold import load_items as load_fact_gold
+    from src.stage3_frontstage.run_fact_eval import gold_values
+
+    items = load_fact_gold(ROOT / "testdata" / "fact_gold" / "fact_gold_dev_v1.json")
+    appendix = [i for i in items if i["gold"].get("fact_gold")]
+    assert len(appendix) == 20
+    for item in appendix:
+        assert item["gold"]["ir"]["clause_text"] not in CONDITION_PROMPT
+        for value in gold_values(item["gold"]):
+            if len(value.value) >= 3:
+                assert value.value not in CONDITION_PROMPT, value.value

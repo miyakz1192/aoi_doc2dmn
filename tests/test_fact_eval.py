@@ -11,6 +11,7 @@
 | 表記の違い(中)の分け方 | **P40 改訂【v0.13】** |
 | 重大な誤りで疑いのゲートが無い件(参考指標) | Q2(第50回) |
 | 済んだ結果を LLM なしで数え直す | 第50回パートB3 |
+| 寄せ先の確認で立った近さは誤報に数えない | Q1(第52回) |
 """
 from __future__ import annotations
 
@@ -71,6 +72,7 @@ def fake_result(
     new: bool = True,
     matches: list[tuple[str, str]] | None = None,
     gates: ReviewGates | None = None,
+    duplicate_scope_only: bool = False,
 ) -> FactExtractionResult:
     """手で作った出力(突き合わせの単体テスト用)。
 
@@ -97,6 +99,7 @@ def fake_result(
             ValueMatch(value=value, matches=[fact])
             for fact, value in (matches or [])
         ],
+        duplicate_scope_only=duplicate_scope_only,
     )
     return FactExtractionResult(
         facts=FactUsage(), trace=trace, gates=gates or ReviewGates()
@@ -472,3 +475,132 @@ def test_the_eval_uses_the_wiring_so_step_3a_is_scoped(oracle_run):
     # 教師ありで層1も育っている(行為「使用」の表が入っている)
     taught = [line for e in oracle_run["ledger_log"] for line in e["taught"]]
     assert any("行為「使用」の判定" in line for line in taught)
+
+
+# --------------------------------------------------------------------------
+# 第52回 Q1: 寄せ先の確認で立った fact_possible_duplicate は誤報に数えない
+# --------------------------------------------------------------------------
+
+
+def test_a_duplicate_for_the_reuse_scope_is_not_a_false_alarm(items):
+    """P37 改訂で立つようになった近さを、別枠(寄せ先の確認)で数える(Q1)。"""
+    golden = next(
+        i["gold"] for i in items if i["gold"]["gold_id"] == "ipa_secguide_v4_6_7_1"
+    )
+    result = fake_result(
+        values=[
+            ("operator_role", "システム開発担当"),
+            ("target_environment", "本番環境"),
+            ("requested_privilege", "特権"),
+        ],
+        gates=ReviewGates(new_fact_unapproved=True, fact_possible_duplicate=True),
+        duplicate_scope_only=True,
+    )
+    judged = judge(1, golden, result)
+    assert judged.correct is True
+    # ゲートは立てたまま(人は寄せ先を確かめたい)
+    assert "fact_possible_duplicate" in judged.gates
+    assert judged.reuse_scope_check is True
+    # 誤報には数えない
+    assert judged.false_alarm_gates == []
+
+
+def test_a_duplicate_that_is_not_a_scope_check_is_still_a_false_alarm(items):
+    golden = next(
+        i["gold"] for i in items if i["gold"]["gold_id"] == "ipa_secguide_v4_6_7_1"
+    )
+    result = fake_result(
+        values=[
+            ("operator_role", "システム開発担当"),
+            ("target_environment", "本番環境"),
+            ("requested_privilege", "特権"),
+        ],
+        gates=ReviewGates(new_fact_unapproved=True, fact_possible_duplicate=True),
+        duplicate_scope_only=False,
+    )
+    judged = judge(1, golden, result)
+    assert judged.correct is True
+    assert judged.reuse_scope_check is False
+    assert judged.false_alarm_gates == ["fact_possible_duplicate"]
+
+
+# --------------------------------------------------------------------------
+# 第52回パートB5: 開発用25件のオラクルの上限
+# --------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def oracle_dev25() -> dict:
+    """開発用25件(正解 IR 5件＋付録20件)をオラクルで通した結果。"""
+    return run(
+        ROOT / "testdata" / "ir_gold",
+        ROOT / "registry" / "registry.json",
+        use_oracle=True,
+        verbose=False,
+        gold_file=ROOT / "testdata" / "fact_gold" / "fact_gold_dev_v1.json",
+    )
+
+
+def test_the_oracle_on_the_dev_twenty_five_stops_at_eleven(oracle_dev25):
+    """正解どおりに入れても 11/25 が上限である(パートB5)。
+
+    残る14件はすべて**中の誤りだけ**(取りこぼし)で、重大な誤りは1件も出ない。
+    手順3a は値の**完全一致**でしか寄せないので、既存の列に新しい値を足す場面
+    (`is_addition`)は原理的に寄せられない。寄せ先は手順3b の提案が当てている。
+    """
+    s = oracle_dev25["summary"]
+    assert s["items"] == 25
+    assert s["correct"] == 11
+    assert s["slipped"] == 0 and s["slipped_strict"] == 0
+    assert s["severe_errors"] == 0
+    assert s["by_verdict"] == {"correct": 11, "severe": 0, "middle": 14}
+    assert s["errors_by_kind"]["reuse_missed"] == 26
+    assert s["errors_by_kind"]["condition_dropped"] == 0
+    # 寄せられなかった26件は、手順3b の提案がすべて当てている(列の単位)
+    assert s["suggestion_hits"] == 26
+    assert s["suggestion_false_alarms"] == 0
+
+
+def test_the_oracle_shows_why_the_twenty_six_values_are_not_reused(oracle_dev25):
+    """取りこぼし26件の理由を3つに分ける(パートB5 の一覧の根拠)。"""
+    gold = json.loads(
+        (ROOT / "testdata" / "fact_gold" / "fact_gold_dev_v1.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    addition = {
+        (item["gold_id"], fact["variable"], value["value"]): bool(
+            value.get("is_addition")
+        )
+        for item in gold["items"]
+        if item["kind"] == "fact_gold"
+        for fact in item["facts"]
+        for value in fact["values"]
+    }
+    counts = {"値の追加": 0, "別の行為の列": 0, "比較型の列": 0}
+    for item in oracle_dev25["items"]:
+        scope = set(item["reuse_scope_facts"])
+        for error in item["errors"]:
+            if error["kind"] != "reuse_missed":
+                continue
+            key = (item["gold_id"], error["gold_fact"], error["value"])
+            if addition.get(key):
+                counts["値の追加"] += 1
+            elif key not in addition:
+                # 正解 IR 5件の比較型の既存 fact(第14条の birth_match・phone_match)
+                counts["比較型の列"] += 1
+            else:
+                assert error["gold_fact"] not in scope
+                counts["別の行為の列"] += 1
+    assert counts == {"値の追加": 17, "別の行為の列": 7, "比較型の列": 2}
+
+
+def test_the_oracle_counts_one_duplicate_as_a_reuse_scope_check(oracle_dev25):
+    """Q1: 別の行為の fact と値が一致して立った近さは、誤報ではなく別枠。"""
+    s = oracle_dev25["summary"]
+    assert s["reuse_scope_check_items"] == ["ipa_secguide_v4_personnel_2"]
+    # 残りの誤報は**名前の類似**で立ったものである(第53回の要判断)
+    assert s["false_alarm_gates"] == {
+        "fact_value_unverified": 1,
+        "fact_possible_duplicate": 6,
+    }

@@ -1,0 +1,181 @@
+[1/25] ipa_secguide_v4_6_7_1 (層3 7件) ...
+      [OK] 正しい（重大0／中0） 値3件 ゲート=['new_fact_unapproved'] 0秒／3回
+      operator_role（システム開発担当、その他）を層3に足した
+      target_environment（本番環境、その他）を層3に足した
+      requested_privilege（特権、その他）を層3に足した
+      dt_privileged_operation（行為「操作」の判定）を層1に足した
+[2/25] mhlw_r7dec_art11_1 (層3 10件) ...
+      [OK] 正しい（重大0／中0） 値4件 ゲート=['new_fact_unapproved'] 0秒／3回
+      usage_authorization（許可なし、その他）を層3に足した
+      usage_purpose（職務以外の目的、その他）を層3に足した
+      usage_target（会社の施設、物品等、その他）を層3に足した
+      dt_facility_property_use（行為「使用」の判定）を層1に足した
+[3/25] ipa_secguide_v4_personnel_2 (層3 13件) ...
+      [OK] 正しい（重大0／中0） 値3件 ゲート=['new_fact_unapproved', 'fact_possible_duplicate'] 0秒／3回
+      provided_information（営業秘密として管理する情報、複製物、その他）を層3に足した
+      recipient_authorization（許可なし、その他）を層3に足した
+      dt_trade_secret_provision（行為「提供」の判定）を層1に足した
+[4/25] mhlw_r7dec_art21_3 (層3 15件) ...
+      [OK] 正しい（重大0／中0） 値7件 ゲート=['new_fact_unapproved'] 0秒／3回
+      worker_category（妊娠中の女性、産後1年を経過しない女性労働者、18歳未満の者、その他）を層3に足した
+      exemption_request（請求した者、その他）を層3に足した
+      work_type（時間外労働、休日労働、深夜労働、その他）を層3に足した
+      dt_overtime_assignment（行為「労働指示」の判定）を層1に足した
+[5/25] aoi_johokanri_art14 (層3 18件) ...
+      [NG] 中の誤りのみ（重大0／中2） 値0件 ゲート=['fact_reuse_suggested'] 0秒／3回
+        - 取りこぼし: 値 '一致'（出力の列 None／正解の列 birth_match）
+        - 取りこぼし: 値 '一致'（出力の列 None／正解の列 phone_match）
+      dt_verbal_disclosure（行為「伝達」の判定）を層1に足した
+[6/25] ipa_secguide_v4_6_1_5 (層3 18件) ...
+      [OK] 正しい（重大0／中0） 値5件 ゲート=['new_fact_unapproved'] 0秒／3回
+      authentication_method（多要素認証、その他）を層3に足した
+      device_ownership（社有機器、私有機器、その他）を層3に足した
+      access_route（指定経路、その他）を層3に足した
+      dt_fact_gold_ipa_secguide_v4_6_1_5（行為「操作」の判定）を層1に足した
+[7/25] ipa_secguide_v4_phys_1_2_level2 (層3 21件) ...
+      [OK] 正しい（重大0／中0） 値4件 ゲート=['new_fact_unapproved', 'fact_value_unverified', 'fact_possible_duplicate'] 0秒／3回
+      operation_target（情報機器、設備、その他）を層3に足した
+      operation_authorization（無断、その他）を層3に足した
+      area_level（レベル2領域、その他）を層3に足した
+      dt_fact_gold_ipa_secguide_v4_phys_1_2_level2（行為「操作」の判定）を層1に足した
+[8/25] ipa_secguide_v4_2_3_3_forward (層3 24件) ...
+      [OK] 正しい（重大0／中0） 値2件 ゲート=['new_fact_unapproved', 'fact_possible_duplicate'] 0秒／3回
+      send_target（社用メールアドレスで受信したメール、その他）を層3に足した
+      destination（従業員個人のアドレス、その他）を層3に足した
+      dt_fact_gold_ipa_secguide_v4_2_3_3_forward（行為「送信」の判定）を層1に足した
+[9/25] ipa_secguide_v4_2_3_3_send (層3 26件) ...
+      [NG] 中の誤りのみ（重大0／中1） 値1件 ゲート=['fact_reuse_suggested'] 0秒／3回
+        - 取りこぼし: 値 '社内で利用したデータ'（出力の列 None／正解の列 send_target）
+      send_target に値 社内で利用したデータ を足した
+      dt_fact_gold_ipa_secguide_v4_2_3_3_send（行為「送信」の判定）を層1に足した
+[10/25] ipa_secguide_v4_5_6_outdoor (層3 26件) ...
+      [OK] 正しい（重大0／中0） 値4件 ゲート=['new_fact_unapproved', 'fact_possible_duplicate'] 0秒／3回
+      location（屋外、その他）を層3に足した
+      information_classification（極秘、社外秘、その他）を層3に足した
+      encryption_status（暗号化する、その他）を層3に足した
+      dt_fact_gold_ipa_secguide_v4_5_6_outdoor（行為「送信」の判定）を層1に足した
+[11/25] ipa_secguide_v4_phys_3_printer (層3 29件) ...
+      [OK] 正しい（重大0／中0） 値4件 ゲート=['new_fact_unapproved', 'fact_possible_duplicate'] 0秒／3回
+      leave_place（複合機、プリンタ、その他）を層3に足した
+      leave_target（原稿、印刷物、その他）を層3に足した
+      dt_fact_gold_ipa_secguide_v4_phys_3_printer（行為「放置」の判定）を層1に足した
+[12/25] ipa_secguide_v4_phys_1_2_level1 (層3 31件) ...
+      [NG] 中の誤りのみ（重大0／中3） 値1件 ゲート=['new_fact_unapproved', 'fact_value_unverified', 'fact_possible_duplicate', 'fact_reuse_suggested'] 0秒／3回
+        - 取りこぼし: 値 '社外秘'（出力の列 None／正解の列 information_classification）
+        - 取りこぼし: 値 '極秘'（出力の列 None／正解の列 information_classification）
+        - 取りこぼし: 値 'レベル1領域'（出力の列 None／正解の列 area_level）
+      usage_state（未使用時、その他）を層3に足した
+      area_level に値 レベル1領域 を足した
+      dt_fact_gold_ipa_secguide_v4_phys_1_2_level1（行為「放置」の判定）を層1に足した
+[13/25] ipa_secguide_v4_personnel_6_4_4_leave (層3 32件) ...
+      [NG] 中の誤りのみ（重大0／中2） 値0件 ゲート=['fact_reuse_suggested'] 0秒／3回
+        - 取りこぼし: 値 '機器'（出力の列 None／正解の列 leave_target）
+        - 取りこぼし: 値 '書類'（出力の列 None／正解の列 leave_target）
+      leave_target に値 機器、書類 を足した
+      dt_fact_gold_ipa_secguide_v4_personnel_6_4_4_leave（行為「放置」の判定）を層1に足した
+[14/25] ipa_secguide_v4_2_3_3_store (層3 32件) ...
+      [NG] 中の誤りのみ（重大0／中2） 値3件 ゲート=['new_fact_unapproved', 'fact_value_unverified', 'fact_possible_duplicate', 'fact_reuse_suggested'] 0秒／3回
+        - 取りこぼし: 値 '社外秘'（出力の列 None／正解の列 information_classification）
+        - 取りこぼし: 値 '極秘'（出力の列 None／正解の列 information_classification）
+      storage_medium（IT機器、電子媒体、その他）を層3に足した
+      usage_period（利用期間中、その他）を層3に足した
+      dt_fact_gold_ipa_secguide_v4_2_3_3_store（行為「保存」の判定）を層1に足した
+[15/25] mhlw_r7dec_art58_3_6 (層3 34件) ...
+      [OK] 正しい（重大0／中0） 値2件 ゲート=['new_fact_unapproved', 'fact_possible_duplicate'] 0秒／3回
+      area_type（立入禁止区域、通行禁止区域、その他）を層3に足した
+      dt_fact_gold_mhlw_r7dec_art58_3_6（行為「立入り」の判定）を層1に足した
+[16/25] mhlw_r7dec_art58_3_4 (層3 35件) ...
+      [NG] 中の誤りのみ（重大0／中1） 値1件 ゲート=['new_fact_unapproved', 'fact_reuse_suggested'] 0秒／3回
+        - 取りこぼし: 値 '喫煙可能な場所'（出力の列 None／正解の列 area_type）
+      entrant_age（20歳未満の者、その他）を層3に足した
+      area_type に値 喫煙可能な場所 を足した
+      dt_fact_gold_mhlw_r7dec_art58_3_4（行為「立入り」の判定）を層1に足した
+[17/25] mhlw_r7dec_art58_3_5 (層3 36件) ...
+      [NG] 中の誤りのみ（重大0／中1） 値1件 ゲート=['new_fact_unapproved', 'fact_reuse_suggested'] 0秒／3回
+        - 取りこぼし: 値 '喫煙可能な場所'（出力の列 None／正解の列 area_type）
+      companion_attribute（受動喫煙を望まない者、その他）を層3に足した
+      dt_fact_gold_mhlw_r7dec_art58_3_5（行為「同伴」の判定）を層1に足した
+[18/25] mhlw_r7dec_art25_2 (層3 37件) ...
+      [NG] 中の誤りのみ（重大0／中1） 値0件 ゲート=['fact_reuse_suggested'] 0秒／3回
+        - 取りこぼし: 値 '産後8週間を経過していない女性労働者'（出力の列 None／正解の列 worker_category）
+      worker_category に値 産後8週間を経過していない女性労働者 を足した
+      dt_fact_gold_mhlw_r7dec_art25_2（行為「労働指示」の判定）を層1に足した
+[19/25] mhlw_r7dec_art21_4 (層3 37件) ...
+      [NG] 中の誤りのみ（重大0／中3） 値1件 ゲート=['fact_reuse_suggested'] 0秒／3回
+        - 取りこぼし: 値 '妊産婦'（出力の列 None／正解の列 worker_category）
+        - 取りこぼし: 値 '請求のあった'（出力の列 None／正解の列 exemption_request）
+        - 取りこぼし: 値 '所定労働時間外労働'（出力の列 None／正解の列 work_type）
+      worker_category に値 妊産婦 を足した
+      exemption_request に値 請求のあった を足した
+      work_type に値 所定労働時間外労働 を足した
+      dt_fact_gold_mhlw_r7dec_art21_4（行為「労働指示」の判定）を層1に足した
+[20/25] ipa_secguide_v4_2_3_3_wifi (層3 37件) ...
+      [NG] 中の誤りのみ（重大0／中1） 値1件 ゲート=['new_fact_unapproved', 'fact_reuse_suggested'] 0秒／3回
+        - 取りこぼし: 値 'Wi-Fiサービス'（出力の列 None／正解の列 usage_target）
+      service_contract（会社で契約したサービス社外、その他）を層3に足した
+      usage_target に値 Wi-Fiサービス を足した
+      dt_fact_gold_ipa_secguide_v4_2_3_3_wifi（行為「使用」の判定）を層1に足した
+[21/25] ipa_secguide_v4_6_10_password_reuse (層3 38件) ...
+      [NG] 中の誤りのみ（重大0／中1） 値2件 ゲート=['new_fact_unapproved', 'fact_reuse_suggested'] 0秒／3回
+        - 取りこぼし: 値 'パスワード'（出力の列 None／正解の列 usage_target）
+      reuse_scope（機器間、サービス間、その他）を層3に足した
+      usage_target に値 パスワード を足した
+      dt_fact_gold_ipa_secguide_v4_6_10_password_reuse（行為「使用」の判定）を層1に足した
+[22/25] ipa_secguide_v4_personnel_6_4_2_cloud (層3 39件) ...
+      [NG] 中の誤りのみ（重大0／中3） 値1件 ゲート=['new_fact_unapproved', 'fact_reuse_suggested'] 0秒／3回
+        - 取りこぼし: 値 '送受信'（出力の列 None／正解の列 usage_purpose）
+        - 取りこぼし: 値 '保存'（出力の列 None／正解の列 usage_purpose）
+        - 取りこぼし: 値 '共有'（出力の列 None／正解の列 usage_purpose）
+      handled_data（業務関連データ、その他）を層3に足した
+      usage_purpose に値 送受信、保存、共有 を足した
+      dt_fact_gold_ipa_secguide_v4_personnel_6_4_2_cloud（行為「使用」の判定）を層1に足した
+[23/25] ipa_secguide_v4_6_10_priv_name (層3 40件) ...
+      [OK] 正しい（重大0／中0） 値2件 ゲート=['new_fact_unapproved', 'fact_possible_duplicate'] 0秒／3回
+      share_target（特権アカウント名、その他）を層3に足した
+      sharer_count（2名以上、その他）を層3に足した
+      dt_fact_gold_ipa_secguide_v4_6_10_priv_name（行為「共有」の判定）を層1に足した
+[24/25] ipa_secguide_v4_6_2_1_item2 (層3 42件) ...
+      [NG] 中の誤りのみ（重大0／中1） 値1件 ゲート=['new_fact_unapproved', 'fact_possible_duplicate', 'fact_reuse_suggested'] 0秒／3回
+        - 取りこぼし: 値 '同一アカウント'（出力の列 None／正解の列 share_target）
+      share_partner（他者、その他）を層3に足した
+      share_target に値 同一アカウント を足した
+      dt_fact_gold_ipa_secguide_v4_6_2_1_item2（行為「共有」の判定）を層1に足した
+[25/25] ipa_secguide_v4_5_6_share (層3 43件) ...
+      [NG] 中の誤りのみ（重大0／中4） 値1件 ゲート=['new_fact_unapproved', 'fact_possible_duplicate', 'fact_reuse_suggested'] 0秒／3回
+        - 取りこぼし: 値 '社外秘'（出力の列 None／正解の列 information_classification）
+        - 取りこぼし: 値 '極秘'（出力の列 None／正解の列 information_classification）
+        - 取りこぼし: 値 '情報ファイル'（出力の列 None／正解の列 share_target）
+        - 取りこぼし: 値 '秘密保持に関する合意をした相手'（出力の列 None／正解の列 share_partner）
+      share_scope（社外、その他）を層3に足した
+      share_target に値 情報ファイル を足した
+      share_partner に値 秘密保持に関する合意をした相手 を足した
+      dt_fact_gold_ipa_secguide_v4_5_6_share（行為「共有」の判定）を層1に足した
+
+== 集計 ==
+  件数: 25
+  すり抜け(重大な誤りでゲート無し): 0件 → 合格（P40）
+  [参考] 重大な誤りで疑いのゲート無し: 0件 []
+  正しい: 11/25（重大な誤りを含む件 0／中の誤りを含む件 14／中の誤りだけの件 14）
+  誤りの内訳（値の単位）:
+    条件の付け足し（重大）: 0件
+    誤った再利用（重大）: 0件
+    値の取り違え（重大）: 0件
+    条件の落とし（中）: 0件
+    取りこぼし（中）: 26件
+    fact の分け方の違い（中）: 0件
+    表記の違い（中）: 0件
+  値の突き合わせ: 正解 80件／出力 54件／対応 54件
+  条件の語句の逐語率: 75/80
+  既存の fact の再利用: 正しい 3/29（取りこぼし 26／誤った再利用 0）
+  手順3b の提案: 26件／渡した値 77件（当たり 26／誤報 0。列の単位）
+  手順3b の答えの照合: {'exact': 77, 'contains': 0, 'no_match_answer': 0, 'ambiguous': 0, 'none': 0, 'unrecorded': 0}
+  別の行為の fact と値が一致(寄せずに提案へ。P37 改訂): 8件（うち祖先の行為だけ 0件）
+  人に回る割合: 25/25（疑いあり 11／設計上の確認だけ 14／自動 0）
+  ゲート: {'new_fact_unapproved': 20, 'fact_possible_duplicate': 11, 'fact_reuse_suggested': 14, 'fact_value_unverified': 3}
+  疑いのゲートの誤報: 6件 {'fact_value_unverified': 1, 'fact_possible_duplicate': 6}
+  [別枠] 寄せ先の確認で立った fact_possible_duplicate(Q1): 1件 ['ipa_secguide_v4_personnel_2']
+  新規候補の primitive の一致: 37/37
+  評価から外した値(FU2): 0件
+  所要: 0.1秒（1件あたり 0.0秒／LLM 75回）
+
+結果: docs/eval/fact_eval_dev25_20261128_oracle_v013.json

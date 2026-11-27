@@ -16,6 +16,7 @@
 | 条件の落とし | 条文の条件を出さなかった。禁止が広がる(安全側) | 中 |
 | 取りこぼし | 既存の fact を使うべきところを使わなかった | 中 |
 | fact の分け方の違い | 2つの値を1つの fact にまとめた、またはその逆 | 中 |
+| 表記の違い | 新しい fact の値で、根拠の語句と列は正解と同じだが書き方が違う | 中(P40 改訂) |
 
 - **すり抜け**: 重大な誤りのうち、ゲートが1つも立たなかった件数。**0件が合格の条件**
 - 条件の語句の逐語率／既存の fact の再利用(正しい再利用・取りこぼし・誤った再利用)／
@@ -48,6 +49,13 @@ primitive の一致だけを見る。
 
     # LLM を正解を返す偽物に差し替えて、評価の筋だけを確かめる(Ollama 不要)
     .venv/bin/python3 -m src.stage3_frontstage.run_fact_eval --use-oracle
+
+    # 開発用25件(正解 IR 5件＋第52回 HANDOFF 付録20件)を流す
+    .venv/bin/python3 -m src.stage3_frontstage.run_fact_eval \
+        --gold-file testdata/fact_gold/fact_gold_dev_v1.json
+
+    # 済んだ結果を、LLM を回さずにいまの数え方で数え直す
+    .venv/bin/python3 -m src.stage3_frontstage.run_fact_eval --reclassify <結果.json>
 """
 from __future__ import annotations
 
@@ -75,6 +83,8 @@ from .fact_extractor import (
     OllamaJsonLlm,
     normalize_value,
 )
+from .fact_gold import DEV_GOLD_FILE
+from .fact_gold import load_items as load_fact_gold_items
 from .fact_ledger import NO_MATCH, FactEntry, FactLedger
 
 GOLD_DIR = "testdata/ir_gold"
@@ -193,8 +203,34 @@ def load_items(gold_dir: str | Path = GOLD_DIR) -> list[dict]:
     return items
 
 
+def fact_gold_values(entry: dict) -> list[GoldValue]:
+    """付録の正解(fact だけの正解)から正解の値を求める(第52回パートB)。
+
+    正解 IR 5件は決定表の行から既存の fact の値を拾う必要があるが、付録の20件は
+    `facts` 欄に「どの列にどの値が入るか」がそのまま書いてあるので、それを読む。
+    `status` が `new` なら新しい列の値、`existing` なら既存の列の値である
+    (`is_addition` が true かどうかは、どちらも既存の列なので値の分類には使わない)。
+    """
+    out: list[GoldValue] = []
+    for fact in entry["facts"]:
+        for value in fact["values"]:
+            normalized, _ = normalize_value(value["value"])
+            out.append(
+                GoldValue(
+                    variable=fact["variable"],
+                    value=normalized,
+                    is_new=fact["status"] == "new",
+                    quote=value.get("quote", ""),
+                    primitive="passthrough",
+                )
+            )
+    return out
+
+
 def gold_values(gold: dict) -> list[GoldValue]:
     """正解 IR の facts 欄と決定表の行から、正解の値を求める(10.4.1節)。"""
+    if gold.get("fact_gold"):
+        return fact_gold_values(gold["fact_gold"])
     ir = gold["ir"]
     facts = ir["facts"]
     quotes: dict[tuple[str, str], str] = {}
@@ -349,6 +385,9 @@ class ItemResult:
     matches: list[dict] = field(default_factory=list)
     reuse_scope_facts: list[str] = field(default_factory=list)
     out_of_scope_hits: list[dict] = field(default_factory=list)
+    # Q1: fact_possible_duplicate が立った理由が「別の行為の fact と値が一致した」
+    # ことだけだったか(誤報ではなく寄せ先の確認として数える)
+    duplicate_scope_only: bool = False
     elapsed_seconds: float = 0.0
     llm_calls: int = 0
 
@@ -396,9 +435,29 @@ class ItemResult:
         return [g for g in self.gates if g in DESIGN_CHECK_GATES]
 
     @property
+    def reuse_scope_check(self) -> bool:
+        """fact_possible_duplicate が「寄せ先の確認」だったか(Q1)。
+
+        P37 改訂で寄せ先を同じ行為の fact に限ったので、別の行為の fact と値が一致した
+        値は新規候補に入り、その候補は必ず「既存の fact の値と同じ」で近いと判定される。
+        ゲートは立てたままにし(人は寄せ先を確かめたい)、**疑いの誤報には数えない**
+        (第52回 Q1)。
+        """
+        return bool(
+            self.duplicate_scope_only and "fact_possible_duplicate" in self.gates
+        )
+
+    @property
     def false_alarm_gates(self) -> list[str]:
-        """正しい結果なのに立った疑いのゲート(P21)。"""
-        return self.suspicion_gates if self.correct else []
+        """正しい結果なのに立った疑いのゲート(P21)。
+
+        Q1: 寄せ先の確認として立った fact_possible_duplicate は誤報に数えない。
+        """
+        if not self.correct:
+            return []
+        if self.reuse_scope_check:
+            return [g for g in self.suspicion_gates if g != "fact_possible_duplicate"]
+        return self.suspicion_gates
 
     @property
     def routed_to_human(self) -> bool:
@@ -437,6 +496,8 @@ class ItemResult:
             "matches": [dict(m) for m in self.matches],
             "reuse_scope_facts": list(self.reuse_scope_facts),
             "out_of_scope_hits": [dict(h) for h in self.out_of_scope_hits],
+            "duplicate_scope_only": self.duplicate_scope_only,
+            "reuse_scope_check": self.reuse_scope_check,
             "elapsed_seconds": round(self.elapsed_seconds, 1),
             "llm_calls": self.llm_calls,
         }
@@ -478,6 +539,7 @@ class ItemResult:
             matches=[dict(x) for x in payload.get("matches") or []],
             reuse_scope_facts=list(payload.get("reuse_scope_facts") or []),
             out_of_scope_hits=[dict(x) for x in payload.get("out_of_scope_hits") or []],
+            duplicate_scope_only=bool(payload.get("duplicate_scope_only", False)),
             elapsed_seconds=payload.get("elapsed_seconds", 0.0),
             llm_calls=payload.get("llm_calls", 0),
         )
@@ -710,6 +772,7 @@ def judge(
         matches=[m.to_json() for m in result.trace.matches],
         reuse_scope_facts=list(result.trace.reuse_scope),
         out_of_scope_hits=[dict(h) for h in result.trace.out_of_scope_hits],
+        duplicate_scope_only=result.trace.duplicate_scope_only,
         elapsed_seconds=result.trace.elapsed_seconds,
         llm_calls=result.trace.llm_calls,
     )
@@ -1014,6 +1077,9 @@ def build_summary(
         "gates": gate_counts,
         "false_alarm_items": sum(1 for r in results if r.false_alarm_gates),
         "false_alarm_gates": false_alarm_counts,
+        # Q1: 寄せ先の確認として立った fact_possible_duplicate(誤報に数えない)
+        "reuse_scope_checks": sum(1 for r in results if r.reuse_scope_check),
+        "reuse_scope_check_items": [r.gold_id for r in results if r.reuse_scope_check],
         # 新規候補の primitive の一致
         "primitive_total": len(primitive_checks),
         "primitive_matches": sum(1 for p in primitive_checks if p["matches"]),
@@ -1092,9 +1158,14 @@ def run(
     limit: Optional[int] = None,
     verbose: bool = True,
     partial_path: Optional[str | Path] = None,
+    gold_file: Optional[str | Path] = None,
 ) -> dict:
-    """正解 IR を manifest の順に流して集計する。"""
-    items = load_items(gold_dir)
+    """正解を順に流して集計する。
+
+    `gold_file` を渡すと、開発用25件の正解ファイル(正解 IR 5件＋付録20件)を読む
+    (第52回パートB)。渡さなければ、これまでどおり `gold_dir` の manifest を読む。
+    """
+    items = load_fact_gold_items(gold_file) if gold_file else load_items(gold_dir)
     if limit:
         items = items[:limit]
     registry = Registry.load(registry_path)
@@ -1184,7 +1255,9 @@ def run(
     summary = build_summary(results, elapsed, errors)
     out = {
         "_meta": {
-            "gold_dir": str(gold_dir),
+            "gold_dir": str(gold_dir) if gold_file is None else None,
+            "gold_file": None if gold_file is None else str(gold_file),
+            "items": len(items),
             "registry": str(registry_path),
             "llm": "oracle(偽物)" if use_oracle else f"ollama {llm.model}",  # type: ignore[union-attr]
             "k": 1,
@@ -1258,6 +1331,10 @@ def print_summary(out: dict) -> None:
         f"  疑いのゲートの誤報: {s['false_alarm_items']}件 {s['false_alarm_gates']}"
     )
     print(
+        f"  [別枠] 寄せ先の確認で立った fact_possible_duplicate(Q1): "
+        f"{s.get('reuse_scope_checks', 0)}件 {s.get('reuse_scope_check_items', [])}"
+    )
+    print(
         f"  新規候補の primitive の一致: {s['primitive_matches']}/{s['primitive_total']}"
     )
     print(f"  評価から外した値(FU2): {s['excluded_values']}件")
@@ -1270,6 +1347,12 @@ def print_summary(out: dict) -> None:
 def main(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--gold-dir", default=GOLD_DIR)
+    parser.add_argument(
+        "--gold-file",
+        default=None,
+        metavar="PATH",
+        help=f"開発用の正解ファイル(例: {DEV_GOLD_FILE})。正解 IR 5件＋付録20件",
+    )
     parser.add_argument("--registry", default=REGISTRY_PATH)
     parser.add_argument("--out", default=OUT_DIR)
     parser.add_argument(
@@ -1316,6 +1399,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         use_oracle=args.use_oracle,
         limit=args.limit,
         partial_path=None if args.use_oracle else out_dir / "partial.json",
+        gold_file=args.gold_file,
     )
     out_dir.mkdir(parents=True, exist_ok=True)
     name = "result_oracle.json" if args.use_oracle else "result.json"

@@ -1,0 +1,1280 @@
+{
+  "_meta": {
+    "note": "事実の抽出(前段の第2要素)の開発用の正解 25件。先頭5件は承認済みの正解 IR(manifest の順)で、6件目から20件が第52回 HANDOFF 付録の正解である。正解 IR 5件は IR 全体を持つが、20件は fact の正解だけを持つ(決定表は作らない)。教師ありの評価では、各件の後で正解の fact を層3に足し、その行為の表がその fact を入力に使うことを配線として足す(K61・P42)。",
+    "design": "前段設計書 10.4節 v0.13",
+    "split": "dev",
+    "created": "2026-11-28",
+    "approved": {
+      "by": "Kazuhiro",
+      "at": "2026-11-28",
+      "what": "20件の正解(第52回 HANDOFF 付録)。作り方は運用メモ3章"
+    },
+    "action_gold": [
+      "testdata/action_gold/action_gold_v4.json",
+      "testdata/action_gold/action_gold_dev2_v1.json",
+      "testdata/action_gold/action_gold_dev3_v1.json"
+    ],
+    "fields": {
+      "action_surface": "条文中の行為の語句(Action の正解の surface。D71)",
+      "facts[].status": "existing＝その時点の層3にある fact／new＝新しい fact",
+      "facts[].kind": "条件の種類(P35)。評価では見ない(10.4.1節)",
+      "facts[].values[].value": "正解の値。条文の語のまま書く(10.5節 v0.13)",
+      "facts[].values[].quote": "値の根拠の語句。条文本文または context に逐語である",
+      "facts[].values[].is_addition": "true＝既存の fact に足す値(value_additions)",
+      "facts[].other_value_note": "予約語「その他」が指す状態(D55)",
+      "not_modeled": "列にしない条件(D51・FU2)"
+    }
+  },
+  "items": [
+    {
+      "order": 1,
+      "kind": "ir_gold",
+      "gold_id": "ipa_secguide_v4_6_7_1",
+      "file": "testdata/ir_gold/ipa_secguide_v4_6_7_1.json",
+      "split": "dev",
+      "reason": "ゴールデンパス。v2 の基本形なので先頭に置く(設計書6.1)"
+    },
+    {
+      "order": 2,
+      "kind": "ir_gold",
+      "gold_id": "mhlw_r7dec_art11_1",
+      "file": "testdata/ir_gold/mhlw_r7dec_art11_1.json",
+      "split": "dev",
+      "reason": "新しい DMN モデルを1枚作るだけで、他の条文に依存しない"
+    },
+    {
+      "order": 3,
+      "kind": "ir_gold",
+      "gold_id": "ipa_secguide_v4_personnel_2",
+      "file": "testdata/ir_gold/ipa_secguide_v4_personnel_2.json",
+      "split": "dev",
+      "reason": "同じく独立。Action の親(情報開示)が第14条と同じ階層になるため、第14条より前に置く"
+    },
+    {
+      "order": 4,
+      "kind": "ir_gold",
+      "gold_id": "mhlw_r7dec_art21_3",
+      "file": "testdata/ir_gold/mhlw_r7dec_art21_3.json",
+      "split": "dev",
+      "reason": "同じく独立。値の種類が最も多い条文"
+    },
+    {
+      "order": 5,
+      "kind": "ir_gold",
+      "gold_id": "aoi_johokanri_art14",
+      "file": "testdata/ir_gold/aoi_johokanri_art14.json",
+      "split": "dev",
+      "reason": "あおいの初期登録した fact(birth_match・phone_match)を再利用する唯一の条文。登録簿の層3を前提にするので、新しい fact を定義する条文より後に置く"
+    },
+    {
+      "order": 6,
+      "kind": "fact_gold",
+      "gold_id": "ipa_secguide_v4_6_1_5",
+      "clause_id": "ipa_secguide_v4_6_1_5",
+      "split": "dev",
+      "actor": "あおい",
+      "action": "操作",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.1 アクセス制御方針（箇条書き第5項）",
+      "action_surface": "特権操作",
+      "clause_text": "特権操作は多要素認証を用い、社有機器及び指定経路（VPN等）からのみ実施し、私有機器を使用しないこと。",
+      "facts": [
+        {
+          "variable": "requested_privilege",
+          "status": "existing",
+          "kind": "状況",
+          "values": [
+            {
+              "value": "特権",
+              "quote": "特権操作",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": null
+        },
+        {
+          "variable": "authentication_method",
+          "status": "new",
+          "kind": "状況",
+          "values": [
+            {
+              "value": "多要素認証",
+              "quote": "多要素認証",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "多要素認証以外の認証"
+        },
+        {
+          "variable": "device_ownership",
+          "status": "new",
+          "kind": "状況",
+          "values": [
+            {
+              "value": "社有機器",
+              "quote": "社有機器",
+              "is_addition": false
+            },
+            {
+              "value": "私有機器",
+              "quote": "私有機器",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "社有機器・私有機器以外の機器"
+        },
+        {
+          "variable": "access_route",
+          "status": "new",
+          "kind": "状況",
+          "values": [
+            {
+              "value": "指定経路",
+              "quote": "指定経路",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "指定経路以外の経路"
+        }
+      ],
+      "not_modeled": [],
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-28"
+      },
+      "source": {
+        "action_gold": "testdata/action_gold/action_gold_v4.json",
+        "handoff": "HANDOFF_20261128_round52_to_claudecode.md 付録"
+      }
+    },
+    {
+      "order": 7,
+      "kind": "fact_gold",
+      "gold_id": "ipa_secguide_v4_phys_1_2_level2",
+      "clause_id": "ipa_secguide_v4_phys_1_2_level2",
+      "split": "dev",
+      "actor": "あおい",
+      "action": "操作",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 1.2 セキュリティ領域の設定（レベル2領域の表・制限事項）",
+      "action_surface": "情報機器・設備の無断操作",
+      "clause_text": "情報機器・設備の無断操作禁止・無断持出し禁止",
+      "facts": [
+        {
+          "variable": "operation_target",
+          "status": "new",
+          "kind": "対象",
+          "values": [
+            {
+              "value": "情報機器",
+              "quote": "情報機器・設備",
+              "is_addition": false
+            },
+            {
+              "value": "設備",
+              "quote": "情報機器・設備",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "情報機器・設備以外"
+        },
+        {
+          "variable": "operation_authorization",
+          "status": "new",
+          "kind": "状態",
+          "values": [
+            {
+              "value": "無断",
+              "quote": "無断操作",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "許可を得ている"
+        },
+        {
+          "variable": "area_level",
+          "status": "new",
+          "kind": "状況",
+          "values": [
+            {
+              "value": "レベル2領域",
+              "quote": "レベル2領域",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "レベル2領域以外の場所"
+        }
+      ],
+      "not_modeled": [],
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-28"
+      },
+      "source": {
+        "action_gold": "testdata/action_gold/action_gold_dev2_v1.json",
+        "handoff": "HANDOFF_20261128_round52_to_claudecode.md 付録"
+      },
+      "context": [
+        {
+          "text": "レベル2領域",
+          "where": "物理的対策 1.2 の表の行(領域)の見出し",
+          "locator": "T24.R1.C1.L1",
+          "basis": "verbatim"
+        },
+        {
+          "text": "本社執務室・社長室・書庫・工場・営業所",
+          "where": "同じ表の「レベル2領域」の対象",
+          "locator": "T24.R1.C2.L1",
+          "basis": "verbatim"
+        },
+        {
+          "text": "制限事項",
+          "where": "同じ表の、このセルが属する行の見出し",
+          "locator": "T24.R5.C1.L1",
+          "basis": "verbatim"
+        }
+      ]
+    },
+    {
+      "order": 8,
+      "kind": "fact_gold",
+      "gold_id": "ipa_secguide_v4_2_3_3_forward",
+      "clause_id": "ipa_secguide_v4_2_3_3_forward",
+      "split": "dev",
+      "actor": "あおい",
+      "action": "送信",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+      "action_surface": "従業員個人のアドレスに転送",
+      "clause_text": "社用メールアドレスで受信したメールを従業員個人のアドレスに転送することを禁止する。",
+      "facts": [
+        {
+          "variable": "send_target",
+          "status": "new",
+          "kind": "対象",
+          "values": [
+            {
+              "value": "社用メールアドレスで受信したメール",
+              "quote": "社用メールアドレスで受信したメール",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "それ以外のデータ"
+        },
+        {
+          "variable": "destination",
+          "status": "new",
+          "kind": "状況",
+          "values": [
+            {
+              "value": "従業員個人のアドレス",
+              "quote": "従業員個人のアドレス",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "従業員個人のアドレス以外の宛先"
+        }
+      ],
+      "not_modeled": [],
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-28"
+      },
+      "source": {
+        "action_gold": "testdata/action_gold/action_gold_v4.json",
+        "handoff": "HANDOFF_20261128_round52_to_claudecode.md 付録"
+      }
+    },
+    {
+      "order": 9,
+      "kind": "fact_gold",
+      "gold_id": "ipa_secguide_v4_2_3_3_send",
+      "clause_id": "ipa_secguide_v4_2_3_3_send",
+      "split": "dev",
+      "actor": "あおい",
+      "action": "送信",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+      "action_surface": "従業員個人のアドレスに送信",
+      "clause_text": "社内で利用したデータを従業員個人のアドレスに送信することを禁止する。",
+      "facts": [
+        {
+          "variable": "send_target",
+          "status": "existing",
+          "kind": "対象",
+          "values": [
+            {
+              "value": "社内で利用したデータ",
+              "quote": "社内で利用したデータ",
+              "is_addition": true
+            }
+          ],
+          "other_value_note": null
+        },
+        {
+          "variable": "destination",
+          "status": "existing",
+          "kind": "状況",
+          "values": [
+            {
+              "value": "従業員個人のアドレス",
+              "quote": "従業員個人のアドレス",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": null
+        }
+      ],
+      "not_modeled": [],
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-28"
+      },
+      "source": {
+        "action_gold": "testdata/action_gold/action_gold_v4.json",
+        "handoff": "HANDOFF_20261128_round52_to_claudecode.md 付録"
+      }
+    },
+    {
+      "order": 10,
+      "kind": "fact_gold",
+      "gold_id": "ipa_secguide_v4_5_6_outdoor",
+      "clause_id": "ipa_secguide_v4_5_6_outdoor",
+      "split": "dev",
+      "actor": "あおい",
+      "action": "送信",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 5.6 情報資産の社外持ち出し（箇条書き）",
+      "action_surface": "極秘又は社外秘の情報資産を送受信",
+      "clause_text": "屋外でネットワークへ接続して極秘又は社外秘の情報資産を送受信する場合は、暗号化する。",
+      "facts": [
+        {
+          "variable": "location",
+          "status": "new",
+          "kind": "状況",
+          "values": [
+            {
+              "value": "屋外",
+              "quote": "屋外",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "屋外以外の場所"
+        },
+        {
+          "variable": "information_classification",
+          "status": "new",
+          "kind": "対象",
+          "values": [
+            {
+              "value": "極秘",
+              "quote": "極秘又は社外秘",
+              "is_addition": false
+            },
+            {
+              "value": "社外秘",
+              "quote": "極秘又は社外秘",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "極秘・社外秘以外の区分"
+        },
+        {
+          "variable": "encryption_status",
+          "status": "new",
+          "kind": "状態",
+          "values": [
+            {
+              "value": "暗号化する",
+              "quote": "暗号化する",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "暗号化していない"
+        }
+      ],
+      "not_modeled": [],
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-28"
+      },
+      "source": {
+        "action_gold": "testdata/action_gold/action_gold_dev2_v1.json",
+        "handoff": "HANDOFF_20261128_round52_to_claudecode.md 付録"
+      }
+    },
+    {
+      "order": 11,
+      "kind": "fact_gold",
+      "gold_id": "ipa_secguide_v4_phys_3_printer",
+      "clause_id": "ipa_secguide_v4_phys_3_printer",
+      "split": "dev",
+      "actor": "あおい",
+      "action": "放置",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 3. セキュリティ領域内注意事項（箇条書き）",
+      "action_surface": "原稿、印刷物を放置",
+      "clause_text": "複合機、プリンタに原稿、印刷物を放置しない。",
+      "facts": [
+        {
+          "variable": "leave_place",
+          "status": "new",
+          "kind": "状況",
+          "values": [
+            {
+              "value": "複合機",
+              "quote": "複合機",
+              "is_addition": false
+            },
+            {
+              "value": "プリンタ",
+              "quote": "プリンタ",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "複合機・プリンタ以外の場所"
+        },
+        {
+          "variable": "leave_target",
+          "status": "new",
+          "kind": "対象",
+          "values": [
+            {
+              "value": "原稿",
+              "quote": "原稿",
+              "is_addition": false
+            },
+            {
+              "value": "印刷物",
+              "quote": "印刷物",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "原稿・印刷物以外の物"
+        }
+      ],
+      "not_modeled": [],
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-28"
+      },
+      "source": {
+        "action_gold": "testdata/action_gold/action_gold_v4.json",
+        "handoff": "HANDOFF_20261128_round52_to_claudecode.md 付録"
+      }
+    },
+    {
+      "order": 12,
+      "kind": "fact_gold",
+      "gold_id": "ipa_secguide_v4_phys_1_2_level1",
+      "clause_id": "ipa_secguide_v4_phys_1_2_level1",
+      "split": "dev",
+      "actor": "あおい",
+      "action": "放置",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 3.物理的対策 1.2 セキュリティ領域の設定（レベル1領域の表・制限事項）",
+      "action_surface": "情報資産の放置",
+      "clause_text": "未使用時に社外秘又は極秘の情報資産の放置禁止",
+      "facts": [
+        {
+          "variable": "usage_state",
+          "status": "new",
+          "kind": "状態",
+          "values": [
+            {
+              "value": "未使用時",
+              "quote": "未使用時",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "使用中"
+        },
+        {
+          "variable": "information_classification",
+          "status": "existing",
+          "kind": "対象",
+          "values": [
+            {
+              "value": "社外秘",
+              "quote": "社外秘又は極秘",
+              "is_addition": false
+            },
+            {
+              "value": "極秘",
+              "quote": "社外秘又は極秘",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": null
+        },
+        {
+          "variable": "area_level",
+          "status": "existing",
+          "kind": "状況",
+          "values": [
+            {
+              "value": "レベル1領域",
+              "quote": "レベル1領域",
+              "is_addition": true
+            }
+          ],
+          "other_value_note": null
+        }
+      ],
+      "not_modeled": [],
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-28"
+      },
+      "source": {
+        "action_gold": "testdata/action_gold/action_gold_v4.json",
+        "handoff": "HANDOFF_20261128_round52_to_claudecode.md 付録"
+      },
+      "context": [
+        {
+          "text": "レベル1領域",
+          "where": "物理的対策 1.2 の表の行(領域)の見出し",
+          "locator": "T23.R1.C1.L1",
+          "basis": "verbatim"
+        },
+        {
+          "text": "本社受付・応接スペース・商談室・倉庫",
+          "where": "同じ表の「レベル1領域」の対象",
+          "locator": "T23.R1.C2.L1",
+          "basis": "verbatim"
+        },
+        {
+          "text": "制限事項",
+          "where": "同じ表の、このセルが属する行の見出し",
+          "locator": "T23.R5.C1.L1",
+          "basis": "verbatim"
+        }
+      ]
+    },
+    {
+      "order": 13,
+      "kind": "fact_gold",
+      "gold_id": "ipa_secguide_v4_personnel_6_4_4_leave",
+      "clause_id": "ipa_secguide_v4_personnel_6_4_4_leave",
+      "split": "dev",
+      "actor": "あおい",
+      "action": "放置",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.4.4 外出時の注意（箇条書き）",
+      "action_surface": "機器や書類は目の届く範囲に置き放置",
+      "clause_text": "機器や書類は目の届く範囲に置き放置しない。",
+      "facts": [
+        {
+          "variable": "leave_target",
+          "status": "existing",
+          "kind": "対象",
+          "values": [
+            {
+              "value": "機器",
+              "quote": "機器や書類",
+              "is_addition": true
+            },
+            {
+              "value": "書類",
+              "quote": "機器や書類",
+              "is_addition": true
+            }
+          ],
+          "other_value_note": null
+        }
+      ],
+      "not_modeled": [
+        {
+          "quote": "目の届く範囲に置き",
+          "reason": "評価の判断を含む条件"
+        }
+      ],
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-28"
+      },
+      "source": {
+        "action_gold": "testdata/action_gold/action_gold_dev3_v1.json",
+        "handoff": "HANDOFF_20261128_round52_to_claudecode.md 付録"
+      }
+    },
+    {
+      "order": 14,
+      "kind": "fact_gold",
+      "gold_id": "ipa_secguide_v4_2_3_3_store",
+      "clause_id": "ipa_secguide_v4_2_3_3_store",
+      "split": "dev",
+      "actor": "あおい",
+      "action": "保存",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+      "action_surface": "社外秘又は極秘の情報資産の保存",
+      "clause_text": "社外秘又は極秘の情報資産の保存を禁止する。",
+      "facts": [
+        {
+          "variable": "information_classification",
+          "status": "existing",
+          "kind": "対象",
+          "values": [
+            {
+              "value": "社外秘",
+              "quote": "社外秘又は極秘",
+              "is_addition": false
+            },
+            {
+              "value": "極秘",
+              "quote": "社外秘又は極秘",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": null
+        },
+        {
+          "variable": "storage_medium",
+          "status": "new",
+          "kind": "状況",
+          "values": [
+            {
+              "value": "IT機器",
+              "quote": "IT機器",
+              "is_addition": false
+            },
+            {
+              "value": "電子媒体",
+              "quote": "電子媒体",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "IT機器・電子媒体以外の保存先"
+        },
+        {
+          "variable": "usage_period",
+          "status": "new",
+          "kind": "状況",
+          "values": [
+            {
+              "value": "利用期間中",
+              "quote": "利用期間中",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "利用期間外"
+        }
+      ],
+      "not_modeled": [
+        {
+          "quote": "以下に該当する機能がある場合には実行する",
+          "reason": "機能の内容が文脈に無く機器依存"
+        }
+      ],
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-28"
+      },
+      "source": {
+        "action_gold": "testdata/action_gold/action_gold_dev2_v1.json",
+        "handoff": "HANDOFF_20261128_round52_to_claudecode.md 付録"
+      },
+      "context": [
+        {
+          "text": "利用期間中は、利用するIT機器や電子媒体に以下に該当する機能がある場合には実行する。",
+          "where": "4.技術的対策 2.3.3 の箇条書きの親文",
+          "locator": "P0695.1",
+          "basis": "verbatim"
+        }
+      ]
+    },
+    {
+      "order": 15,
+      "kind": "fact_gold",
+      "gold_id": "mhlw_r7dec_art58_3_6",
+      "clause_id": "mhlw_r7dec_art58_3_6",
+      "split": "dev",
+      "actor": "あおい",
+      "action": "立入り",
+      "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第6号",
+      "action_surface": "区域には立ち入ら",
+      "clause_text": "立入禁止又は通行禁止区域には立ち入らないこと。",
+      "facts": [
+        {
+          "variable": "area_type",
+          "status": "new",
+          "kind": "状況",
+          "values": [
+            {
+              "value": "立入禁止区域",
+              "quote": "立入禁止又は通行禁止区域",
+              "is_addition": false
+            },
+            {
+              "value": "通行禁止区域",
+              "quote": "立入禁止又は通行禁止区域",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "それ以外の区域"
+        }
+      ],
+      "not_modeled": [],
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-28"
+      },
+      "source": {
+        "action_gold": "testdata/action_gold/action_gold_v4.json",
+        "handoff": "HANDOFF_20261128_round52_to_claudecode.md 付録"
+      }
+    },
+    {
+      "order": 16,
+      "kind": "fact_gold",
+      "gold_id": "mhlw_r7dec_art58_3_4",
+      "clause_id": "mhlw_r7dec_art58_3_4",
+      "split": "dev",
+      "actor": "あおい",
+      "action": "立入り",
+      "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第4号",
+      "action_surface": "喫煙可能な場所には立ち入ら",
+      "clause_text": "２０歳未満の者は、喫煙可能な場所には立ち入らないこと。",
+      "facts": [
+        {
+          "variable": "entrant_age",
+          "status": "new",
+          "kind": "主体の属性",
+          "values": [
+            {
+              "value": "20歳未満の者",
+              "quote": "２０歳未満の者",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "20歳以上の者"
+        },
+        {
+          "variable": "area_type",
+          "status": "existing",
+          "kind": "状況",
+          "values": [
+            {
+              "value": "喫煙可能な場所",
+              "quote": "喫煙可能な場所",
+              "is_addition": true
+            }
+          ],
+          "other_value_note": null
+        }
+      ],
+      "not_modeled": [],
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-28"
+      },
+      "source": {
+        "action_gold": "testdata/action_gold/action_gold_v4.json",
+        "handoff": "HANDOFF_20261128_round52_to_claudecode.md 付録"
+      }
+    },
+    {
+      "order": 17,
+      "kind": "fact_gold",
+      "gold_id": "mhlw_r7dec_art58_3_5",
+      "clause_id": "mhlw_r7dec_art58_3_5",
+      "split": "dev",
+      "actor": "あおい",
+      "action": "同伴",
+      "clause_ref": "厚生労働省「モデル就業規則」解説版 第58条（遵守事項）第3項第5号",
+      "action_surface": "喫煙可能な場所に連れて行か",
+      "clause_text": "受動喫煙を望まない者を喫煙可能な場所に連れて行かないこと。",
+      "facts": [
+        {
+          "variable": "companion_attribute",
+          "status": "new",
+          "kind": "対象",
+          "values": [
+            {
+              "value": "受動喫煙を望まない者",
+              "quote": "受動喫煙を望まない者",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "受動喫煙を望まない者以外"
+        },
+        {
+          "variable": "area_type",
+          "status": "existing",
+          "kind": "状況",
+          "values": [
+            {
+              "value": "喫煙可能な場所",
+              "quote": "喫煙可能な場所",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": null
+        }
+      ],
+      "not_modeled": [],
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-28"
+      },
+      "source": {
+        "action_gold": "testdata/action_gold/action_gold_dev2_v1.json",
+        "handoff": "HANDOFF_20261128_round52_to_claudecode.md 付録"
+      }
+    },
+    {
+      "order": 18,
+      "kind": "fact_gold",
+      "gold_id": "mhlw_r7dec_art25_2",
+      "clause_id": "mhlw_r7dec_art25_2",
+      "split": "dev",
+      "actor": "あおい",
+      "action": "労働指示",
+      "clause_ref": "厚生労働省「モデル就業規則」解説版 第25条（産前産後の休業）第2項",
+      "action_surface": "就業させ",
+      "clause_text": "産後８週間を経過していない女性労働者は、就業させない。",
+      "facts": [
+        {
+          "variable": "worker_category",
+          "status": "existing",
+          "kind": "主体の属性",
+          "values": [
+            {
+              "value": "産後8週間を経過していない女性労働者",
+              "quote": "産後８週間を経過していない女性労働者",
+              "is_addition": true
+            }
+          ],
+          "other_value_note": null
+        }
+      ],
+      "not_modeled": [],
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-28"
+      },
+      "source": {
+        "action_gold": "testdata/action_gold/action_gold_v4.json",
+        "handoff": "HANDOFF_20261128_round52_to_claudecode.md 付録"
+      }
+    },
+    {
+      "order": 19,
+      "kind": "fact_gold",
+      "gold_id": "mhlw_r7dec_art21_4",
+      "clause_id": "mhlw_r7dec_art21_4",
+      "split": "dev",
+      "actor": "あおい",
+      "action": "労働指示",
+      "clause_ref": "厚生労働省「モデル就業規則」解説版 第21条（時間外及び休日労働等）第4項",
+      "action_surface": "所定労働時間外労働又は休日労働に従事させ",
+      "clause_text": "災害その他避けることのできない事由によって臨時の必要がある場合には、第１項から前項までの制限を超えて、所定労働時間外又は休日に労働させることがある。ただし、この場合であっても、請求のあった妊産婦については、所定労働時間外労働又は休日労働に従事させない。",
+      "facts": [
+        {
+          "variable": "worker_category",
+          "status": "existing",
+          "kind": "主体の属性",
+          "values": [
+            {
+              "value": "妊産婦",
+              "quote": "妊産婦",
+              "is_addition": true
+            }
+          ],
+          "other_value_note": null
+        },
+        {
+          "variable": "exemption_request",
+          "status": "existing",
+          "kind": "状態",
+          "values": [
+            {
+              "value": "請求のあった",
+              "quote": "請求のあった",
+              "is_addition": true
+            }
+          ],
+          "other_value_note": null
+        },
+        {
+          "variable": "work_type",
+          "status": "existing",
+          "kind": "対象",
+          "values": [
+            {
+              "value": "所定労働時間外労働",
+              "quote": "所定労働時間外労働",
+              "is_addition": true
+            },
+            {
+              "value": "休日労働",
+              "quote": "休日労働",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": null
+        }
+      ],
+      "not_modeled": [
+        {
+          "quote": "災害その他避けることのできない事由によって臨時の必要がある場合",
+          "reason": "評価の判断を含む条件（許可の側の例外）"
+        }
+      ],
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-28"
+      },
+      "source": {
+        "action_gold": "testdata/action_gold/action_gold_v4.json",
+        "handoff": "HANDOFF_20261128_round52_to_claudecode.md 付録"
+      }
+    },
+    {
+      "order": 20,
+      "kind": "fact_gold",
+      "gold_id": "ipa_secguide_v4_2_3_3_wifi",
+      "clause_id": "ipa_secguide_v4_2_3_3_wifi",
+      "split": "dev",
+      "actor": "あおい",
+      "action": "使用",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 4.技術的対策 2.3.3 私有IT機器・電子媒体の利用期間中（箇条書き）",
+      "action_surface": "Wi-Fiサービスの利用",
+      "clause_text": "会社で契約したサービス社外のWi-Fiサービスの利用を禁止する。",
+      "facts": [
+        {
+          "variable": "usage_target",
+          "status": "existing",
+          "kind": "対象",
+          "values": [
+            {
+              "value": "Wi-Fiサービス",
+              "quote": "Wi-Fiサービス",
+              "is_addition": true
+            }
+          ],
+          "other_value_note": null
+        },
+        {
+          "variable": "service_contract",
+          "status": "new",
+          "kind": "状態",
+          "values": [
+            {
+              "value": "会社で契約したサービス社外",
+              "quote": "会社で契約したサービス社外",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "会社契約のサービス"
+        }
+      ],
+      "not_modeled": [],
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-28"
+      },
+      "source": {
+        "action_gold": "testdata/action_gold/action_gold_dev2_v1.json",
+        "handoff": "HANDOFF_20261128_round52_to_claudecode.md 付録"
+      }
+    },
+    {
+      "order": 21,
+      "kind": "fact_gold",
+      "gold_id": "ipa_secguide_v4_6_10_password_reuse",
+      "clause_id": "ipa_secguide_v4_6_10_password_reuse",
+      "split": "dev",
+      "actor": "あおい",
+      "action": "使用",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.10 利用者アカウント・パスワードの条件（表・一般利用者アカウント列／パスワード運用行）",
+      "action_surface": "機器やサービス間でのパスワードの使い回し",
+      "clause_text": "機器やサービス間でのパスワードの使い回しをしない",
+      "facts": [
+        {
+          "variable": "usage_target",
+          "status": "existing",
+          "kind": "対象",
+          "values": [
+            {
+              "value": "パスワード",
+              "quote": "パスワード",
+              "is_addition": true
+            }
+          ],
+          "other_value_note": null
+        },
+        {
+          "variable": "reuse_scope",
+          "status": "new",
+          "kind": "状況",
+          "values": [
+            {
+              "value": "機器間",
+              "quote": "機器やサービス間",
+              "is_addition": false
+            },
+            {
+              "value": "サービス間",
+              "quote": "機器やサービス間",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "使い回しなし"
+        }
+      ],
+      "not_modeled": [],
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-28"
+      },
+      "source": {
+        "action_gold": "testdata/action_gold/action_gold_dev3_v1.json",
+        "handoff": "HANDOFF_20261128_round52_to_claudecode.md 付録"
+      }
+    },
+    {
+      "order": 22,
+      "kind": "fact_gold",
+      "gold_id": "ipa_secguide_v4_personnel_6_4_2_cloud",
+      "clause_id": "ipa_secguide_v4_personnel_6_4_2_cloud",
+      "split": "dev",
+      "actor": "あおい",
+      "action": "使用",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 2.人的対策 6.4.2 クラウド・SNSの利用（箇条書き）",
+      "action_surface": "業務関連データの送受信、保存、共有に利用",
+      "clause_text": "業務関連データの送受信、保存、共有に利用しない。",
+      "facts": [
+        {
+          "variable": "usage_purpose",
+          "status": "existing",
+          "kind": "状況",
+          "values": [
+            {
+              "value": "送受信",
+              "quote": "送受信",
+              "is_addition": true
+            },
+            {
+              "value": "保存",
+              "quote": "保存",
+              "is_addition": true
+            },
+            {
+              "value": "共有",
+              "quote": "共有",
+              "is_addition": true
+            }
+          ],
+          "other_value_note": null
+        },
+        {
+          "variable": "handled_data",
+          "status": "new",
+          "kind": "対象",
+          "values": [
+            {
+              "value": "業務関連データ",
+              "quote": "業務関連データ",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "業務関連データ以外"
+        }
+      ],
+      "not_modeled": [],
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-28"
+      },
+      "source": {
+        "action_gold": "testdata/action_gold/action_gold_dev3_v1.json",
+        "handoff": "HANDOFF_20261128_round52_to_claudecode.md 付録"
+      }
+    },
+    {
+      "order": 23,
+      "kind": "fact_gold",
+      "gold_id": "ipa_secguide_v4_6_10_priv_name",
+      "clause_id": "ipa_secguide_v4_6_10_priv_name",
+      "split": "dev",
+      "actor": "あおい",
+      "action": "共有",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.10 利用者アカウント・パスワードの条件（表・特権アカウント列／アカウント名行）",
+      "action_surface": "特権アカウント名を2名以上で共用",
+      "clause_text": "1つの特権アカウント名を2名以上で共用しない",
+      "facts": [
+        {
+          "variable": "share_target",
+          "status": "new",
+          "kind": "対象",
+          "values": [
+            {
+              "value": "特権アカウント名",
+              "quote": "特権アカウント名",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "特権アカウント名以外"
+        },
+        {
+          "variable": "sharer_count",
+          "status": "new",
+          "kind": "状況",
+          "values": [
+            {
+              "value": "2名以上",
+              "quote": "2名以上",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "1名"
+        }
+      ],
+      "not_modeled": [],
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-28"
+      },
+      "source": {
+        "action_gold": "testdata/action_gold/action_gold_v4.json",
+        "handoff": "HANDOFF_20261128_round52_to_claudecode.md 付録"
+      },
+      "context": [
+        {
+          "text": "特権アカウント",
+          "where": "6.10 の表の列の見出し",
+          "locator": "T6.R1.C2.L1",
+          "basis": "verbatim"
+        },
+        {
+          "text": "アカウント名",
+          "where": "6.10 の表の行の見出し",
+          "locator": "T6.R2.C1.L1",
+          "basis": "verbatim"
+        }
+      ]
+    },
+    {
+      "order": 24,
+      "kind": "fact_gold",
+      "gold_id": "ipa_secguide_v4_6_2_1_item2",
+      "clause_id": "ipa_secguide_v4_6_2_1_item2",
+      "split": "dev",
+      "actor": "あおい",
+      "action": "共有",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 6.2.1 認証に関する基本方針（箇条書き第2項）",
+      "action_surface": "同一アカウントの他者との共有",
+      "clause_text": "同一アカウントの他者との共有および複数の利用者が共有するアカウントの発行を禁止する。",
+      "facts": [
+        {
+          "variable": "share_target",
+          "status": "existing",
+          "kind": "対象",
+          "values": [
+            {
+              "value": "同一アカウント",
+              "quote": "同一アカウント",
+              "is_addition": true
+            }
+          ],
+          "other_value_note": null
+        },
+        {
+          "variable": "share_partner",
+          "status": "new",
+          "kind": "対象",
+          "values": [
+            {
+              "value": "他者",
+              "quote": "他者",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "本人"
+        }
+      ],
+      "not_modeled": [],
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-28"
+      },
+      "source": {
+        "action_gold": "testdata/action_gold/action_gold_dev2_v1.json",
+        "handoff": "HANDOFF_20261128_round52_to_claudecode.md 付録"
+      }
+    },
+    {
+      "order": 25,
+      "kind": "fact_gold",
+      "gold_id": "ipa_secguide_v4_5_6_share",
+      "clause_id": "ipa_secguide_v4_5_6_share",
+      "split": "dev",
+      "actor": "あおい",
+      "action": "共有",
+      "clause_ref": "IPA「中小企業の情報セキュリティ対策ガイドライン」第4.0版 付録5 情報セキュリティ関連規程（サンプル） 1.組織的対策 5.6 情報資産の社外持ち出し（箇条書き）",
+      "action_surface": "社外秘又は極秘の情報ファイルを社外に共有",
+      "clause_text": "社外秘又は極秘の情報ファイルを社外に共有する場合は、秘密保持に関する合意をした相手とのみ共有する。",
+      "facts": [
+        {
+          "variable": "information_classification",
+          "status": "existing",
+          "kind": "対象",
+          "values": [
+            {
+              "value": "社外秘",
+              "quote": "社外秘又は極秘",
+              "is_addition": false
+            },
+            {
+              "value": "極秘",
+              "quote": "社外秘又は極秘",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": null
+        },
+        {
+          "variable": "share_target",
+          "status": "existing",
+          "kind": "対象",
+          "values": [
+            {
+              "value": "情報ファイル",
+              "quote": "情報ファイル",
+              "is_addition": true
+            }
+          ],
+          "other_value_note": null
+        },
+        {
+          "variable": "share_scope",
+          "status": "new",
+          "kind": "状況",
+          "values": [
+            {
+              "value": "社外",
+              "quote": "社外",
+              "is_addition": false
+            }
+          ],
+          "other_value_note": "社内"
+        },
+        {
+          "variable": "share_partner",
+          "status": "existing",
+          "kind": "対象",
+          "values": [
+            {
+              "value": "秘密保持に関する合意をした相手",
+              "quote": "秘密保持に関する合意をした相手",
+              "is_addition": true
+            }
+          ],
+          "other_value_note": null
+        }
+      ],
+      "not_modeled": [],
+      "review": {
+        "approved_by": "Kazuhiro",
+        "reviewed_at": "2026-11-28"
+      },
+      "source": {
+        "action_gold": "testdata/action_gold/action_gold_dev2_v1.json",
+        "handoff": "HANDOFF_20261128_round52_to_claudecode.md 付録"
+      }
+    }
+  ]
+}
